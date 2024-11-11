@@ -38,7 +38,9 @@ class SiglipSdpaAttention(nn.Module):
         attn_scores = torch.matmul(Q, K_merged.transpose(-2, -1)) / torch.sqrt(torch.tensor(Q.size(-1), dtype=torch.float32))
         attn_scores = attn_scores + torch.log(torch.tensor(num_patches_per_token, dtype=torch.float32, device=attn_scores.device))
         attn_weights = F.softmax(attn_scores, dim=-1)
-        output = torch.matmul(attn_weights, V)
+        # Merge the value tensor V to match the merged keys
+        V_merged, _ = self.token_merger(V)
+        output = torch.matmul(attn_weights, V_merged)
         return self.out_proj(output)
 
 class SiglipMLP(nn.Module):
@@ -102,7 +104,7 @@ class SiglipVisionModel(nn.Module):
         return self.vision_model(x)
 
 class VisionTower(nn.Module):
-    def __init__(self, in_channels=3, hidden_size=1152, patch_size=14, num_patches=729, num_layers=27, mlp_dim=4304, r=10):
+    def __init__(self, in_channels=3, hidden_size=1152, patch_size=14, num_patches=2916, num_layers=27, mlp_dim=4304, r=10):
         super(VisionTower, self).__init__()
         self._vision_tower = SiglipVisionModel(in_channels, hidden_size, patch_size, num_patches, num_layers, mlp_dim, r)
 
