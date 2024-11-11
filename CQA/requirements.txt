@@ -5,3 +5,4 @@ torch==2.4.1+cu118
 transformers==4.44.2
 tf-keras
 git+https://github.com/facebookresearch/ToMe.git
+datasets
