@@ -1,112 +1,114 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from typing import Optional, Tuple
+from transformers.models.siglip.modeling_siglip import SiglipMLP, SiglipConfig, SiglipSdpaAttention
 from ViTmerging import VisionTokenMerger
+class SiglipSdpaAttentionWithVTM(SiglipSdpaAttention):
+    def __init__(self, config: SiglipConfig, r=20):
+        super().__init__(config)
+        self.config = config
+        self.r = r  # Number of token pairs to merge per layer
+        
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        s: torch.Tensor,  # New input for token size vector
+        attention_mask: Optional[torch.Tensor] = None,
+        output_attentions: Optional[bool] = False,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        batch_size, q_len, _ = hidden_states.size()
 
-class SiglipVisionEmbeddings(nn.Module):
-    def __init__(self, in_channels, hidden_size, patch_size, num_patches):
-        super(SiglipVisionEmbeddings, self).__init__()
-        self.patch_embedding = nn.Conv2d(in_channels, hidden_size, kernel_size=patch_size, stride=patch_size, padding=0)
-        self.position_embedding = nn.Embedding(num_patches, hidden_size)
+        # Project hidden states to obtain queries, keys, and values
+        query_states = self.q_proj(hidden_states)
+        key_states = self.k_proj(hidden_states)
+        value_states = self.v_proj(hidden_states)
 
-    def forward(self, x):
-        x = self.patch_embedding(x)
-        batch_size, num_channels, height, width = x.size()
-        x = x.flatten(2).transpose(1, 2)
-        positions = torch.arange(0, x.size(1), device=x.device).unsqueeze(0).expand(batch_size, -1)
-        x = x + self.position_embedding(positions)
-        return x
+        # Reshape for multi-head attention
+        query_states = query_states.view(batch_size, q_len, self.num_heads, self.head_dim).transpose(1, 2)
+        key_states = key_states.view(batch_size, q_len, self.num_heads, self.head_dim).transpose(1, 2)
+        value_states = value_states.view(batch_size, q_len, self.num_heads, self.head_dim).transpose(1, 2)
+        
+        if query_states.device.type == "cuda" and attention_mask is not None:
+            query_states = query_states.contiguous()
+            key_states = key_states.contiguous()
+            value_states = value_states.contiguous()
+        # Apply Visual Token Merging
+         # Apply Visual Token Merging (VTM) on keys and values
+        merge_fn, _ = self.token_merger.bipartite_soft_matching(
+            metric=key_states.mean(dim=-1),  # Metric for matching, e.g., mean over heads
+            r=self.r,
+        )
+        key_states, key_sizes = merge_fn(key_states)
+        value_states, value_sizes = merge_fn(value_states)
 
-class SiglipSdpaAttention(nn.Module):
-    def __init__(self, hidden_size, r):
-        super(SiglipSdpaAttention, self).__init__()
-        self.k_proj = nn.Linear(hidden_size, hidden_size)
-        self.v_proj = nn.Linear(hidden_size, hidden_size)
-        self.q_proj = nn.Linear(hidden_size, hidden_size)
-        self.out_proj = nn.Linear(hidden_size, hidden_size)
-        self.token_merger = VisionTokenMerger(hidden_size, r)
+        # Calculate attention scores with the addition of log(s)
+        # Reshape `s` to align with attention scores dimensions
+        log_s = torch.log(key_sizes).view(batch_size, 1, 1, -1)  # Shape: (batch_size, 1, 1, seq_len)
+        
+        # Scaled dot-product attention with `log s`
+        attention_scores = torch.matmul(query_states, key_states.transpose(-1, -2)) / torch.sqrt(torch.tensor(self.head_dim, dtype=torch.float32))
+        attention_scores += log_s  # Add log(s) to attention scores
 
-    def forward(self, x):
-        Q = self.q_proj(x)
-        K = self.k_proj(x)
-        V = self.v_proj(x)
+        # Apply attention mask, if provided
+        if attention_mask is not None:
+            attention_scores += attention_mask
 
-        # Merge tokens based on similarity
-        K_merged, num_patches_per_token = self.token_merger(K)
+        # Compute attention probabilities
+        attention_probs = F.softmax(attention_scores, dim=-1)
 
-        # Adjust attention scores based on the number of patches each token represents
-        attn_scores = torch.matmul(Q, K_merged.transpose(-2, -1)) / torch.sqrt(torch.tensor(Q.size(-1), dtype=torch.float32))
-        attn_scores = attn_scores + torch.log(torch.tensor(num_patches_per_token, dtype=torch.float32, device=attn_scores.device))
-        attn_weights = F.softmax(attn_scores, dim=-1)
-        # Merge the value tensor V to match the merged keys
-        V_merged, _ = self.token_merger(V)
-        output = torch.matmul(attn_weights, V_merged)
-        return self.out_proj(output)
+        # Multiply with values to get the output
+        attn_output = torch.matmul(attention_probs, value_states)
+        attn_output = attn_output.transpose(1, 2).contiguous().view(batch_size, q_len, self.embed_dim)
 
-class SiglipMLP(nn.Module):
-    def __init__(self, hidden_size, mlp_dim):
-        super(SiglipMLP, self).__init__()
-        self.fc1 = nn.Linear(hidden_size, mlp_dim)
-        self.fc2 = nn.Linear(mlp_dim, hidden_size)
-        self.activation_fn = nn.GELU()
+        # Final output projection
+        attn_output = self.out_proj(attn_output)
 
-    def forward(self, x):
-        x = self.activation_fn(self.fc1(x))
-        x = self.fc2(x)
-        return x
+        return attn_output, None
 
-class SiglipEncoderLayer(nn.Module):
-    def __init__(self, hidden_size, mlp_dim, r):
-        super(SiglipEncoderLayer, self).__init__()
-        self.self_attn = SiglipSdpaAttention(hidden_size, r)
-        self.layer_norm1 = nn.LayerNorm(hidden_size, eps=1e-6)
-        self.mlp = SiglipMLP(hidden_size, mlp_dim)
-        self.layer_norm2 = nn.LayerNorm(hidden_size, eps=1e-6)
+class CustomSiglipEncoderLayer(nn.Module):
+    def __init__(self, config: SiglipConfig, r: int):
+        super().__init__()
+        self.embed_dim = config.hidden_size
+        self.self_attn = SiglipSdpaAttentionWithVTM(config, r=r)
+        self.layer_norm1 = nn.LayerNorm(self.embed_dim, eps=config.layer_norm_eps)
+        self.mlp = SiglipMLP(config)
+        self.layer_norm2 = nn.LayerNorm(self.embed_dim, eps=config.layer_norm_eps)
 
-    def forward(self, x):
-        attn_output = self.self_attn(self.layer_norm1(x))
-        x = x + attn_output
-        mlp_output = self.mlp(self.layer_norm2(x))
-        x = x + mlp_output
-        return x
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor,
+        output_attentions: Optional[bool] = False,
+    ) -> Tuple[torch.FloatTensor]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`):
+                Input to the layer of shape `(batch, seq_len, embed_dim)`.
+            attention_mask (`torch.FloatTensor`):
+                Attention mask of shape `(batch, 1, q_len, k_v_seq_len)` where padding elements are indicated by very large negative values.
+            output_attentions (`bool`, *optional*, defaults to `False`):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        residual = hidden_states
 
-class SiglipEncoder(nn.Module):
-    def __init__(self, num_layers, hidden_size, mlp_dim, r):
-        super(SiglipEncoder, self).__init__()
-        self.layers = nn.ModuleList([SiglipEncoderLayer(hidden_size, mlp_dim, r) for _ in range(num_layers)])
+        hidden_states = self.layer_norm1(hidden_states)
+        hidden_states, attn_weights = self.self_attn(
+            hidden_states=hidden_states,
+            attention_mask=attention_mask,
+            output_attentions=output_attentions,
+        )
+        hidden_states = residual + hidden_states
 
-    def forward(self, x):
-        for layer in self.layers:
-            x = layer(x)
-        return x
+        residual = hidden_states
+        hidden_states = self.layer_norm2(hidden_states)
+        hidden_states = self.mlp(hidden_states)
+        hidden_states = residual + hidden_states
 
-class SiglipVisionTransformer(nn.Module):
-    def __init__(self, in_channels, hidden_size, patch_size, num_patches, num_layers, mlp_dim, r):
-        super(SiglipVisionTransformer, self).__init__()
-        self.embeddings = SiglipVisionEmbeddings(in_channels, hidden_size, patch_size, num_patches)
-        self.encoder = SiglipEncoder(num_layers, hidden_size, mlp_dim, r)
-        self.post_layernorm = nn.LayerNorm(hidden_size, eps=1e-6)
-        self.head = nn.Linear(hidden_size, hidden_size)
+        outputs = (hidden_states,)
 
-    def forward(self, x):
-        x = self.embeddings(x)
-        x = self.encoder(x)
-        x = self.post_layernorm(x)
-        x = self.head(x.mean(dim=1))
-        return x
+        if output_attentions:
+            outputs += (attn_weights,)
 
-class SiglipVisionModel(nn.Module):
-    def __init__(self, in_channels, hidden_size, patch_size, num_patches, num_layers, mlp_dim, r):
-        super(SiglipVisionModel, self).__init__()
-        self.vision_model = SiglipVisionTransformer(in_channels, hidden_size, patch_size, num_patches, num_layers, mlp_dim, r)
-
-    def forward(self, x):
-        return self.vision_model(x)
-
-class VisionTower(nn.Module):
-    def __init__(self, in_channels=3, hidden_size=1152, patch_size=14, num_patches=2916, num_layers=27, mlp_dim=4304, r=10):
-        super(VisionTower, self).__init__()
-        self._vision_tower = SiglipVisionModel(in_channels, hidden_size, patch_size, num_patches, num_layers, mlp_dim, r)
-
-    def forward(self, x):
-        return self._vision_tower(x)
+        return outputs
