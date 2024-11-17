@@ -35,27 +35,30 @@ model.config.use_cache = False
 
 processor = AutoImageProcessor.from_pretrained(config.vision_model_name_or_path)
 processor.size = {"height": 768, "width": 768}
-# print(processor)
-# print(tokenizer)
-# print(model.chat)
-image_file = "E:\hocbaidcm\DACN\\test\CQA\data\\test\png\\166.png"
-raw_image = Image.open(image_file)
-inputs = processor(images=raw_image, return_tensors='pt').to(0, torch.float16)
-print(inputs)
-print(inputs['pixel_values'].shape)
-processor.size = {"height": 384, "width": 384}
-inputs = processor(images=raw_image, return_tensors='pt').to(0, torch.float16)
-print(inputs)
-print(inputs['pixel_values'].shape)
-# config.vision_config = SiglipVisionConfig(hidden_act = "gelu_pytorch_tanh",
-#                                           hidden_size = 1152,
-#                                           image_size=768,
-#                                           intermediate_size=4304,
-#                                           layer_norm_eps= 1e-06,
-#                                           model_name_or_path = "siglip_vision_with_tome",
-#                                           num_attention_heads= 16,
-#                                           num_hidden_layers= 27,
-#                                           patch_size= 14)
+raw_image = Image.open("E:\\son\\ChartQA Dataset\\train\\png\\34.png")
+img_input = processor(images=raw_image, return_tensors='pt').to(device, torch.float16)
+print(img_input)
+text_img = tokenizer(text="Are the lines diverging?",images = "E:\\son\\ChartQA Dataset\\train\\png\\34.png",text_target = "Yes",
+                                                    padding="max_length",
+                                                    truncation=True,
+                                                    max_length=128,
+                                                    return_tensors="pt")
+print(text_img)
+print(tokenizer.decode(text_img['labels'][0], skip_special_tokens=True))
+
+# inputs = processor(images=raw_image, return_tensors='pt').to(0, torch.float16)
+# print(inputs)
+# print(inputs['pixel_values'].shape)
+
+config.vision_config = SiglipVisionConfig(hidden_act = "gelu_pytorch_tanh",
+                                          hidden_size = 1152,
+                                          image_size=768,
+                                          intermediate_size=4304,
+                                          layer_norm_eps= 1e-06,
+                                          model_name_or_path = "siglip_vision_with_tome",
+                                          num_attention_heads= 16,
+                                          num_hidden_layers= 27,
+                                          patch_size= 14)
 
 # r = 20
 # # print(config)
