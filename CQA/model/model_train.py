@@ -7,16 +7,19 @@ import os
 from datasets import load_dataset
 from torchvision import transforms
 from PIL import Image
-# from ....TinyLLaVA_Factory.TinyLLaVA 
-
-# Add the parent directory to the Python path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'processing')))
 from transformers.models.siglip.modeling_siglip import SiglipVisionEmbeddings
 from transformers.models.siglip.configuration_siglip import SiglipVisionConfig
+import transformers
+import requests
+# Add the parent directory to the Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'processing')))
 from VisionEncoder import CustomSiglipEncoderLayer
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..','..' )))
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
+
 
 def calculate_model_parameters(model):
     return sum(p.numel() for p in model.parameters())
@@ -32,32 +35,41 @@ model.config.use_cache = False
 
 processor = AutoImageProcessor.from_pretrained(config.vision_model_name_or_path)
 processor.size = {"height": 768, "width": 768}
+# print(processor)
+# print(tokenizer)
+# print(model.chat)
+image_file = "E:\hocbaidcm\DACN\\test\CQA\data\\test\png\\166.png"
+raw_image = Image.open(image_file)
+inputs = processor(images=raw_image, return_tensors='pt').to(0, torch.float16)
+print(inputs)
+print(inputs['pixel_values'].shape)
+processor.size = {"height": 384, "width": 384}
+inputs = processor(images=raw_image, return_tensors='pt').to(0, torch.float16)
+print(inputs)
+print(inputs['pixel_values'].shape)
+# config.vision_config = SiglipVisionConfig(hidden_act = "gelu_pytorch_tanh",
+#                                           hidden_size = 1152,
+#                                           image_size=768,
+#                                           intermediate_size=4304,
+#                                           layer_norm_eps= 1e-06,
+#                                           model_name_or_path = "siglip_vision_with_tome",
+#                                           num_attention_heads= 16,
+#                                           num_hidden_layers= 27,
+#                                           patch_size= 14)
 
-config.vision_config = SiglipVisionConfig(hidden_act = "gelu_pytorch_tanh",
-                                          hidden_size = 1152,
-                                          image_size=768,
-                                          intermediate_size=4304,
-                                          layer_norm_eps= 1e-06,
-                                          model_name_or_path = "siglip_vision_with_tome",
-                                          num_attention_heads= 16,
-                                          num_hidden_layers= 27,
-                                          patch_size= 14)
+# r = 20
+# # print(config)
+# # Replace the vision tower with the modified version
+# model.vision_tower._vision_tower.vision_model.embeddings = SiglipVisionEmbeddings(config.vision_config)
+# model.vision_tower._vision_tower.vision_model.encoder.layers = nn.ModuleList([CustomSiglipEncoderLayer(config.vision_config, r) for _ in range(config.vision_config.num_hidden_layers)])
 
-r = 20
-# print(config)
-# Replace the vision tower with the modified version
-model.vision_tower._vision_tower.vision_model.embeddings = SiglipVisionEmbeddings(config.vision_config)
-model.vision_tower._vision_tower.vision_model.encoder.layers = nn.ModuleList([CustomSiglipEncoderLayer(config.vision_config, r) for _ in range(config.vision_config.num_hidden_layers)])
-
-print(model)
+# print(model)
 # Number of parameters in the model: 3217417280 384 14
 # Number of parameters in the model: 3218070464 512 14
 # Number of parameters in the model: 3219439040 768 16
 # Number of parameters in the model: 3219936704 768 14
-total_params = sum(p.numel() for p in model.parameters())
-print(f"Number of parameters in the model: {total_params}")
-# # Image transformation
-# image_transform = transforms.Compose([transforms.Resize((512, 512)), transforms.ToTensor()])
+# total_params = sum(p.numel() for p in model.parameters())
+# print(f"Number of parameters in the model: {total_params}")
 
 # # Root directory for images in train and validation sets
 # trainset = load_dataset('json', data_files=['E:/son/ChartQA Dataset/train/train_human.json', 'E:/son/ChartQA Dataset/train/train_augmented.json'], cache_dir="E:/son/", split='train')
