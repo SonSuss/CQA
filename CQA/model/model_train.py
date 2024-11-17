@@ -35,10 +35,10 @@ model.config.use_cache = False
 
 processor = AutoImageProcessor.from_pretrained(config.vision_model_name_or_path)
 processor.size = {"height": 768, "width": 768}
-raw_image = Image.open("E:\\son\\ChartQA Dataset\\train\\png\\34.png")
+raw_image = Image.open("E:\hocbaidcm\DACN\\test\CQA\data\\test\png\\166.png")
 img_input = processor(images=raw_image, return_tensors='pt').to(device, torch.float16)
 print(img_input)
-text_img = tokenizer(text="Are the lines diverging?",images = "E:\\son\\ChartQA Dataset\\train\\png\\34.png",text_target = "Yes",
+text_img = tokenizer(text="Are the lines diverging?",image = img_input,text_target = "Yes",
                                                     padding="max_length",
                                                     truncation=True,
                                                     max_length=128,
@@ -60,11 +60,11 @@ config.vision_config = SiglipVisionConfig(hidden_act = "gelu_pytorch_tanh",
                                           num_hidden_layers= 27,
                                           patch_size= 14)
 
-# r = 20
-# # print(config)
-# # Replace the vision tower with the modified version
-# model.vision_tower._vision_tower.vision_model.embeddings = SiglipVisionEmbeddings(config.vision_config)
-# model.vision_tower._vision_tower.vision_model.encoder.layers = nn.ModuleList([CustomSiglipEncoderLayer(config.vision_config, r) for _ in range(config.vision_config.num_hidden_layers)])
+r = 20
+# print(config)
+# Replace the vision tower with the modified version
+model.vision_tower._vision_tower.vision_model.embeddings = SiglipVisionEmbeddings(config.vision_config)
+model.vision_tower._vision_tower.vision_model.encoder.layers = nn.ModuleList([CustomSiglipEncoderLayer(config.vision_config, r) for _ in range(config.vision_config.num_hidden_layers)])
 
 # print(model)
 # Number of parameters in the model: 3217417280 384 14
@@ -74,46 +74,46 @@ config.vision_config = SiglipVisionConfig(hidden_act = "gelu_pytorch_tanh",
 # total_params = sum(p.numel() for p in model.parameters())
 # print(f"Number of parameters in the model: {total_params}")
 
-# # Root directory for images in train and validation sets
-# trainset = load_dataset('json', data_files=['E:/son/ChartQA Dataset/train/train_human.json', 'E:/son/ChartQA Dataset/train/train_augmented.json'], cache_dir="E:/son/", split='train')
-# valset = load_dataset('json', data_files=['E:/son/ChartQA Dataset/val/val_augmented.json','E:/son/ChartQA Dataset/val/val_human.json'], cache_dir="E:/son/", split='train')
-# train_image_root = 'E:/son/ChartQA Dataset/train/png/'
-# val_image_root = 'E:/son/ChartQA Dataset/val/png/'
+# Root directory for images in train and validation sets
+trainset = load_dataset('json', data_files=['E:/son/ChartQA Dataset/train/train_human.json', 'E:/son/ChartQA Dataset/train/train_augmented.json'], cache_dir="E:/son/", split='train')
+valset = load_dataset('json', data_files=['E:/son/ChartQA Dataset/val/val_augmented.json','E:/son/ChartQA Dataset/val/val_human.json'], cache_dir="E:/son/", split='train')
+train_image_root = 'E:/son/ChartQA Dataset/train/png/'
+val_image_root = 'E:/son/ChartQA Dataset/val/png/'
 
-# def preprocess_function(examples,root):
-#     # Load and preprocess images
-#     images = [
-#         image_transform(Image.open(os.path.join(root, imgname)).convert("RGB"))
-#         for imgname in examples["imgname"]
-#     ]
-#     images = torch.stack(images).to(device)
+def preprocess_function(examples,root):
+    # Load and preprocess images
+    images = [
+        image_transform(Image.open(os.path.join(root, imgname)).convert("RGB"))
+        for imgname in examples["imgname"]
+    ]
+    images = torch.stack(images).to(device)
 
-#     # Tokenize questions and labels directly using the tokenizer
-#     text_inputs = tokenizer(
-#         examples["query"],
-#         padding="max_length",
-#         truncation=True,
-#         max_length=128,
-#         return_tensors="pt"
-#     )
+    # Tokenize questions and labels directly using the tokenizer
+    text_inputs = tokenizer(
+        examples["query"],
+        padding="max_length",
+        truncation=True,
+        max_length=128,
+        return_tensors="pt"
+    )
 
-#     label_inputs = tokenizer(
-#         examples["label"],  # Ground truth label
-#         padding="max_length",
-#         truncation=True,
-#         max_length=50,
-#         return_tensors="pt"
-#     )
+    label_inputs = tokenizer(
+        examples["label"],  # Ground truth label
+        padding="max_length",
+        truncation=True,
+        max_length=50,
+        return_tensors="pt"
+    )
 
-#     # Ensure the output includes all necessary keys
-#     model_inputs = {
-#         "pixel_values": images,  # Add images as pixel values
-#         "input_ids": text_inputs["input_ids"],
-#         "attention_mask": text_inputs["attention_mask"],
-#         "labels": label_inputs["input_ids"]
-#     }
+    # Ensure the output includes all necessary keys
+    model_inputs = {
+        "pixel_values": images,  # Add images as pixel values
+        "input_ids": text_inputs["input_ids"],
+        "attention_mask": text_inputs["attention_mask"],
+        "labels": label_inputs["input_ids"]
+    }
 
-#     return model_inputs
+    return model_inputs
 
 
 # tokenized_trainsets = trainset.map(lambda x: preprocess_function(x, train_image_root), batched=True,batch_size=128)
