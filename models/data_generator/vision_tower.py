@@ -1,18 +1,74 @@
+import os
 from typing import Optional, Tuple, Union, Dict
 
 from transformers.modeling_utils import PreTrainedModel
 from transformers.models.siglip.modeling_siglip import SiglipModel, SiglipVisionTransformer
 from transformers.models.siglip.processing_siglip import *
 from transformers.models.siglip.configuration_siglip import SiglipVisionConfig
-from transformers.modeling_outputs import BaseModelOutput, BaseModelOutputWithPooling
+from transformers.modeling_outputs import BaseModelOutputWithPooling
 from transformers.image_utils import (ChannelDimension, PILImageResampling, to_numpy_array, )
 from transformers.image_processing_utils import BatchFeature, get_size_dict
 from transformers.image_transforms import (convert_to_rgb, normalize, rescale, resize, to_channel_dimension_format, )
+from transformers import PretrainedConfig
 from functools import partial, reduce
 from PIL import Image
 
 from torch import nn
 import torch
+
+class SigLipVisionConfig(PretrainedConfig):
+    model_type = "siglip_vision_model"
+
+    def __init__(
+            self,
+            hidden_size=1152,
+            image_mean=(0.5, 0.5, 0.5),
+            intermediate_size=4304,
+            num_hidden_layers=27,
+            num_attention_heads=16,
+            num_channels=3,
+            image_size=384,
+            patch_size=14,
+            hidden_act="gelu_pytorch_tanh",
+            layer_norm_eps=1e-6,
+            attention_dropout=0.0,
+            **kwargs,
+    ):
+        super().__init__(**kwargs)
+
+        self.hidden_size = hidden_size
+        self.intermediate_size = intermediate_size
+        self.num_hidden_layers = num_hidden_layers
+        self.num_attention_heads = num_attention_heads
+        self.num_channels = num_channels
+        self.patch_size = patch_size
+        self.image_size = image_size
+        self.attention_dropout = attention_dropout
+        self.layer_norm_eps = layer_norm_eps
+        self.hidden_act = hidden_act
+        self.image_mean = image_mean
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    @classmethod
+    def from_pretrained(cls, pretrained_model_name_or_path: Union[str, os.PathLike], **kwargs) -> "PretrainedConfig":
+        cls._set_token_in_kwargs(kwargs)
+
+        config_dict, kwargs = cls.get_config_dict(pretrained_model_name_or_path, **kwargs)
+
+        # get the vision config dict if we are loading from SigLipConfig
+        if config_dict.get("model_type") == "siglip":
+            config_dict = config_dict["vision_config"]
+
+        if "model_type" in config_dict and hasattr(cls, "model_type") and config_dict["model_type"] != cls.model_type:
+            # logger.warning(
+            #     f"You are using a model of type {config_dict['model_type']} to instantiate a model of type "
+            #     f"{cls.model_type}. This is not supported for all configurations of models and can yield errors."
+            # )
+            print("You are using a model of type {config_dict['model_type']}")
+
+        return cls.from_dict(config_dict, **kwargs)
 
 class SigLipImageProcessor:
     def __init__(self,
@@ -71,7 +127,7 @@ class SigLipPreTrainedModel(PreTrainedModel):
 class SigLipVisionModel(SigLipPreTrainedModel):
     config_class = SiglipVisionConfig
     main_input_name = "pixel_values"
-    _no_split_modules = ["SigLipEncoderLayerToMe"]
+    # _no_split_modules = ["SigLipEncoderLayerToMe"]
 
     def __init__(self, config: SiglipVisionConfig):
         super().__init__(config)
@@ -130,9 +186,9 @@ class SigLipVisionTower(nn.Module):
         self.is_loaded = False
 
         if vision_tower is not None:
-            self.config = SiglipVisionConfig.from_pretrained(vision_tower)
+            self.config = SigLipVisionConfig.from_pretrained(vision_tower)
         else:
-            self.config = SiglipVisionConfig()
+            self.config = SigLipVisionConfig()
 
         self.vision_tower_name = vision_tower
 
