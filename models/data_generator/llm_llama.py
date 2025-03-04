@@ -7,6 +7,8 @@ from transformers import AutoConfig, AutoModelForCausalLM, LlamaConfig, LlamaFor
 from transformers.modeling_outputs import CausalLMOutputWithPast
 from transformers import BitsAndBytesConfig
 
+from llava import LlavaMetaForCausalLM
+
 def load_pretrained_llm_model(model_name, load_8bit=False, load_4bit=False, device_map="auto", device="cuda", **kwargs):
     kwargs = {"device_map": device_map, **kwargs}
 
@@ -29,16 +31,19 @@ def load_pretrained_llm_model(model_name, load_8bit=False, load_4bit=False, devi
         kwargs['torch_dtype'] = torch.float16
 
     print(kwargs)
+    
+
+
 
 # Define the custom configuration class for LLaMA 3
-class LlamaConfig(LlamaConfig):
+class SiglipLlamaConfig(LlamaConfig):
     model_type = "siglip_llama"
 
 # Define the LLaMA-based multimodal model
 class LlamaModel(nn.Module):
-    config_class = LlamaConfig
+    config_class = SiglipLlamaConfig
 
-    def __init__(self, config: LlamaConfig):
+    def __init__(self, config: SiglipLlamaConfig):
         super(LlamaModel, self).__init__()
         self.model = LlamaForCausalLM(config)
         self.gradient_checkpointing = False
@@ -47,7 +52,7 @@ class LlamaModel(nn.Module):
         return self.model.forward(*args, **kwargs)
 
 # Define the causal LM model wrapper
-class GenLlamaForCausalLM(LlamaForCausalLM):
+class SigLlamaForCausalLM(LlamaForCausalLM, LlavaMetaForCausalLM):
     config_class = LlamaConfig
 
     def __init__(self, config):
@@ -166,8 +171,8 @@ def get_tokenizer():
     return AutoTokenizer, post_init
 
 # Register configuration and model with Hugging Face
-AutoConfig.register("siglip_llama", LlamaConfig)
-AutoModelForCausalLM.register(LlamaConfig, GenLlamaForCausalLM)
+AutoConfig.register("siglip_llama", SiglipLlamaConfig)
+AutoModelForCausalLM.register(SiglipLlamaConfig, SigLlamaForCausalLM)
 
 
 

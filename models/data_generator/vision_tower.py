@@ -248,3 +248,8 @@ class SigLipVisionTower(nn.Module):
     @property
     def num_patches(self):
         return (self.config.image_size // self.config.patch_size) ** 2
+    
+
+def build_vision_tower(vision_tower_cfg, **kwargs):
+    vision_tower = getattr(vision_tower_cfg, 'mm_vision_tower', getattr(vision_tower_cfg, 'vision_tower', None))
+    return SigLipVisionTower(vision_tower, vision_tower_cfg, **kwargs)
