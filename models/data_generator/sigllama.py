@@ -27,7 +27,7 @@ class SiglipLlamaModel(LlavaMetaModel, LlamaModel):
 
 # Define the causal LM model wrapper
 class SigLlamaForCausalLM(LlamaForCausalLM, LlavaMetaForCausalLM):
-    config_class = LlamaConfig
+    config_class = SiglipLlamaConfig
 
     def __init__(self, config):
         super().__init__(config)
