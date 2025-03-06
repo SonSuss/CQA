@@ -5,34 +5,11 @@ from typing import Optional, List, Tuple, Union
 
 from transformers import AutoConfig, AutoModelForCausalLM, LlamaConfig, LlamaForCausalLM
 from transformers.modeling_outputs import CausalLMOutputWithPast
+from transformers import LlamaModel
+
 from transformers import BitsAndBytesConfig
 
-from llava import LlavaMetaForCausalLM
-
-def load_pretrained_llm_model(model_name, load_8bit=False, load_4bit=False, device_map="auto", device="cuda", **kwargs):
-    kwargs = {"device_map": device_map, **kwargs}
-
-    if device != "cuda":
-        kwargs['device_map'] = {"": device}
-
-    if load_8bit:
-        kwargs['load_in_8bit'] = True
-    elif load_4bit:
-        kwargs['load_in_4bit'] = True
-        kwargs['quantization_config'] = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_compute_dtype=torch.float16,
-            bnb_4bit_use_double_quant=True,
-            bnb_4bit_quant_type='nf4'
-        )
-    elif device == "cpu":
-        kwargs['torch_dtype'] = torch.float32
-    else:
-        kwargs['torch_dtype'] = torch.float16
-
-    print(kwargs)
-    
-
+from llava import LlavaMetaForCausalLM, LlavaMetaModel
 
 
 # Define the custom configuration class for LLaMA 3
@@ -40,16 +17,13 @@ class SiglipLlamaConfig(LlamaConfig):
     model_type = "siglip_llama"
 
 # Define the LLaMA-based multimodal model
-class LlamaModel(nn.Module):
+class SiglipLlamaModel(LlavaMetaModel, LlamaModel):
     config_class = SiglipLlamaConfig
 
-    def __init__(self, config: SiglipLlamaConfig):
-        super(LlamaModel, self).__init__()
-        self.model = LlamaForCausalLM(config)
-        self.gradient_checkpointing = False
 
-    def forward(self, *args, **kwargs):
-        return self.model.forward(*args, **kwargs)
+    def __init__(self, config: SiglipLlamaConfig):
+        super(SiglipLlamaModel, self).__init__(config)
+        self.gradient_checkpointing = False
 
 # Define the causal LM model wrapper
 class SigLlamaForCausalLM(LlamaForCausalLM, LlavaMetaForCausalLM):
@@ -57,7 +31,7 @@ class SigLlamaForCausalLM(LlamaForCausalLM, LlavaMetaForCausalLM):
 
     def __init__(self, config):
         super().__init__(config)
-        self.model = LlamaModel(config)
+        self.model = SiglipLlamaModel(config)
         self.vocab_size = config.vocab_size
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
