@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 import torch
 import torch.nn as nn
 
-from vision_tower import build_vision_tower
-from mm_projector import build_vision_projector
+from CQA.models.data_generator.vision_tower import build_vision_tower
+from CQA.models.data_generator.mm_projector import build_vision_projector
 
 
 IGNORE_INDEX = -100

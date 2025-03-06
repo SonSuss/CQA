@@ -9,7 +9,7 @@ from transformers import LlamaModel
 
 from transformers import BitsAndBytesConfig
 
-from llava import LlavaMetaForCausalLM, LlavaMetaModel
+from CQA.models.data_generator.llava import LlavaMetaForCausalLM, LlavaMetaModel
 
 
 # Define the custom configuration class for LLaMA 3

@@ -26,4 +26,3 @@ def load_pretrained_llm_model(model_name, load_8bit=False, load_4bit=False, devi
     else:
         kwargs['torch_dtype'] = torch.float16
 
-    #not now
