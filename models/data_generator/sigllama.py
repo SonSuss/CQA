@@ -21,7 +21,7 @@ class SiglipLlamaModel(LlavaMetaModel, LlamaModel):
     config_class = SiglipLlamaConfig
 
 
-    def __init__(self, config: SiglipLlamaConfig):
+    def __init__(self, config: LlamaConfig):
         super(SiglipLlamaModel, self).__init__(config)
         self.gradient_checkpointing = False
 
