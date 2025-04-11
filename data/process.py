@@ -4,11 +4,15 @@ from typing import Dict, Optional, Sequence, List
 
 import transformers
 
-# from tinychart.constants import DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
-# from tinychart import conversation as conversation_lib
-# from tinychart.arguments import *
+
+from models.data_generator import conversation as conversation_lib
+from models.data_generator.train.config import DataArguments
 
 PREPROCESS_REGISTRY = {}
+
+DEFAULT_IMAGE_TOKEN = "<image>"
+DEFAULT_IM_START_TOKEN = "<im_start>"
+DEFAULT_IM_END_TOKEN = "<im_end>"
 
 def register_preprocess(name):
     def register_preprocess_cls(cls):

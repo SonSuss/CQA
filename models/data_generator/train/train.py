@@ -2,6 +2,7 @@ from models.data_generator.model.sigllama import SigLlamaForCausalLM, SiglipLlam
 from models.data_generator.train.config import ModelArguments, DataArguments, TrainingArguments
 from models.data_generator.train.utils import get_bnb_model_args, lora_setting, smart_tokenizer_and_embedding_resize, unlock_vit, lora_kbit_setting
 from models.data_generator import conversation as conversation_lib
+from data.dataset import *
 
 import transformers
 import torch
