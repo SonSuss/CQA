@@ -1,7 +1,7 @@
-from ..model.sigllama import SigLlamaForCausalLM, SiglipLlamaConfig
-from .config import ModelArguments, DataArguments, TrainingArguments
-from .utils import get_bnb_model_args, lora_setting, smart_tokenizer_and_embedding_resize, unlock_vit, lora_kbit_setting
-from .. import conversation as conversation_lib
+from models.data_generator.model.sigllama import SigLlamaForCausalLM, SiglipLlamaConfig
+from models.data_generator.train.config import ModelArguments, DataArguments, TrainingArguments
+from models.data_generator.train.utils import get_bnb_model_args, lora_setting, smart_tokenizer_and_embedding_resize, unlock_vit, lora_kbit_setting
+from models.data_generator import conversation as conversation_lib
 
 import transformers
 import torch
@@ -38,7 +38,7 @@ model_args = ModelArguments(
 data_args = DataArguments(
     data_path="./data/train.json",
     eval_data_path="./data/eval.json",
-    lazy_preprocess=False,
+    lazy_preprocess=True,
     is_multimodal=True,
     image_folder="./data/images",
     image_aspect_ratio="square",
@@ -219,15 +219,15 @@ def train():
                                               data_args=data_args)
 
 
-    trainer = LLaVATrainer(model=model,
-                           tokenizer=tokenizer,
-                           args=training_args,
-                           **data_module)
-    if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
-        trainer.train(resume_from_checkpoint=True)
-    else:
-        trainer.train()
+    # trainer = LLaVATrainer(model=model,
+    #                        tokenizer=tokenizer,
+    #                        args=training_args,
+    #                        **data_module)
+    # if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
+    #     trainer.train(resume_from_checkpoint=True)
+    # else:
+    #     trainer.train()
 
-    trainer.save_state()
+    # trainer.save_state()
 
     
