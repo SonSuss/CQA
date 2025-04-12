@@ -1,0 +1,68 @@
+[
+    {
+      "image": "images/1.png",
+      "conversations": [
+        {
+          "from": "human",
+          "value": "<image>\nWhich country has the longest bar?"
+        },
+        {
+          "from": "gpt",
+          "value": "Nigeria"
+        }
+      ]
+    },
+    {
+      "image": "images/2.png",
+      "conversations": [
+        {
+          "from": "human",
+          "value": "<image>\nWhat is the value of the second bar from the left?"
+        },
+        {
+          "from": "gpt",
+          "value": "45"
+        }
+      ]
+    },
+    {
+      "image": "images/3.png",
+      "conversations": [
+        {
+          "from": "human",
+          "value": "<image>\nHow many categories are displayed in the chart?"
+        },
+        {
+          "from": "gpt",
+          "value": "5"
+        }
+      ]
+    },
+    {
+      "image": "images/4.png",
+      "conversations": [
+        {
+          "from": "human",
+          "value": "<image>\nWhich year had the lowest sales?"
+        },
+        {
+          "from": "gpt",
+          "value": "2018"
+        }
+      ]
+    },
+    {
+      "image": "images/5.png",
+      "conversations": [
+        {
+          "from": "human",
+          "value": "<image>\nCompare the heights of bars for Product A and Product B."
+        },
+        {
+          "from": "gpt",
+          "value": "Product A is higher than Product B"
+        }
+      ]
+    }
+  ]
+  
