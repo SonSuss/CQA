@@ -14,6 +14,7 @@ DEFAULT_IMAGE_TOKEN = "<image>"
 DEFAULT_IM_START_TOKEN = "<im_start>"
 DEFAULT_IM_END_TOKEN = "<im_end>"
 
+
 def register_preprocess(name):
     def register_preprocess_cls(cls):
         if name in PREPROCESS_REGISTRY:
@@ -38,7 +39,7 @@ def import_modules(modules_dir, namespace):
             importlib.import_module(namespace + "." + module_name)
 
 models_dir = os.path.join(os.path.dirname(__file__), 'preprocess')
-import_modules(models_dir, "tinychart.data.preprocess")
+import_modules(models_dir, "data.preprocess")
 
 
 def PreprocessSelect(version):
