@@ -64,6 +64,13 @@ class TrainingArguments(transformers.TrainingArguments):
         default=16,
         metadata={"help": "How many bits to use."}
     )
+    evaluation_strategy: str = field(
+        default="steps",
+        metadata={
+            "help":
+                "The evaluation strategy to adopt during training. Possible values are `no`, `steps`, `epoch`. Default to `no`."
+        },
+    )
     lora_enable: bool = False
     lora_r: int = 64
     lora_alpha: int = 16

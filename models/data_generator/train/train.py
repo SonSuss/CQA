@@ -178,6 +178,7 @@ def train():
         model.config.tokenizer_model_max_length = tokenizer.model_max_length
 
         model.config.tune_mm_mlp_adapter = training_args.tune_mm_mlp_adapter = model_args.tune_mm_mlp_adapter
+        
         if model_args.tune_mm_mlp_adapter:
             model.requires_grad_(False)
             for p in model.get_model().mm_projector.parameters():
@@ -210,9 +211,6 @@ def train():
         
     print("mm_projector: ",model.get_model().mm_projector)
     # load data
-    if training_args.bits in [4, 8]:
-        lora_kbit_setting(model, training_args)
-    
     if training_args.bits in [4, 8]:
         lora_kbit_setting(model, training_args)
 
