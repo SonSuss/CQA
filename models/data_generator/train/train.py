@@ -1,6 +1,11 @@
+import pathlib
+import os
+import copy
+
 from models.data_generator.model.sigllama import SigLlamaForCausalLM, SiglipLlamaConfig
 from models.data_generator.train.config import ModelArguments, DataArguments, TrainingArguments
 from models.data_generator.train.utils import get_bnb_model_args, lora_setting, smart_tokenizer_and_embedding_resize, unlock_vit, lora_kbit_setting
+from models.data_generator.train.llava_trainer import LLaVATrainer
 from models.data_generator import conversation as conversation_lib
 from data.dataset import *
 
@@ -217,16 +222,18 @@ def train():
     data_module = make_supervised_data_module_with_eval(tokenizer=tokenizer,
                                               data_args=data_args)
 
+    print("trainable parameters: ", sum(p.numel() for p in model.parameters() if p.requires_grad))
+    print("total parameters: ", sum(p.numel() for p in model.parameters()))
 
-    # trainer = LLaVATrainer(model=model,
-    #                        tokenizer=tokenizer,
-    #                        args=training_args,
-    #                        **data_module)
-    # if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
-    #     trainer.train(resume_from_checkpoint=True)
-    # else:
-    #     trainer.train()
+    trainer = LLaVATrainer(model=model,
+                           tokenizer=tokenizer,
+                           args=training_args,
+                           **data_module)
+    if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
+        trainer.train(resume_from_checkpoint=True)
+    else:
+        trainer.train()
 
-    # trainer.save_state()
+    trainer.save_state()
 
     

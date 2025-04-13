@@ -1,6 +1,6 @@
 [
     {
-      "image": "images/1.png",
+      "image": "1.png",
       "conversations": [
         {
           "from": "human",
@@ -13,7 +13,7 @@
       ]
     },
     {
-      "image": "images/2.png",
+      "image": "2.png",
       "conversations": [
         {
           "from": "human",
@@ -26,7 +26,7 @@
       ]
     },
     {
-      "image": "images/3.png",
+      "image": "3.png",
       "conversations": [
         {
           "from": "human",
@@ -39,7 +39,7 @@
       ]
     },
     {
-      "image": "images/4.png",
+      "image": "4.png",
       "conversations": [
         {
           "from": "human",
@@ -52,7 +52,7 @@
       ]
     },
     {
-      "image": "images/5.png",
+      "image": "5.png",
       "conversations": [
         {
           "from": "human",
