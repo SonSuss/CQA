@@ -8,7 +8,7 @@ import transformers
 import torch
 
 from peft import prepare_model_for_kbit_training
-from transformers import LlamaTokenizer
+from transformers import LlamaTokenizerFast
 
 
 #train config
@@ -118,7 +118,7 @@ def train():
         model = lora_setting(model, training_args)
         
     # using llama tokenizer
-    tokenizer = LlamaTokenizer.from_pretrained(
+    tokenizer = LlamaTokenizerFast.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
         model_max_length=training_args.model_max_length,
