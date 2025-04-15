@@ -12,6 +12,7 @@ from PIL import Image, ImageFile
 
 from data.process import *
 from models.data_generator.train.config import DataArguments
+from models.data_generator.train.utils import rank0_print
 
 
 IGNORE_INDEX = -100
@@ -49,9 +50,9 @@ class LazySupervisedDataset(Dataset):
 
     def __getitem__(self, i) -> Dict[str, torch.Tensor]:
         
-        print(f"Fetching item {i}...")
+        rank0_print(f"Fetching item {i}...")
         sources = self.list_data_dict[i]
-        print(f"Sources: {sources}")
+        rank0_print(f"Sources: {sources}")
         
         
         if isinstance(i, int):
@@ -91,7 +92,7 @@ class LazySupervisedDataset(Dataset):
             self.tokenizer,
             has_image=('image' in self.list_data_dict[i]))
         
-        print(f"Preprocessed data: {data_dict}")
+        rank0_print(f"Preprocessed data: {data_dict}")
         
         if isinstance(i, int):
             data_dict = dict(input_ids=data_dict["input_ids"][0],
@@ -180,7 +181,7 @@ def make_supervised_data_module_with_eval(tokenizer: transformers.PreTrainedToke
                                           data_path=data_args.data_path,
                                           data_args=data_args)
     if data_args.eval_data_path is None or data_args.eval_data_path == "":
-        print('Evaluation dataset not specified, skipping...')
+        rank0_print('Evaluation dataset not specified, skipping...')
         eval_dataset = None
     else:
         eval_dataset = LazySupervisedDataset(tokenizer=tokenizer,

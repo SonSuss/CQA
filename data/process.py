@@ -7,6 +7,7 @@ import transformers
 
 from models.data_generator import conversation as conversation_lib
 from models.data_generator.train.config import DataArguments
+from models.data_generator.train.utils import rank0_print
 
 PREPROCESS_REGISTRY = {}
 
@@ -36,7 +37,7 @@ def import_modules(modules_dir, namespace):
                 and (file.endswith(".py") or os.path.isdir(path))
         ):
             module_name = file[: file.find(".py")] if file.endswith(".py") else file
-            print(f"Importing module: {namespace + '.' + module_name}")
+            rank0_print(f"Importing module: {namespace + '.' + module_name}")
             importlib.import_module(namespace + "." + module_name)
 
 models_dir = os.path.join(os.path.dirname(__file__), 'preprocess')
