@@ -8,6 +8,7 @@ from models.data_generator import conversation as conversation_lib
 from models.data_generator.mm_utils import tokenizer_image_token
 from data.process import register_preprocess
 
+IGNORE_INDEX=-100
 
 @register_preprocess("default") 
 def preprocess_default(
