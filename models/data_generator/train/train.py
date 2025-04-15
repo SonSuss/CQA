@@ -21,7 +21,7 @@ from transformers import LlamaTokenizerFast
 #model config
 model_args = ModelArguments(
     model_name_or_path="meta-llama/Llama-3.1-8B",
-    version="linear_projector",
+    version="v1",
     freeze_backbone=True,
     tune_mm_mlp_adapter=False,
     vision_tower="google/siglip-so400m-patch14-384",
