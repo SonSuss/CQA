@@ -36,6 +36,7 @@ def import_modules(modules_dir, namespace):
                 and (file.endswith(".py") or os.path.isdir(path))
         ):
             module_name = file[: file.find(".py")] if file.endswith(".py") else file
+            print(f"Importing module: {namespace + '.' + module_name}")
             importlib.import_module(namespace + "." + module_name)
 
 models_dir = os.path.join(os.path.dirname(__file__), 'preprocess')
