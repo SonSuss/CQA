@@ -1,5 +1,4 @@
 import os
-os.environ["RANK"] = "0"
 import copy
 from dataclasses import dataclass
 import json

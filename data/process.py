@@ -1,5 +1,4 @@
 import os
-os.environ["RANK"] = "0"
 import importlib
 from typing import Dict, Optional, Sequence, List
 
