@@ -18,7 +18,7 @@ def preprocess_llama3(
     tokenizer: transformers.PreTrainedTokenizer,
     has_image: bool = False
 ) -> Dict:
-    conv_template = conversation_lib.default_conversation.copy()
+    conv_template = conversation_lib.conv_llama_3.copy()  
     roles = {"human": conv_template.roles[0], "gpt": conv_template.roles[1]}
 
     conversations = []
@@ -52,35 +52,34 @@ def preprocess_llama3(
         input_ids = tokenized.input_ids
 
     targets = input_ids.clone()
+    assert conv_template.sep_style == conversation_lib.SeparatorStyle.TWO
 
     sep = conv_template.sep + conv_template.roles[1] + ": "
     for conversation, target in zip(conversations, targets):
         rounds = conversation.split(conv_template.sep2)
         cur_len = 0
 
-        for round_str in rounds:
-            if round_str.strip() == "":
+        for i, rou in enumerate(rounds):
+            if rou.strip() == "":
                 break
 
-            parts = round_str.split(sep)
+            parts = rou.split(sep)
             if len(parts) != 2:
-                break  # unexpected format
-            prompt_part = parts[0] + sep
+                break
+            parts[0] += sep  # Reattach separator
 
-            # Compute lengths
             if has_image:
-                round_len = len(tokenizer_image_token(round_str, tokenizer))
-                instruction_len = len(tokenizer_image_token(prompt_part, tokenizer))
+                round_len = len(tokenizer_image_token(rou, tokenizer)) + 1
+                instruction_len = len(tokenizer_image_token(parts[0], tokenizer)) - 1
             else:
-                round_len = len(tokenizer(round_str).input_ids)
-                instruction_len = len(tokenizer(prompt_part).input_ids)
+                round_len = len(tokenizer(rou).input_ids) + 1
+                instruction_len = len(tokenizer(parts[0]).input_ids) - 1
 
-            # Mask the instruction (user message) part
-            target[cur_len:cur_len + instruction_len] = IGNORE_INDEX
+            target[cur_len : cur_len + instruction_len] = IGNORE_INDEX
             cur_len += round_len
 
-        # Mask any leftover padding/extra
         target[cur_len:] = IGNORE_INDEX
+
 
     return dict(
         input_ids=input_ids,
