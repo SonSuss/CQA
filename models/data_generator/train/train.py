@@ -7,6 +7,7 @@ from models.data_generator.train.config import ModelArguments, DataArguments, Tr
 from models.data_generator.train.utils import get_bnb_model_args, lora_setting, smart_tokenizer_and_embedding_resize, unlock_vit, lora_kbit_setting
 from models.data_generator.train.llava_trainer import LLaVATrainer
 from models.data_generator import conversation as conversation_lib
+from models.data_generator.train.train_utils import *
 from data.dataset import *
 
 import transformers
@@ -141,7 +142,8 @@ def train():
     elif model_args.version == "v0.5":
         tokenizer.pad_token = tokenizer.unk_token
     else:
-        tokenizer.pad_token = tokenizer.unk_token
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token = tokenizer.eos_token 
 
         model.config.pad_token_id = tokenizer.pad_token_id
         model.config.pad_token = tokenizer.pad_token
@@ -235,5 +237,13 @@ def train():
         trainer.train()
 
     trainer.save_state()
-
+    model.config.use_cache = True
     
+    if training_args.lora_enable:
+        lora_save_model(model, training_args)
+    else:
+        safe_save_model_for_hf_trainer(trainer=trainer,
+                                       output_dir=training_args.output_dir)
+
+if __name__ == "__main__":
+    train()
