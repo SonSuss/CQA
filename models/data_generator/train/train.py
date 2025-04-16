@@ -2,7 +2,7 @@ import pathlib
 import os
 import copy
 
-from data_generator.model.sigllama import SigLlamaForCausalLM, SiglipLlamaConfig
+from models.data_generator.model.sigllama import SigLlamaForCausalLM, SiglipLlamaConfig
 from models.data_generator.train.config import ModelArguments, DataArguments, TrainingArguments
 from models.data_generator.train.utils import get_bnb_model_args, lora_setting, smart_tokenizer_and_embedding_resize, unlock_vit, lora_kbit_setting
 from models.data_generator.train.llava_trainer import LLaVATrainer
