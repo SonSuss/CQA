@@ -278,10 +278,10 @@ conv_llama_3 = Conversation(
     system="A chat between a curious user and an artificial intelligence assistant. "
     "The assistant gives helpful, detailed, and polite answers to the user's questions.",
     roles=("USER", "ASSISTANT"),
-    version="llama_v3",
+    version="v3",
     messages=(),
     offset=0,
-    sep_style=SeparatorStyle.LLAMA_2,
+    sep_style=SeparatorStyle.TWO,
     sep=" ",
     sep2="<|end_of_text|>",
 )
