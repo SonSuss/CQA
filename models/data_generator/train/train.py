@@ -4,6 +4,7 @@ import copy
 
 # Print the current file location
 print("Current file location:", os.path.abspath(__file__))
+print("Current working directory:", os.getcwd())
 
 from models.data_generator.model.sigllama import SigLlamaForCausalLM, SiglipLlamaConfig
 from models.data_generator.train.config import ModelArguments, DataArguments, TrainingArguments
