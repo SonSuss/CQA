@@ -44,7 +44,7 @@ model_args = ModelArguments(
 
 data_args = DataArguments(
     data_path="./data/train.json",
-    eval_data_path="./data/eval.json",
+    eval_data_path="./data/val.json",
     lazy_preprocess=True,
     is_multimodal=True,
     image_folder="./data/images",
