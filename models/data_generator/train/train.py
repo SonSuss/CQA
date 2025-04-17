@@ -2,10 +2,6 @@ import pathlib
 import os
 import copy
 
-# Print the current file location
-print("Current file location:", os.path.abspath(__file__))
-print("Current working directory:", os.getcwd())
-
 from models.data_generator.model.sigllama import SigLlamaForCausalLM, SiglipLlamaConfig
 from models.data_generator.train.config import ModelArguments, DataArguments, TrainingArguments
 from models.data_generator.train.utils import get_bnb_model_args, lora_setting, smart_tokenizer_and_embedding_resize, unlock_vit, lora_kbit_setting
