@@ -115,11 +115,11 @@ def train():
         model.config.torch_dtype = (
             torch.float32 if training_args.fp16 else (torch.bfloat16 if training_args.bf16 else torch.float32))
         model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=training_args.gradient_checkpointing)
-    # if training_args.gradient_checkpointing:
-    #     if hasattr(model, "enable_input_require_grads"):
-    #         model.enable_input_require_grads()
-    #     else:
-    #         model.get_input_embeddings().register_forward_hook(make_inputs_require_grad)
+    if training_args.gradient_checkpointing:
+        if hasattr(model, "enable_input_require_grads"):
+            model.enable_input_require_grads()
+        else:
+            model.get_input_embeddings().register_forward_hook(make_inputs_require_grad)
     if training_args.lora_enable:
         model = lora_setting(model, training_args)
         
