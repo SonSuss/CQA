@@ -14,7 +14,7 @@ import transformers
 import torch
 
 from peft import prepare_model_for_kbit_training
-from transformers import LlamaTokenizerFast
+from transformers import PreTrainedTokenizerFast
 
 
 #train config
@@ -124,7 +124,7 @@ def train():
         model = lora_setting(model, training_args)
         
     # using llama tokenizer
-    tokenizer = LlamaTokenizerFast.from_pretrained(
+    tokenizer = PreTrainedTokenizerFast.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
         model_max_length=training_args.model_max_length,
@@ -231,10 +231,10 @@ def train():
                            tokenizer=tokenizer,
                            args=training_args,
                            **data_module)
-    if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
-        trainer.train(resume_from_checkpoint=True)
-    else:
-        trainer.train()
+    # if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
+    #     trainer.train(resume_from_checkpoint=True)
+    # else:
+    #     trainer.train()
 
     trainer.save_state()
     model.config.use_cache = True
