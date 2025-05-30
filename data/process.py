@@ -9,12 +9,9 @@ import transformers
 from models.data_generator import conversation as conversation_lib
 from models.data_generator.train.config import DataArguments
 from models.data_generator.train.utils import rank0_print
+from models.data_generator.constants import DEFAULT_IM_END_TOKEN,DEFAULT_IM_START_TOKEN, DEFAULT_IMAGE_TOKEN
 
 PREPROCESS_REGISTRY = {}
-
-DEFAULT_IMAGE_TOKEN = "<image>"
-DEFAULT_IM_START_TOKEN = "<im_start>"
-DEFAULT_IM_END_TOKEN = "<im_end>"
 
 
 def register_preprocess(name):

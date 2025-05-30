@@ -2,13 +2,15 @@ from PIL import Image
 from io import BytesIO
 import base64
 
+from models.data_generator.constants import IMAGE_TOKEN_INDEX
+
 import torch
 from transformers import StoppingCriteria
 
 import math
 import ast
 
-IMAGE_TOKEN_INDEX = -200
+
 
 def load_image_from_base64(image):
     return Image.open(BytesIO(base64.b64decode(image)))

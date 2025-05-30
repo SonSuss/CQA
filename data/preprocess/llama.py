@@ -12,7 +12,7 @@ from data.process import register_preprocess
 
 
 IGNORE_INDEX = -100
-@register_preprocess('llama_v3')
+@register_preprocess('llama_3')
 def preprocess_llama3(
     sources,
     tokenizer: transformers.PreTrainedTokenizer,

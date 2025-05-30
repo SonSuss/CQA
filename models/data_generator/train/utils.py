@@ -109,7 +109,14 @@ def unlock_vit(training_args, model_args, vision_tower):
         else:
             p.requires_grad = True
 
-
+def disable_torch_init():
+    """
+    Disable the redundant torch default initialization to accelerate model creation.
+    """
+    import torch
+    setattr(torch.nn.Linear, "reset_parameters", lambda self: None)
+    setattr(torch.nn.LayerNorm, "reset_parameters", lambda self: None)
+    
 def lora_kbit_setting(model, training_args):
     for name, module in model.named_modules():
         if isinstance(module, LoraLayer):

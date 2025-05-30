@@ -22,7 +22,7 @@ from transformers import PreTrainedTokenizerFast
 #model config
 model_args = ModelArguments(
     model_name_or_path="meta-llama/Llama-3.1-8B",
-    version="v1",
+    version="llama_3",
     freeze_backbone=True,
     tune_mm_mlp_adapter=False,
     vision_tower="google/siglip-so400m-patch14-384",
@@ -231,10 +231,10 @@ def train():
                            tokenizer=tokenizer,
                            args=training_args,
                            **data_module)
-    # if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
-    #     trainer.train(resume_from_checkpoint=True)
-    # else:
-    #     trainer.train()
+    if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
+        trainer.train(resume_from_checkpoint=True)
+    else:
+        trainer.train()
 
     trainer.save_state()
     model.config.use_cache = True
