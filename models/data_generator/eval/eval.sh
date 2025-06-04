@@ -35,9 +35,10 @@ python scripts/merge_jsonl_sort.py \
     --input ${TEMP_DIR} \
     --output ${TEMP_DIR}/all.jsonl
 
-################
 python scripts/split_jsonl_dataset.py \
     --input ${TEMP_DIR}/all.jsonl \
     --output ${OUTPUT}
+    
+################
 python tinychart/eval/run_eval.py \
     --input ${OUTPUT}

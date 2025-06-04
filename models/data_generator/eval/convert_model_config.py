@@ -13,14 +13,14 @@ def convert_config(path):
     config['mm_vision_tower'] = path+'/siglip'
     json.dump(config, open(config_path, 'w'), indent=4, ensure_ascii=False)
 
-# if __name__ == '__main__':
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument('--input', type=str, required=True)
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input', type=str, required=True)
 
-#     args = parser.parse_args()
+    args = parser.parse_args()
 
-#     if args.input[0] != '/':
-#         args.input = os.getcwd() + '/' + args.input
+    if args.input[0] != '/':
+        args.input = os.getcwd() + '/' + args.input
 
-#     if os.path.isdir(args.input+'/vision_tower'):
-#         convert_config(args.input)
+    if os.path.isdir(args.input+'/vision_tower'):
+        convert_config(args.input)

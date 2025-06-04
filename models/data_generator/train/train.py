@@ -1,6 +1,7 @@
 import pathlib
 import os
 import copy
+import subprocess
 
 from models.data_generator.model.sigllama import SigLlamaForCausalLM, SiglipLlamaConfig
 from models.data_generator.train.config import ModelArguments, DataArguments, TrainingArguments
@@ -9,6 +10,10 @@ from models.data_generator.train.llava_trainer import LLaVATrainer
 from models.data_generator import conversation as conversation_lib
 from models.data_generator.train.train_utils import *
 from data.dataset import *
+from huggingface_hub import login
+login(token=os.environ.get("HF_TOKEN"))
+result = subprocess.run(["huggingface-cli", "whoami"], capture_output=True, text=True)
+print("Output:\n", result.stdout)
 
 import transformers
 import torch
@@ -28,7 +33,7 @@ model_args = ModelArguments(
     vision_tower="google/siglip-so400m-patch14-384",
     mm_vision_select_layer=-1,
     pretrain_mm_mlp_adapter=None,
-    mm_projector_type="linear",
+    mm_projector_type="resampler",
     mm_use_im_start_end=False,
     mm_use_im_patch_token=False,
     mm_patch_merge_type="flat",
