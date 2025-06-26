@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 import torch
 import torch.nn as nn
 
-from models.data_generator.model.vision_tower import build_vision_tower
-from models.data_generator.model.mm_projector import build_vision_projector
+from models.components.vision_tower import build_vision_tower
+from models.components.mm_projector import build_vision_projector
 
 
 IGNORE_INDEX = -100
