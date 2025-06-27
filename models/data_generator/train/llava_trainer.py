@@ -141,12 +141,15 @@ class LengthGroupedSampler(Sampler):
 
 class LLaVATrainer(Trainer):
 
-    def _get_train_sampler(self) -> Optional[torch.utils.data.Sampler]:
-        if self.train_dataset is None or not has_length(self.train_dataset):
+    def _get_train_sampler(self, dataset=None) -> Optional[torch.utils.data.Sampler]:
+        # Use provided dataset parameter or fall back to self.train_dataset for compatibility
+        train_dataset = dataset if dataset is not None else self.train_dataset
+        
+        if train_dataset is None or not has_length(train_dataset):
             return None
 
         if self.args.group_by_modality_length:
-            lengths = self.train_dataset.modality_lengths
+            lengths = train_dataset.modality_lengths
             return LengthGroupedSampler(
                 # self.args.train_batch_size * self.args.gradient_accumulation_steps, # TODO: seems that we should not have gradient_accumulation_steps
                 self.args.train_batch_size,
@@ -155,7 +158,12 @@ class LLaVATrainer(Trainer):
                 group_by_modality=True,
             )
         else:
-            return super()._get_train_sampler()
+            # Try to call parent method with dataset parameter if it supports it
+            try:
+                return super()._get_train_sampler(dataset)
+            except TypeError:
+                # Fall back to parameterless call for older transformers versions
+                return super()._get_train_sampler()
 
     def create_optimizer(self):
         """
