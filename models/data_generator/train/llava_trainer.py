@@ -275,7 +275,8 @@ class LLaVATrainer(Trainer):
                 self.model.config.save_pretrained(output_dir)
                 torch.save(weight_to_save, os.path.join(output_dir, f'mm_projector.bin'))
         else:
-            super(LLaVATrainer, self)._save_checkpoint(model, trial, metrics)
+            # Call parent method without metrics parameter for compatibility
+            super(LLaVATrainer, self)._save_checkpoint(model, trial)
 
         if getattr(self.args, 'tune_vision_tower', False) or getattr(self.args, 'tune_entire_model', False):
             # save vision model to vision_tower

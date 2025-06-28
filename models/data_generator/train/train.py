@@ -66,13 +66,15 @@ training_args = TrainingArguments(
     save_strategy="steps",
     save_steps=1000,
     save_total_limit=10,
-    learning_rate=1e-4,
+    # learning_rate=1e-4,
+    mm_projector_lr=1e-4,
+    vision_tower_lr=5e-5,
     weight_decay=0.0,
-    warmup_ratio=0.03,
+    warmup_ratio=0.1,
     lr_scheduler_type="cosine",
     logging_steps=1,
-    fp16=True,
-    bf16=False,
+    fp16=False,
+    bf16=True,
     model_max_length=1024,
     gradient_checkpointing=True,
     dataloader_num_workers=4,
@@ -80,7 +82,9 @@ training_args = TrainingArguments(
     cache_dir="./cache",
     optim="adamw_torch",
     bits=16,
-    group_by_modality_length=True
+    group_by_modality_length=True,
+    warmup_steps=100,
+    max_grad_norm=1.0
 )
 
 
@@ -242,6 +246,7 @@ def train():
         trainer.train()
 
     trainer.save_state()
+    
     model.config.use_cache = True
     
     if training_args.lora_enable:

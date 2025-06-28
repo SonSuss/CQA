@@ -31,14 +31,14 @@ wait
 
 #################
 # Merge split && divide by dataset && calculate metric
-python scripts/merge_jsonl_sort.py \
+python merge_jsonl_sort.py \
     --input ${TEMP_DIR} \
     --output ${TEMP_DIR}/all.jsonl
 
-python scripts/split_jsonl_dataset.py \
+python split_jsonl_dataset.py \
     --input ${TEMP_DIR}/all.jsonl \
     --output ${OUTPUT}
     
 ################
-python tinychart/eval/run_eval.py \
+python eval/run_eval.py \
     --input ${OUTPUT}
