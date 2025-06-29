@@ -5,11 +5,12 @@ from dataclasses import dataclass
 import json
 from typing import Dict, Sequence
 
-
 import transformers
 import torch
 from torch.utils.data import Dataset
 from PIL import Image, ImageFile
+from concurrent.futures import ThreadPoolExecutor
+
 
 from data.process import *
 from models.data_generator.train.config import DataArguments
@@ -51,9 +52,9 @@ class LazySupervisedDataset(Dataset):
 
     def __getitem__(self, i) -> Dict[str, torch.Tensor]:
         
-        rank0_print(f"Fetching item {i}...")
+        # rank0_print(f"Fetching item {i}...")
         sources = self.list_data_dict[i]
-        rank0_print(f"Sources: {sources}")
+        # rank0_print(f"Sources: {sources}")
         
         
         if isinstance(i, int):
@@ -93,7 +94,6 @@ class LazySupervisedDataset(Dataset):
             self.tokenizer,
             has_image=('image' in self.list_data_dict[i]))
         
-        rank0_print(f"Preprocessed data: {data_dict}")
         
         if isinstance(i, int):
             data_dict = dict(input_ids=data_dict["input_ids"][0],
@@ -177,17 +177,25 @@ def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer,
 
 def make_supervised_data_module_with_eval(tokenizer: transformers.PreTrainedTokenizer,
                                           data_args) -> Dict:
-    """Make dataset and collator for supervised fine-tuning."""
-    train_dataset = LazySupervisedDataset(tokenizer=tokenizer,
-                                          data_path=data_args.data_path,
-                                          data_args=data_args)
-    if data_args.eval_data_path is None or data_args.eval_data_path == "":
-        rank0_print('Evaluation dataset not specified, skipping...')
-        eval_dataset = None
-    else:
-        eval_dataset = LazySupervisedDataset(tokenizer=tokenizer,
-                                            data_path=data_args.eval_data_path,
-                                            data_args=data_args)
+    def create_train_dataset():
+        return LazySupervisedDataset(tokenizer=tokenizer,
+                                   data_path=data_args.data_path,
+                                   data_args=data_args)
+    
+    def create_eval_dataset():
+        if data_args.eval_data_path is None or data_args.eval_data_path == "":
+            rank0_print('Evaluation dataset not specified, skipping...')
+            return None
+        return LazySupervisedDataset(tokenizer=tokenizer,
+                                   data_path=data_args.eval_data_path,
+                                   data_args=data_args)
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        train_future = executor.submit(create_train_dataset)
+        eval_future = executor.submit(create_eval_dataset)
+        
+        train_dataset = train_future.result()
+        eval_dataset = eval_future.result()
+        
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
     return dict(train_dataset=train_dataset,
                 eval_dataset=eval_dataset,

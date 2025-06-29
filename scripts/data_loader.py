@@ -8,9 +8,9 @@ from huggingface_hub import hf_hub_download
 
 repo_id = "mPLUG/TinyChartData"
 filenames = [
-    "tinychart_images.tar",
-    "train.json",
-    "test.json"
+    "/tinychart_images.tar",
+    "/train.json",
+    "/test.json"
 ]
 
 for filename in filenames:

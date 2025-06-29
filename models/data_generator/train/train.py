@@ -26,7 +26,7 @@ from transformers import PreTrainedTokenizerFast
 
 #model config
 model_args = ModelArguments(
-    model_name_or_path="meta-llama/Llama-3.1-8B",
+    model_name_or_path="meta-llama/Llama-3.1-8B-Instruct",
     version="llama_3",
     freeze_backbone=True,
     tune_mm_mlp_adapter=False,
@@ -48,20 +48,20 @@ model_args = ModelArguments(
 )
 
 data_args = DataArguments(
-    data_path="./data/train.json",
-    eval_data_path="./data/val.json",
+    data_path="./data/gen_questions.json",
+    eval_data_path="./data/test.json",
     lazy_preprocess=True,
     is_multimodal=True,
-    image_folder="./data/images",
+    image_folder="",
     image_aspect_ratio="square",
 )
 
 training_args = TrainingArguments(
     output_dir="./checkpoints",
     num_train_epochs=3,
-    per_device_train_batch_size=1,
-    per_device_eval_batch_size=1,
-    gradient_accumulation_steps=8,
+    per_device_train_batch_size=8,
+    per_device_eval_batch_size=4,
+    gradient_accumulation_steps=4,
     evaluation_strategy="no",
     save_strategy="steps",
     save_steps=1000,
@@ -77,7 +77,8 @@ training_args = TrainingArguments(
     bf16=True,
     model_max_length=1024,
     gradient_checkpointing=True,
-    dataloader_num_workers=4,
+    dataloader_num_workers=8,
+    dataloader_persistent_workers=True,
     report_to="tensorboard",
     cache_dir="./cache",
     optim="adamw_torch",
