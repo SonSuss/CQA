@@ -1,10 +1,21 @@
 import math
 import torch
+import re
 
 from torch import nn
 from einops import rearrange, repeat
 
 
+class IdentityMap(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x, *args, **kwargs):
+        return x
+
+    @property
+    def config(self):
+        return {"mm_projector_type": 'identity'}
 class ResamplerBlock(nn.Module):
     def __init__(
         self,
@@ -151,34 +162,34 @@ def build_vision_projector(config, delay_load=False, **kwargs):
             initializer_range=initializer_range
         )
 
-    # mlp_gelu_match = re.match(r'^mlp(\d+)x_gelu$', projector_type)
-    # if mlp_gelu_match:
-    #     mlp_depth = int(mlp_gelu_match.group(1))
-    #     modules = [nn.Linear(config.mm_hidden_size, config.hidden_size)]
-    #     for _ in range(1, mlp_depth):
-    #         modules.append(nn.GELU())
-    #         modules.append(nn.Linear(config.hidden_size, config.hidden_size))
-    #     mlp = nn.Sequential(*modules)
-    #     if getattr(config, 'load_moe_mm_projector', False):
-    #         from deepspeed.moe.layer import MoE
-    #         mlp = MoE(
-    #             config.mm_hidden_size,
-    #             expert=mlp,
-    #             num_experts=4,
-    #             ep_size=1,
-    #             k=2,
-    #             capacity_factor=1.,
-    #             eval_capacity_factor=1.,
-    #             min_capacity=4,
-    #             use_residual=False,
-    #         )
+    mlp_gelu_match = re.match(r'^mlp(\d+)x_gelu$', projector_type)
+    if mlp_gelu_match:
+        mlp_depth = int(mlp_gelu_match.group(1))
+        modules = [nn.Linear(config.mm_hidden_size, config.hidden_size)]
+        for _ in range(1, mlp_depth):
+            modules.append(nn.GELU())
+            modules.append(nn.Linear(config.hidden_size, config.hidden_size))
+        mlp = nn.Sequential(*modules)
+        if getattr(config, 'load_moe_mm_projector', False):
+            from deepspeed.moe.layer import MoE
+            mlp = MoE(
+                config.mm_hidden_size,
+                expert=mlp,
+                num_experts=4,
+                ep_size=1,
+                k=2,
+                capacity_factor=1.,
+                eval_capacity_factor=1.,
+                min_capacity=4,
+                use_residual=False,
+            )
 
-    #         def moe_forward_wrapper(forward_func):
-    #             return lambda *args, **kwargs: forward_func(*args, **kwargs)[0]
-    #         mlp.forward = moe_forward_wrapper(mlp.forward)
-    #     return mlp
+            def moe_forward_wrapper(forward_func):
+                return lambda *args, **kwargs: forward_func(*args, **kwargs)[0]
+            mlp.forward = moe_forward_wrapper(mlp.forward)
+        return mlp
 
-    # if projector_type == 'identity':
-    #     return IdentityMap()
+    if projector_type == 'identity':
+        return IdentityMap()
 
     raise ValueError(f'Unknown projector type: {projector_type}')

@@ -1,7 +1,6 @@
 
 
-from models.data_generator.builder import load_pretrained_llava_model
-from models.data_generator.mm_utils import get_model_name_from_path, tokenizer_image_token, KeywordsStoppingCriteria
+from models.data_generator.mm_utils import tokenizer_image_token, KeywordsStoppingCriteria
 from models.data_generator.conversation import conv_templates, SeparatorStyle
 
 from models.data_generator.constants import IMAGE_TOKEN_INDEX,DEFAULT_IMAGE_TOKEN,DEFAULT_IM_START_TOKEN,DEFAULT_IM_END_TOKEN,IMAGE_PLACEHOLDER
@@ -63,3 +62,4 @@ def inference_model(image_path ,input, model, tokenizer, image_processor, conv_m
         outputs = outputs[: -len(stop_str)]
     outputs = outputs.strip()
     return outputs
+

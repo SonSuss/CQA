@@ -1,8 +1,4 @@
-import os
-import warnings
-import shutil
-
-from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig, BitsAndBytesConfig
+from transformers import AutoTokenizer, BitsAndBytesConfig
 from models.data_generator.model.sigllama import SigLlamaForCausalLM, SiglipLlamaConfig
 from models.data_generator.constants import DEFAULT_IMAGE_PATCH_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
 
