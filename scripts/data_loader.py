@@ -26,7 +26,7 @@ def save_dataset(dataset, json_filename, images_folder):
             },
             {
                 "from": "gpt",
-                "value": item['label']
+                "value": item['label'][0]
             }
         ]
         }

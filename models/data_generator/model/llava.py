@@ -67,6 +67,10 @@ class LlavaMetaModel:
                 vision_tower = self.vision_tower
             vision_tower.load_model()
 
+        if not model_args.tune_vision_tower:
+            for p in self.vision_tower.parameters():
+                p.requires_grad = False
+        
         self.config.use_mm_proj = True
         self.config.mm_projector_type = getattr(model_args, 'mm_projector_type', 'linear')
         self.config.mm_hidden_size = vision_tower.hidden_size

@@ -1,3 +1,6 @@
 models/chart_QA/mPLUG-DocOwl/
 note.txt
 checkpoints
+data/images
+data/train.json
+data/val.json

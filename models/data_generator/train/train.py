@@ -208,6 +208,11 @@ def train():
 
         model.config.tune_vision_tower = training_args.tune_vision_tower = model_args.tune_vision_tower
         model.config.tune_entire_model = training_args.tune_entire_model = model_args.tune_entire_model
+        
+        if not model_args.tune_vision_tower:
+            for p in model.get_model().vision_tower.parameters():
+                p.requires_grad = False
+            
         if model_args.tune_entire_model:
             lr_of_mlp = training_args.mm_projector_lr if training_args.mm_projector_lr is not None else training_args.learning_rate
             # Tune the MLP, The LR of MLP is {lr_of_mlp}
@@ -226,14 +231,20 @@ def train():
         model.config.mm_use_im_patch_token = model_args.mm_use_im_patch_token
         model.initialize_vision_tokenizer(model_args, tokenizer=tokenizer)
         
-    print("mm_projector: ",model.get_model().mm_projector)
-    # load data
     if training_args.bits in [4, 8]:
         lora_kbit_setting(model, training_args)
 
     data_module = make_supervised_data_module_with_eval(tokenizer=tokenizer,
                                               data_args=data_args)
-
+    vision_tower_params = sum(p.numel() for p in model.get_model().vision_tower.parameters())
+    vision_tower_trainable = sum(p.numel() for p in model.get_model().vision_tower.parameters() if p.requires_grad)
+    mm_projector_params = sum(p.numel() for p in model.get_model().mm_projector.parameters() if p.requires_grad)
+    llm_backbone_params = sum(p.numel() for p in model.model.parameters() if p.requires_grad)
+    print(f"Vision Tower total params: {vision_tower_params:,}")
+    print(f"Vision Tower trainable params: {vision_tower_trainable:,}")
+    print(f"MM Projector trainable params: {mm_projector_params:,}")
+    print(f"LLM Backbone trainable params: {llm_backbone_params:,}")
+    print("mm_projector: ",model.get_model().mm_projector)
     print("trainable parameters: ", sum(p.numel() for p in model.parameters() if p.requires_grad))
     print("total parameters: ", sum(p.numel() for p in model.parameters()))
 
