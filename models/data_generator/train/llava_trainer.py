@@ -182,26 +182,40 @@ class LLaVATrainer(Trainer):
         if self.optimizer is None:
             decay_parameters = get_parameter_names(opt_model, ALL_LAYERNORM_LAYERS)
             decay_parameters = [name for name in decay_parameters if "bias" not in name]
+            projector_parameters = []
+            vision_tower_parameters = []
             if self.args.mm_projector_lr is not None:
                 projector_parameters = [name for name, _ in opt_model.named_parameters() if "mm_projector" in name]
-                optimizer_grouped_parameters = [
+            
+            if self.args.vision_tower_lr is not None:
+                vision_tower_parameters = [name for name, _ in opt_model.named_parameters() if "vision_tower" in name or "vision_model" in name]
+        
+            optimizer_grouped_parameters = []
+            optimizer_grouped_parameters.extend([
+                {
+                    "params": [
+                        p for n, p in opt_model.named_parameters() 
+                        if (n in decay_parameters and n not in projector_parameters and n not in vision_tower_parameters and p.requires_grad)
+                    ],
+                    "weight_decay": self.args.weight_decay,
+                    "name": "decay_default_parameters"
+                },
+                {
+                    "params": [
+                        p for n, p in opt_model.named_parameters() 
+                        if (n not in decay_parameters and n not in projector_parameters and n not in vision_tower_parameters and p.requires_grad)
+                    ],
+                    "weight_decay": 0.0,
+                    "name": "no_decay_default_parameters"
+                }
+            ])
+            
+            if self.args.mm_projector_lr is not None:
+                optimizer_grouped_parameters.extend([
                     {
                         "params": [
-                            p for n, p in opt_model.named_parameters() if (n in decay_parameters and n not in projector_parameters and p.requires_grad)
-                        ],
-                        "weight_decay": self.args.weight_decay,
-                        "name": "decay_no_proj_parameters"
-                    },
-                    {
-                        "params": [
-                            p for n, p in opt_model.named_parameters() if (n not in decay_parameters and n not in projector_parameters and p.requires_grad)
-                        ],
-                        "weight_decay": 0.0,
-                        "name": "no_decay_no_proj_parameters"
-                    },
-                    {
-                        "params": [
-                            p for n, p in opt_model.named_parameters() if (n in decay_parameters and n in projector_parameters and p.requires_grad)
+                            p for n, p in opt_model.named_parameters() 
+                            if (n in decay_parameters and n in projector_parameters and p.requires_grad)
                         ],
                         "weight_decay": self.args.weight_decay,
                         "lr": self.args.mm_projector_lr,
@@ -209,30 +223,37 @@ class LLaVATrainer(Trainer):
                     },
                     {
                         "params": [
-                            p for n, p in opt_model.named_parameters() if (n not in decay_parameters and n in projector_parameters and p.requires_grad)
+                            p for n, p in opt_model.named_parameters() 
+                            if (n not in decay_parameters and n in projector_parameters and p.requires_grad)
                         ],
                         "weight_decay": 0.0,
                         "lr": self.args.mm_projector_lr,
                         "name": "no_decay_proj_parameters"
-                    },
-                ]
-            else:
-                optimizer_grouped_parameters = [
+                    }
+                ])
+            
+            # Vision Tower parameters (if specified)
+            if self.args.vision_tower_lr is not None:
+                optimizer_grouped_parameters.extend([
                     {
                         "params": [
-                            p for n, p in opt_model.named_parameters() if (n in decay_parameters and p.requires_grad)
+                            p for n, p in opt_model.named_parameters() 
+                            if (n in decay_parameters and n in vision_tower_parameters and p.requires_grad)
                         ],
                         "weight_decay": self.args.weight_decay,
-                        "name": "decay_parameters"
+                        "lr": self.args.vision_tower_lr,
+                        "name": "decay_vision_parameters"
                     },
                     {
                         "params": [
-                            p for n, p in opt_model.named_parameters() if (n not in decay_parameters and p.requires_grad)
+                            p for n, p in opt_model.named_parameters() 
+                            if (n not in decay_parameters and n in vision_tower_parameters and p.requires_grad)
                         ],
                         "weight_decay": 0.0,
-                        "name": "no_decay_parameters"
-                    },
-                ]
+                        "lr": self.args.vision_tower_lr,
+                        "name": "no_decay_vision_parameters"
+                    }
+                ])
 
             if getattr(self.args, "moe_enable", False):
                 from deepspeed.moe.utils import split_params_into_different_moe_groups_for_optimizer

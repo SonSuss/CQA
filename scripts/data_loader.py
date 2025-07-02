@@ -18,7 +18,7 @@ def save_dataset(dataset, json_filename, images_folder):
 
         entry = {
             "id": "chartQA_" + str(idx),
-            "image": image_filename,
+            "image": str(image_path),
             "conversations": [
             {
                 "from": "human",

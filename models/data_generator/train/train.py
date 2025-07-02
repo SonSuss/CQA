@@ -48,8 +48,8 @@ model_args = ModelArguments(
 )
 
 data_args = DataArguments(
-    data_path="./data/gen_questions.json",
-    eval_data_path="./data/test.json",
+    data_path="data/train.json",
+    eval_data_path="data/val.json",
     lazy_preprocess=True,
     is_multimodal=True,
     image_folder="",
@@ -59,7 +59,7 @@ data_args = DataArguments(
 training_args = TrainingArguments(
     output_dir="./checkpoints",
     num_train_epochs=3,
-    per_device_train_batch_size=8,
+    per_device_train_batch_size=4,
     per_device_eval_batch_size=4,
     gradient_accumulation_steps=4,
     evaluation_strategy="no",
@@ -172,7 +172,12 @@ def train():
             model_args=model_args,
             fsdp=training_args.fsdp
         )
-
+        if model_args.tune_vision_tower:
+            # Only enable if you actually want to train vision tower parameters too
+            for p in model.get_vision_tower().parameters():
+                p.requires_grad = True
+            print(f"Vision tower frozen - trainable params: {sum(p.numel() for p in model.get_vision_tower().parameters() if p.requires_grad)}")
+        
         vision_tower = model.get_vision_tower()
         vision_tower.to(dtype=torch.bfloat16 if training_args.bf16 else torch.float16, device=training_args.device)
 
@@ -208,10 +213,6 @@ def train():
 
         model.config.tune_vision_tower = training_args.tune_vision_tower = model_args.tune_vision_tower
         model.config.tune_entire_model = training_args.tune_entire_model = model_args.tune_entire_model
-        
-        if not model_args.tune_vision_tower:
-            for p in model.get_model().vision_tower.parameters():
-                p.requires_grad = False
             
         if model_args.tune_entire_model:
             lr_of_mlp = training_args.mm_projector_lr if training_args.mm_projector_lr is not None else training_args.learning_rate
@@ -245,9 +246,35 @@ def train():
     print(f"MM Projector trainable params: {mm_projector_params:,}")
     print(f"LLM Backbone trainable params: {llm_backbone_params:,}")
     print("mm_projector: ",model.get_model().mm_projector)
+# Debug: Find what's actually trainable
+    print("\n=== DEBUGGING TRAINABLE PARAMETERS ===")
+    total_trainable = 0
+    component_counts = {}
+    
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            component = name.split('.')[0] if '.' in name else name
+            if component not in component_counts:
+                component_counts[component] = 0
+            component_counts[component] += param.numel()
+            total_trainable += param.numel()
+    
+    print("Trainable parameters by component:")
+    for component, count in sorted(component_counts.items()):
+        print(f"  {component}: {count:,}")
+    
+    print(f"\nCalculated total trainable: {total_trainable:,}")
+    print(f"PyTorch total trainable: {sum(p.numel() for p in model.parameters() if p.requires_grad):,}")
+    
+    # Check if there are embedding parameters being trained
+    embed_trainable = sum(p.numel() for p in model.get_input_embeddings().parameters() if p.requires_grad)
+    output_embed_trainable = sum(p.numel() for p in model.get_output_embeddings().parameters() if p.requires_grad)
+    print(f"Input embeddings trainable: {embed_trainable:,}")
+    print(f"Output embeddings trainable: {output_embed_trainable:,}")
+    
+    print("mm_projector: ",model.get_model().mm_projector)
     print("trainable parameters: ", sum(p.numel() for p in model.parameters() if p.requires_grad))
     print("total parameters: ", sum(p.numel() for p in model.parameters()))
-
     trainer = LLaVATrainer(model=model,
                            tokenizer=tokenizer,
                            args=training_args,
