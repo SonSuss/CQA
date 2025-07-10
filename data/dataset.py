@@ -13,8 +13,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 
 from data.process import *
-from CQA.models.components.config import DataArguments
-from CQA.models.components.utils import rank0_print
+from models.components.config import DataArguments
+from models.components.utils import rank0_print
 
 
 IGNORE_INDEX = -100

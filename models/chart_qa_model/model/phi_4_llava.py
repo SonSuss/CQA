@@ -7,7 +7,7 @@ from transformers import AutoConfig, AutoModelForCausalLM
 from transformers.modeling_outputs import CausalLMOutputWithPast
 from transformers import PhiConfig, PhiForCausalLM, PhiModel
 
-from CQA.models.components.llava import LlavaMetaForCausalLM, LlavaMetaModel
+from models.components.llava import LlavaMetaForCausalLM, LlavaMetaModel
 
 
 class PhiLlava_config(PhiConfig):

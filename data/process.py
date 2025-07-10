@@ -6,10 +6,10 @@ from typing import Dict, Optional, Sequence, List
 import transformers
 
 
-from CQA.models.components import conversation as conversation_lib
-from CQA.models.components.config import DataArguments
-from CQA.models.components.utils import rank0_print
-from CQA.models.components.constants import DEFAULT_IM_END_TOKEN,DEFAULT_IM_START_TOKEN, DEFAULT_IMAGE_TOKEN
+from models.components import conversation as conversation_lib
+from models.components.config import DataArguments
+from models.components.utils import rank0_print
+from models.components.constants import DEFAULT_IM_END_TOKEN,DEFAULT_IM_START_TOKEN, DEFAULT_IMAGE_TOKEN
 
 PREPROCESS_REGISTRY = {}
 
