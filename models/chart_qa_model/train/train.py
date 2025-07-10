@@ -19,8 +19,8 @@ from transformers import AutoTokenizer
 
 #model config
 model_args = ModelArguments(
-    model_name_or_path="microsoft/Phi-3-mini-4k-instruct",
-    version="phi-4-mini", # note: config the converstion version
+    model_name_or_path="microsoft/Phi-4-mini-instruct",
+    version="phi_instruct",
     freeze_backbone=True,
     tune_mm_mlp_adapter=False,
     vision_tower="mPLUG/TinyChart-3B-768-siglip",
@@ -97,7 +97,7 @@ def train():
     bnb_model_from_pretrained_args = get_bnb_model_args(training_args)
     if model_args.vision_tower is not None:
         model_name = model_args.model_name_or_path
-        cfg_pretrained = PhiLlava_config.from_pretrained(model_name)
+        cfg_pretrained = PhiLlava_config.from_pretrained(model_name, rope_scaling={"type": "linear", "factor": 1.0} )
         model_class = PhiLlavaForCausalLM
         model = model_class.from_pretrained(
             model_args.model_name_or_path,
@@ -262,13 +262,11 @@ def train():
 
     total_trainable = 0
     module_counts = {}
-    for name, param in model.named_modules():
+    for name, _ in model.named_modules():
         if param.requires_grad:
             module = name.split('.')[0] if '.' in name else name
             if module not in module_counts:
                 module_counts[module] = 0
-            module_counts[module] += param.numel()
-            total_trainable += param.numel()
     logger.info("Trainable parameters by module:")
     for module, count in sorted(module_counts.items()):
         logger.info(f"  {module}: {count:,}")

@@ -5,22 +5,22 @@ from typing import Optional, List, Tuple, Union
 
 from transformers import AutoConfig, AutoModelForCausalLM
 from transformers.modeling_outputs import CausalLMOutputWithPast
-from transformers import PhiConfig, PhiForCausalLM, PhiModel
+from transformers import Phi3Config, Phi3ForCausalLM, Phi3Model
 
 from models.components.llava import LlavaMetaForCausalLM, LlavaMetaModel
 
 
-class PhiLlava_config(PhiConfig):
+class PhiLlava_config(Phi3Config):
     model_type = "Phi_llava"
 
-class Phi_LlavaModel(LlavaMetaModel, PhiModel):
+class Phi_LlavaModel(LlavaMetaModel, Phi3Model):
     config_class = PhiLlava_config
 
-    def __init__(self, config: PhiConfig):
+    def __init__(self, config: Phi3Config):
         super(Phi_LlavaModel, self).__init__(config)
         self.gradient_checkpointing = False
 
-class PhiLlavaForCausalLM(PhiForCausalLM, LlavaMetaForCausalLM):
+class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
     config_class = PhiLlava_config
 
     def __init__(self, config):

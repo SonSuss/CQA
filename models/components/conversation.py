@@ -412,7 +412,7 @@ conv_templates = {
     "mistral_instruct": conv_mistral_instruct,
     "chatml_direct": conv_chatml_direct,
     "mistral_direct": conv_chatml_direct,
-    "phi_3_instruct": conv_phi_instruct,
+    "phi_instruct": conv_phi_instruct,
 
     "plain": conv_llava_plain,
     "v0_plain": conv_llava_plain,

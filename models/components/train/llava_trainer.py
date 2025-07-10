@@ -139,6 +139,10 @@ class LengthGroupedSampler(Sampler):
 
 
 class LLaVATrainer(Trainer):
+    def __init__(self, *args, **kwargs):
+        # Extract custom logger if provided
+        self.custom_logger = kwargs.pop('custom_logger', None)
+        super().__init__(*args, **kwargs)
 
     def _get_train_sampler(self, dataset=None) -> Optional[torch.utils.data.Sampler]:
         # Use provided dataset parameter or fall back to self.train_dataset for compatibility
