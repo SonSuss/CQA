@@ -10,7 +10,7 @@ from peft import LoraConfig, get_peft_model
 from deepspeed import zero
 from deepspeed.runtime.zero.partition_parameters import ZeroParamStatus
 
-from CQA.models.components.utils import rank0_print
+from models.components.utils import rank0_print
 
 def get_bnb_model_args(training_args):
     compute_dtype = (torch.float16 if training_args.fp16 else (torch.bfloat16 if training_args.bf16 else torch.float32))
