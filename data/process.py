@@ -6,7 +6,7 @@ from typing import Dict, Optional, Sequence, List
 import transformers
 
 
-from models.data_generator import conversation as conversation_lib
+from CQA.models.components import conversation as conversation_lib
 from models.data_generator.train.config import DataArguments
 from models.data_generator.train.utils import rank0_print
 from models.data_generator.constants import DEFAULT_IM_END_TOKEN,DEFAULT_IM_START_TOKEN, DEFAULT_IMAGE_TOKEN

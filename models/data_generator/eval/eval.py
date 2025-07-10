@@ -9,7 +9,7 @@ import shortuuid
 
 
 from models.data_generator.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
-from models.data_generator.conversation import conv_templates, SeparatorStyle
+from CQA.models.components.conversation import conv_templates, SeparatorStyle
 from models.data_generator.builder import load_pretrained_model
 from models.data_generator.train.utils import disable_torch_init
 from models.data_generator.mm_utils import tokenizer_image_token, process_images, get_model_name_from_path

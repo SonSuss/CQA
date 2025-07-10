@@ -3,35 +3,29 @@ import torch.nn as nn
 
 from typing import Optional, List, Tuple, Union
 
-from transformers import AutoConfig, AutoModelForCausalLM, LlamaConfig, LlamaForCausalLM
+from transformers import AutoConfig, AutoModelForCausalLM
 from transformers.modeling_outputs import CausalLMOutputWithPast
-from transformers import LlamaModel
-
-# from transformers import BitsAndBytesConfig
+from transformers import PhiConfig, PhiForCausalLM, PhiModel
 
 from CQA.models.components.llava import LlavaMetaForCausalLM, LlavaMetaModel
 
 
-# Define the custom configuration class for LLaMA 3
-class SiglipLlamaConfig(LlamaConfig):
-    model_type = "siglip_llama"
+class PhiLlava_config(PhiConfig):
+    model_type = "Phi_llava"
 
-# Define the LLaMA-based multimodal model
-class SiglipLlamaModel(LlavaMetaModel, LlamaModel):
-    config_class = SiglipLlamaConfig
+class Phi_LlavaModel(LlavaMetaModel, PhiModel):
+    config_class = PhiLlava_config
 
-
-    def __init__(self, config: LlamaConfig):
-        super(SiglipLlamaModel, self).__init__(config)
+    def __init__(self, config: PhiConfig):
+        super(Phi_LlavaModel, self).__init__(config)
         self.gradient_checkpointing = False
 
-# Define the causal LM model wrapper
-class SigLlamaForCausalLM(LlamaForCausalLM, LlavaMetaForCausalLM):
-    config_class = SiglipLlamaConfig
+class PhiLlavaForCausalLM(PhiForCausalLM, LlavaMetaForCausalLM):
+    config_class = PhiLlava_config
 
     def __init__(self, config):
         super().__init__(config)
-        self.model = SiglipLlamaModel(config)
+        self.model = Phi_LlavaModel(config)
         self.vocab_size = config.vocab_size
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
@@ -145,8 +139,6 @@ def get_tokenizer():
     return AutoTokenizer, post_init
 
 # Register configuration and model with Hugging Face
-AutoConfig.register("siglip_llama", SiglipLlamaConfig)
-AutoModelForCausalLM.register(SiglipLlamaConfig, SigLlamaForCausalLM)
-
-
+AutoConfig.register("Phi_llava", PhiLlava_config)
+AutoModelForCausalLM.register(PhiLlava_config, PhiLlavaForCausalLM)
 

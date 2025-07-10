@@ -7,7 +7,7 @@ from models.data_generator.model.sigllama import SigLlamaForCausalLM, SiglipLlam
 from models.data_generator.train.config import ModelArguments, DataArguments, TrainingArguments
 from models.data_generator.train.utils import get_bnb_model_args, lora_setting, smart_tokenizer_and_embedding_resize, unlock_vit, lora_kbit_setting
 from models.data_generator.train.llava_trainer import LLaVATrainer
-from models.data_generator import conversation as conversation_lib
+from CQA.models.components import conversation as conversation_lib
 from models.data_generator.train.train_utils import *
 from data.dataset import *
 from huggingface_hub import login
@@ -251,7 +251,7 @@ def train():
     total_trainable = 0
     component_counts = {}
     
-    for name, param in model.named_parameters():
+    for name, param in model.named_parameters():#named_modules()?
         if param.requires_grad:
             component = name.split('.')[0] if '.' in name else name
             if component not in component_counts:

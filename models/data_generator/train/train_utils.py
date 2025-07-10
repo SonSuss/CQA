@@ -59,13 +59,13 @@ def lora_kbit_setting(model, training_args):
     for name, module in model.named_modules():
         if isinstance(module, LoraLayer):
             if training_args.bf16:
-                module = module.to(torch.bfloat16)
+                module.to(torch.bfloat16)
         if 'norm' in name:
-            module = module.to(torch.float32)
+            module.to(torch.float32)
         if 'lm_head' in name or 'embed_tokens' in name:
             if hasattr(module, 'weight'):
                 if training_args.bf16 and module.weight.dtype == torch.float32:
-                    module = module.to(torch.bfloat16)
+                    module.to(torch.bfloat16)
 
 
 def lora_save_model(model, training_args):
