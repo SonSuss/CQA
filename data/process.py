@@ -35,6 +35,7 @@ def import_modules(modules_dir, namespace):
                 and (file.endswith(".py") or os.path.isdir(path))
         ):
             module_name = file[: file.find(".py")] if file.endswith(".py") else file
+            
             rank0_print(f"Importing module: {namespace + '.' + module_name}")
             importlib.import_module(namespace + "." + module_name)
 
@@ -51,6 +52,8 @@ def PreprocessSelect(version):
                 break
     if result is None:
         result = PREPROCESS_REGISTRY['default']
+    
+    rank0_print(f"Selected preprocess class: {result.__name__ if hasattr(result, '__name__') else result}")
     return result
 
 
@@ -83,6 +86,12 @@ def preprocess_multimodal(
 def preprocess(
     sources: Sequence[str],
     tokenizer: transformers.PreTrainedTokenizer,
-    has_image: bool = False
+    has_image: bool = False,
+    logger=None
 ) -> Dict:
-    return PreprocessSelect(conversation_lib.default_conversation.version)(sources, tokenizer, has_image)
+    preprocess_cls = PreprocessSelect(conversation_lib.default_conversation.version, logger)
+    if logger:
+        logger.info(f"Using preprocess class: {preprocess_cls.__name__ if hasattr(preprocess_cls, '__name__') else preprocess_cls}")
+    else:
+        rank0_print(f"Using preprocess class: {preprocess_cls.__name__ if hasattr(preprocess_cls, '__name__') else preprocess_cls}")
+    return preprocess_cls(sources, tokenizer, has_image)

@@ -20,16 +20,16 @@ from models.components.utils import rank0_print
 IGNORE_INDEX = -100
 class LazySupervisedDataset(Dataset):
     """Dataset for supervised fine-tuning."""
-
     def __init__(self, data_path: str,
                  tokenizer: transformers.PreTrainedTokenizer,
-                 data_args: DataArguments):
+                 data_args: DataArguments,
+                 logger=None):
         super(LazySupervisedDataset, self).__init__()
         list_data_dict = json.load(open(data_path, "r"))
         self.tokenizer = tokenizer
         self.list_data_dict = list_data_dict
         self.data_args = data_args
-
+        self.logger = logger
     def __len__(self):
         return len(self.list_data_dict)
 
@@ -92,9 +92,10 @@ class LazySupervisedDataset(Dataset):
         data_dict = preprocess(
             sources,
             self.tokenizer,
-            has_image=('image' in self.list_data_dict[i]))
-        
-        
+            has_image=('image' in self.list_data_dict[i]),
+            logger=self.logger
+        )
+
         if isinstance(i, int):
             data_dict = dict(input_ids=data_dict["input_ids"][0],
                              labels=data_dict["labels"][0])
@@ -176,11 +177,12 @@ def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer,
                 data_collator=data_collator)
 
 def make_supervised_data_module_with_eval(tokenizer: transformers.PreTrainedTokenizer,
-                                          data_args) -> Dict:
+                                          data_args, logger) -> Dict:
     def create_train_dataset():
         return LazySupervisedDataset(tokenizer=tokenizer,
                                    data_path=data_args.data_path,
-                                   data_args=data_args)
+                                   data_args=data_args,
+                                   logger=logger)
     
     def create_eval_dataset():
         if data_args.eval_data_path is None or data_args.eval_data_path == "":
@@ -188,7 +190,8 @@ def make_supervised_data_module_with_eval(tokenizer: transformers.PreTrainedToke
             return None
         return LazySupervisedDataset(tokenizer=tokenizer,
                                    data_path=data_args.eval_data_path,
-                                   data_args=data_args)
+                                   data_args=data_args,
+                                   logger=logger)
     with ThreadPoolExecutor(max_workers=2) as executor:
         train_future = executor.submit(create_train_dataset)
         eval_future = executor.submit(create_eval_dataset)

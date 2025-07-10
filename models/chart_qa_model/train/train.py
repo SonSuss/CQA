@@ -232,8 +232,8 @@ def train():
     if training_args.bits in [4, 8]:
         lora_kbit_setting(model, training_args)
     
-    data_module = make_supervised_data_module_with_eval(tokenizer=tokenizer,
-                                              data_args=data_args)
+    data_module = make_supervised_data_module_with_eval(tokenizer=tokenizer, data_args=data_args, logger=logger)
+    
     vision_tower_params = sum(p.numel() for p in model.get_model().vision_tower.parameters())
     vision_tower_trainable = sum(p.numel() for p in model.get_model().vision_tower.parameters() if p.requires_grad)
     mm_projector_params = sum(p.numel() for p in model.get_model().mm_projector.parameters() if p.requires_grad)
@@ -291,6 +291,7 @@ def train():
                            args=training_args,
                            **data_module,
                            custom_logger=logger)
+    
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         trainer.train(resume_from_checkpoint=True)
     else:
