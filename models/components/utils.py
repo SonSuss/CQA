@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import transformers
 import os
+import logging
 
 
 from transformers import BitsAndBytesConfig
@@ -133,6 +134,21 @@ def lora_kbit_setting(model, training_args):
 def rank0_print(*args):
     if os.environ["RANK"] == '0':
         print(*args)
+        
+
+def get_log_writer(log_dir, log_name="train.log", level=logging.INFO):
+    os.makedirs(log_dir, exist_ok=True)
+    log_path = os.path.join(log_dir, log_name)
+    logger = logging.getLogger(log_name)
+    logger.setLevel(level)
+    logger.propagate = False  
+    logger.handlers = []
+    fh = logging.FileHandler(log_path)
+    fh.setLevel(level)
+    fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+    logger.addHandler(fh)
+    return logger
+
         
 def lora_save_model(model, training_args):
     state_dict = get_peft_state_maybe_zero_3(

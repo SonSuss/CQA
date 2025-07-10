@@ -10,7 +10,6 @@ from transformers.trainer import (
     get_parameter_names,
     has_length,
     ALL_LAYERNORM_LAYERS,
-    # ShardedDDPOption,
     logger,
 )
 from typing import List, Optional
@@ -151,20 +150,26 @@ class LLaVATrainer(Trainer):
         if self.args.group_by_modality_length:
             lengths = train_dataset.modality_lengths
             return LengthGroupedSampler(
-                # self.args.train_batch_size * self.args.gradient_accumulation_steps, # TODO: seems that we should not have gradient_accumulation_steps
                 self.args.train_batch_size,
                 world_size=self.args.world_size,
                 lengths=lengths,
                 group_by_modality=True,
             )
         else:
-            # Try to call parent method with dataset parameter if it supports it
             try:
                 return super()._get_train_sampler(dataset)
             except TypeError:
                 # Fall back to parameterless call for older transformers versions
                 return super()._get_train_sampler()
-
+            
+    #override the log method to use custom logger instead of printing to console
+    def log(self, logs):
+        if self.custom_logger is not None:
+            for key, value in logs.items():
+                self.custom_logger.info(f"{key}: {value}")
+        else:
+            super().log(logs)
+            
     def create_optimizer(self):
         """
         Setup the optimizer.

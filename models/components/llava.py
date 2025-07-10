@@ -17,10 +17,10 @@ DEFAULT_IM_START_TOKEN = "<im_start>"
 DEFAULT_IM_END_TOKEN = "<im_end>"
 
 def build_vision_tower(config, delay_load=False):
-    if config.vision_tower == "siglip_tome":
+    if config.vision_tower == "mPLUG/TinyChart-3B-768-siglip":
         module = importlib.import_module("models.components.vision_towers.siglip_tome.siglip_tome")
-    elif config.vision_tower == "vit":
-        module = importlib.import_module("models.components.vision_towers.vit.vit")
+    # elif config.vision_tower == "vit":
+    #     module = importlib.import_module("models.components.vision_towers.vit.vit")
     else:
         raise ValueError("Unknown vision tower")
     return module.build_vision_tower(config, delay_load=delay_load)

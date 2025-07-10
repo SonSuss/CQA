@@ -5,7 +5,7 @@ import subprocess
 from models.chart_qa_model.model.phi_4_llava import PhiLlava_config, PhiLlavaForCausalLM
 from models.components.train.llava_trainer import LLaVATrainer
 from models.components.config import ModelArguments, DataArguments, TrainingArguments
-from models.components.utils import get_bnb_model_args, lora_setting, smart_tokenizer_and_embedding_resize, unlock_vit, lora_kbit_setting
+from models.components.utils import get_bnb_model_args, lora_setting, smart_tokenizer_and_embedding_resize, unlock_vit, lora_kbit_setting, get_log_writer
 from models.components.train.llava_trainer import LLaVATrainer
 from models.components.train.train_utils import *
 from models.components import conversation as conversation_lib
@@ -19,14 +19,14 @@ from transformers import AutoTokenizer
 
 #model config
 model_args = ModelArguments(
-    model_name_or_path="microsoft/Phi-4-mini-instruct",
+    model_name_or_path="microsoft/Phi-3-mini-4k-instruct",
     version="phi-4-mini", # note: config the converstion version
     freeze_backbone=True,
     tune_mm_mlp_adapter=False,
     vision_tower="mPLUG/TinyChart-3B-768-siglip",
     mm_vision_select_layer=-1,
     pretrain_mm_mlp_adapter=None,
-    mm_projector_type="mlp2x_gelu",
+    mm_projector_type="linear",
     mm_use_im_start_end=False,
     mm_use_im_patch_token=False,
     mm_patch_merge_type="flat",
@@ -80,6 +80,15 @@ training_args = TrainingArguments(
     warmup_steps=100,
     max_grad_norm=1.0
 )
+
+logger = get_log_writer(
+    log_dir=training_args.output_dir,
+    log_name="train.log",
+    level=logging.INFO
+)
+logger.info("Model arguments: %s", model_args)
+logger.info("Data arguments: %s", data_args)
+logger.info("Training arguments: %s", training_args)
 
 def train():
     global local_rank
@@ -229,44 +238,59 @@ def train():
     vision_tower_trainable = sum(p.numel() for p in model.get_model().vision_tower.parameters() if p.requires_grad)
     mm_projector_params = sum(p.numel() for p in model.get_model().mm_projector.parameters() if p.requires_grad)
     llm_backbone_params = sum(p.numel() for p in model.model.parameters() if p.requires_grad)
-    print(f"Vision Tower total params: {vision_tower_params:,}")
-    print(f"Vision Tower trainable params: {vision_tower_trainable:,}")
-    print(f"MM Projector trainable params: {mm_projector_params:,}")
-    print(f"LLM Backbone trainable params: {llm_backbone_params:,}")
-    print("mm_projector: ",model.get_model().mm_projector)
-# Debug: Find what's actually trainable
-    print("\n=== DEBUGGING TRAINABLE PARAMETERS ===")
+    logger.info(f"Vision Tower total params: {vision_tower_params:,}")
+    logger.info(f"Vision Tower trainable params: {vision_tower_trainable:,}")
+    logger.info(f"MM Projector trainable params: {mm_projector_params:,}")
+    logger.info(f"LLM Backbone trainable params: {llm_backbone_params:,}")
+    logger.info(f"mm_projector: {model.get_model().mm_projector}")
+    
+    
     total_trainable = 0
     component_counts = {}
-    
-    for name, param in model.named_parameters():#named_modules()?
+    for name, param in model.named_parameters():
         if param.requires_grad:
             component = name.split('.')[0] if '.' in name else name
             if component not in component_counts:
                 component_counts[component] = 0
             component_counts[component] += param.numel()
             total_trainable += param.numel()
-    
-    print("Trainable parameters by component:")
+
+    logger.info("Trainable parameters by component:")
     for component, count in sorted(component_counts.items()):
-        print(f"  {component}: {count:,}")
+        logger.info(f"  {component}: {count:,}")
+    logger.info(f"Calculated total trainable by component: {total_trainable:,}")
+
+    total_trainable = 0
+    module_counts = {}
+    for name, param in model.named_modules():
+        if param.requires_grad:
+            module = name.split('.')[0] if '.' in name else name
+            if module not in module_counts:
+                module_counts[module] = 0
+            module_counts[module] += param.numel()
+            total_trainable += param.numel()
+    logger.info("Trainable parameters by module:")
+    for module, count in sorted(module_counts.items()):
+        logger.info(f"  {module}: {count:,}")
+    logger.info(f"Calculated total trainable by module: {total_trainable:,}")
     
-    print(f"\nCalculated total trainable: {total_trainable:,}")
-    print(f"PyTorch total trainable: {sum(p.numel() for p in model.parameters() if p.requires_grad):,}")
+    logger.info(f"PyTorch total trainable: {sum(p.numel() for p in model.parameters() if p.requires_grad):,}")
     
     # Check if there are embedding parameters being trained
     embed_trainable = sum(p.numel() for p in model.get_input_embeddings().parameters() if p.requires_grad)
     output_embed_trainable = sum(p.numel() for p in model.get_output_embeddings().parameters() if p.requires_grad)
-    print(f"Input embeddings trainable: {embed_trainable:,}")
-    print(f"Output embeddings trainable: {output_embed_trainable:,}")
+    logger.info(f"Input embeddings trainable: {embed_trainable:,}")
+    logger.info(f"Output embeddings trainable: {output_embed_trainable:,}")
     
-    print("mm_projector: ",model.get_model().mm_projector)
-    print("trainable parameters: ", sum(p.numel() for p in model.parameters() if p.requires_grad))
-    print("total parameters: ", sum(p.numel() for p in model.parameters()))
+    logger.info("mm_projector: ",model.get_model().mm_projector)
+    logger.info("trainable parameters: ", sum(p.numel() for p in model.parameters() if p.requires_grad))
+    logger.info("total parameters: ", sum(p.numel() for p in model.parameters()))
+    
     trainer = LLaVATrainer(model=model,
                            tokenizer=tokenizer,
                            args=training_args,
-                           **data_module)
+                           **data_module,
+                           custom_logger=logger)
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         trainer.train(resume_from_checkpoint=True)
     else:
