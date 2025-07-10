@@ -8,11 +8,11 @@ from tqdm import tqdm
 import shortuuid
 
 
-from models.data_generator.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
+from CQA.models.components.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
 from CQA.models.components.conversation import conv_templates, SeparatorStyle
 from models.data_generator.builder import load_pretrained_model
-from models.data_generator.train.utils import disable_torch_init
-from models.data_generator.mm_utils import tokenizer_image_token, process_images, get_model_name_from_path
+from CQA.models.components.utils import disable_torch_init
+from CQA.models.components.mm_utils import tokenizer_image_token, process_images, get_model_name_from_path
 from torch.utils.data import Dataset, DataLoader
 
 from PIL import Image

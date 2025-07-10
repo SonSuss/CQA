@@ -1,33 +1,26 @@
 import pathlib
 import os
-import copy
 import subprocess
 
-from models.data_generator.model.sigllama import SigLlamaForCausalLM, SiglipLlamaConfig
+from models.chart_qa_model.model.phi_4_llava import PhiLlava_config, PhiLlavaForCausalLM
+from models.components.train.llava_trainer import LLaVATrainer
 from models.components.config import ModelArguments, DataArguments, TrainingArguments
 from models.components.utils import get_bnb_model_args, lora_setting, smart_tokenizer_and_embedding_resize, unlock_vit, lora_kbit_setting
 from models.components.train.llava_trainer import LLaVATrainer
-from models.components import conversation as conversation_lib
 from models.components.train.train_utils import *
+from models.components import conversation as conversation_lib
 from data.dataset import *
-from huggingface_hub import login
-login(token=os.environ.get("HF_TOKEN"))
-result = subprocess.run(["huggingface-cli", "whoami"], capture_output=True, text=True)
-print("Output:\n", result.stdout)
 
 import transformers
 import torch
 
 from peft import prepare_model_for_kbit_training
-from transformers import PreTrainedTokenizerFast
-
-
-#train config
+from transformers import AutoTokenizer
 
 #model config
 model_args = ModelArguments(
-    model_name_or_path="meta-llama/Llama-3.1-8B-Instruct",
-    version="llama_3",
+    model_name_or_path="microsoft/Phi-4-mini-instruct",
+    version="phi-4-mini", # note: config the converstion version
     freeze_backbone=True,
     tune_mm_mlp_adapter=False,
     vision_tower="mPLUG/TinyChart-3B-768-siglip",
@@ -88,20 +81,15 @@ training_args = TrainingArguments(
     max_grad_norm=1.0
 )
 
-
-
 def train():
     global local_rank
     local_rank = training_args.local_rank
-
-    # prepare model and tokenizer
     compute_dtype = (torch.float16 if training_args.fp16 else (torch.bfloat16 if training_args.bf16 else torch.float32))
     bnb_model_from_pretrained_args = get_bnb_model_args(training_args)
-        #load model llm
     if model_args.vision_tower is not None:
         model_name = model_args.model_name_or_path
-        cfg_pretrained = SiglipLlamaConfig.from_pretrained(model_name)
-        model_class = SigLlamaForCausalLM
+        cfg_pretrained = PhiLlava_config.from_pretrained(model_name)
+        model_class = PhiLlavaForCausalLM
         model = model_class.from_pretrained(
             model_args.model_name_or_path,
             config=cfg_pretrained,
@@ -109,18 +97,22 @@ def train():
             **bnb_model_from_pretrained_args,
             # attn_implementation="flash_attention_2",
             attn_implementation=None,
-            torch_dtype=compute_dtype
+            torch_dtype=compute_dtype,
+            trust_remote_code=True
         )
     else:
-        model = transformers.LlamaForCausalLM.from_pretrained(
+        model = PhiLlavaForCausalLM.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            **bnb_model_from_pretrained_args
+            **bnb_model_from_pretrained_args,
+            # attn_implementation="flash_attention_2",
+            attn_implementation=None,
+            torch_dtype=compute_dtype,
+            trust_remote_code=True
         )
-
+        
     if model_args.freeze_backbone:
         model.model.requires_grad_(False)
-        
     if training_args.bits in [4, 8]:
         model.config.torch_dtype = (
             torch.float32 if training_args.fp16 else (torch.bfloat16 if training_args.bf16 else torch.float32))
@@ -133,14 +125,14 @@ def train():
     if training_args.lora_enable:
         model = lora_setting(model, training_args)
         
-    # using llama tokenizer
-    tokenizer = PreTrainedTokenizerFast.from_pretrained(
-        model_args.model_name_or_path,
+    tokenizer = AutoTokenizer.from_pretrained(
+    model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
         model_max_length=training_args.model_max_length,
         padding_side="right",
         use_fast=True,
-    )
+        trust_remote_code=True
+        )
     
     if model_args.version == "v0":
         if tokenizer.pad_token is None:
@@ -165,15 +157,12 @@ def train():
 
     model.config.tokenizer_padding_side = tokenizer.padding_side
     
-    #load vision tower
     if model_args.vision_tower is not None:
-        # model.config.tune_embed_tokens = training_args.tune_embed_tokens = model_args.tune_embed_tokens
         model.get_model().initialize_vision_modules(
             model_args=model_args,
             fsdp=training_args.fsdp
         )
         if model_args.tune_vision_tower:
-            # Only enable if you actually want to train vision tower parameters too
             for p in model.get_vision_tower().parameters():
                 p.requires_grad = True
             print(f"Vision tower frozen - trainable params: {sum(p.numel() for p in model.get_vision_tower().parameters() if p.requires_grad)}")
@@ -210,31 +199,30 @@ def train():
         if training_args.freeze_mm_mlp_adapter:
             for p in model.get_model().mm_projector.parameters():
                 p.requires_grad = False
-
+        
         model.config.tune_vision_tower = training_args.tune_vision_tower = model_args.tune_vision_tower
         model.config.tune_entire_model = training_args.tune_entire_model = model_args.tune_entire_model
-            
+        
         if model_args.tune_entire_model:
-            lr_of_mlp = training_args.mm_projector_lr if training_args.mm_projector_lr is not None else training_args.learning_rate
-            # Tune the MLP, The LR of MLP is {lr_of_mlp}
+            # lr_of_mlp = training_args.mm_projector_lr if training_args.mm_projector_lr is not None else training_args.learning_rate
             if training_args.lora_enable:
                 unlock_vit(training_args, model_args, vision_tower)
             else:
                 model.requires_grad_(True)
                 unlock_vit(training_args, model_args, vision_tower)
-
+        
         if training_args.bits in [4, 8]:
-            model.get_model().mm_projector.to(dtype=compute_dtype, device=training_args.device)
+            model.get_model().mm_projector.to(dtype=compute_dtype, device=training_args.device)  
 
         model.config.mm_use_im_start_end = data_args.mm_use_im_start_end = model_args.mm_use_im_start_end
         model.config.mm_projector_lr = training_args.mm_projector_lr
         training_args.use_im_start_end = model_args.mm_use_im_start_end
         model.config.mm_use_im_patch_token = model_args.mm_use_im_patch_token
         model.initialize_vision_tokenizer(model_args, tokenizer=tokenizer)
-        
+
     if training_args.bits in [4, 8]:
         lora_kbit_setting(model, training_args)
-
+    
     data_module = make_supervised_data_module_with_eval(tokenizer=tokenizer,
                                               data_args=data_args)
     vision_tower_params = sum(p.numel() for p in model.get_model().vision_tower.parameters())
@@ -293,6 +281,7 @@ def train():
     else:
         safe_save_model_for_hf_trainer(trainer=trainer,
                                        output_dir=training_args.output_dir)
+
 
 if __name__ == "__main__":
     train()

@@ -19,7 +19,7 @@ from transformers.utils import ModelOutput
 from functools import partial, reduce
 from PIL import Image
 
-from models.components.merge import bipartite_soft_matching, merge_source, merge_wavg
+from CQA.models.components.vision_towers.merge import bipartite_soft_matching, merge_source, merge_wavg
 
 
 class SigLipImageProcessor:

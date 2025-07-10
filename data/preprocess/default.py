@@ -5,7 +5,7 @@ import transformers
 import torch
 
 from CQA.models.components import conversation as conversation_lib
-from models.data_generator.mm_utils import tokenizer_image_token
+from CQA.models.components.mm_utils import tokenizer_image_token
 from data.process import register_preprocess
 
 IGNORE_INDEX=-100

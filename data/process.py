@@ -7,9 +7,9 @@ import transformers
 
 
 from CQA.models.components import conversation as conversation_lib
-from models.data_generator.train.config import DataArguments
-from models.data_generator.train.utils import rank0_print
-from models.data_generator.constants import DEFAULT_IM_END_TOKEN,DEFAULT_IM_START_TOKEN, DEFAULT_IMAGE_TOKEN
+from CQA.models.components.config import DataArguments
+from CQA.models.components.utils import rank0_print
+from CQA.models.components.constants import DEFAULT_IM_END_TOKEN,DEFAULT_IM_START_TOKEN, DEFAULT_IMAGE_TOKEN
 
 PREPROCESS_REGISTRY = {}
 

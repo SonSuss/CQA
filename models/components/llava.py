@@ -1,9 +1,11 @@
+import importlib
 from abc import ABC, abstractmethod
 
 import torch
 import torch.nn as nn
 
-from CQA.models.data_generator.model.vision_tower import build_vision_tower
+# from models.components.vision_towers.siglip_tome.siglip_tome import build_vision_tower
+# from models.components.vision_towers.vit.vit import build_vision_tower
 from models.components.mm_projector import build_vision_projector
 
 
@@ -14,6 +16,14 @@ DEFAULT_IMAGE_PATCH_TOKEN = "<im_patch>"
 DEFAULT_IM_START_TOKEN = "<im_start>"
 DEFAULT_IM_END_TOKEN = "<im_end>"
 
+def build_vision_tower(config, delay_load=False):
+    if config.vision_tower == "siglip_tome":
+        module = importlib.import_module("models.components.vision_towers.siglip_tome.siglip_tome")
+    elif config.vision_tower == "vit":
+        module = importlib.import_module("models.components.vision_towers.vit.vit")
+    else:
+        raise ValueError("Unknown vision tower")
+    return module.build_vision_tower(config, delay_load=delay_load)
 
 class LlavaMetaModel:
 

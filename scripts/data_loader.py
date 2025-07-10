@@ -101,6 +101,8 @@ def check_corresponding_files(annotations_path, tables_path, output_path):
     with open(output_path, 'w') as f:
         json.dump(names_dict, f, indent=2)
 
+
+
 def __main__():
     url = "https://huggingface.co/datasets/ahmed-masry/ChartQA/resolve/main/ChartQA%20Dataset.zip"
     download_and_extract(url)

@@ -1,9 +1,9 @@
 
 
-from models.data_generator.mm_utils import tokenizer_image_token, KeywordsStoppingCriteria
+from CQA.models.components.mm_utils import tokenizer_image_token, KeywordsStoppingCriteria
 from CQA.models.components.conversation import conv_templates, SeparatorStyle
 
-from models.data_generator.constants import IMAGE_TOKEN_INDEX,DEFAULT_IMAGE_TOKEN,DEFAULT_IM_START_TOKEN,DEFAULT_IM_END_TOKEN,IMAGE_PLACEHOLDER
+from CQA.models.components.constants import IMAGE_TOKEN_INDEX,DEFAULT_IMAGE_TOKEN,DEFAULT_IM_START_TOKEN,DEFAULT_IM_END_TOKEN,IMAGE_PLACEHOLDER
 
 import torch
 import re

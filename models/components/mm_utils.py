@@ -2,7 +2,7 @@ from PIL import Image
 from io import BytesIO
 import base64
 
-from models.data_generator.constants import IMAGE_TOKEN_INDEX
+from CQA.models.components.constants import IMAGE_TOKEN_INDEX
 
 import torch
 from transformers import StoppingCriteria
