@@ -391,7 +391,7 @@ Answer the questions.""",
     sep="<|im_end|>",
 )
 
-conv_phi_3_instruct = Conversation(
+conv_phi_instruct = Conversation(
     system="",
     roles=("<|user|>\n", "<|assistant|>\n"),
     version="phi",
@@ -412,7 +412,7 @@ conv_templates = {
     "mistral_instruct": conv_mistral_instruct,
     "chatml_direct": conv_chatml_direct,
     "mistral_direct": conv_chatml_direct,
-    "phi_3_instruct": conv_phi_3_instruct,
+    "phi_3_instruct": conv_phi_instruct,
 
     "plain": conv_llava_plain,
     "v0_plain": conv_llava_plain,
