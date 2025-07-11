@@ -2,6 +2,7 @@ import json
 import os
 import requests
 import zipfile
+import shutil
 
 from datasets import load_dataset
 from tqdm import tqdm
@@ -47,6 +48,26 @@ from PIL import Image
 #         split_set = dataset[split]
 #         json_filename = f"{data_folder}/{split}.json"
 #         save_dataset(split_set, json_filename, images_folder)
+
+def data_preprocess_for_chart_QA(data_path,output_path):
+    input_path = os.path.join(data_path, "ChartQA Dataset")
+    output_folder = os.path.join(data_path, output_path)
+    os.makedirs(output_folder, exist_ok=True)
+    image_path = os.path.join(output_folder,"images")
+    os.makedirs(image_path, exist_ok=True)
+    src_data_img = ["train", "test", "val"]
+    for name in src_data_img:
+        src_folder = os.path.join(input_path, name)
+        src_folder = os.path.join(src_folder, "png")
+        for img in os.listdir(src_folder):
+            img_path = os.path.join(src_folder, img)
+            out_path = os.path.join(image_path, img)
+            if os.path.isfile(img_path):
+                try:
+                    shutil.copy2(img_path, out_path)
+                except FileExistsError:
+                    print(f"Skipped (exists): {img_path}")
+    print(len(os.listdir(image_path)))
 
 def download_and_extract(url, extract_path="data/"):
     try:
@@ -102,9 +123,8 @@ def check_corresponding_files(annotations_path, tables_path, output_path):
         json.dump(names_dict, f, indent=2)
 
 
-
 def __main__():
-    url = "https://huggingface.co/datasets/ahmed-masry/ChartQA/resolve/main/ChartQA%20Dataset.zip"
+    url = "https://huggingface.com/datasets/ahmed-masry/ChartQA/resolve/main/ChartQA%20Dataset.zip"
     download_and_extract(url)
     json_folder = "data/extracted_files/ChartQA Dataset/train/annotations"
     csv_folder = "data/extracted_files/ChartQA Dataset/train/tables"

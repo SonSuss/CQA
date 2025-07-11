@@ -52,9 +52,9 @@ def download_datasets():
     from scripts.data_loader import download_and_extract, check_corresponding_files
 
     url = "https://huggingface.co/datasets/ahmed-masry/ChartQA/resolve/main/ChartQA%20Dataset.zip"
-    extract_path = "/root/data/extracted_files"
+    extract_path = "/root/data/Chart_QA"
 
-    download_and_extract(url, extract_path=extract_path)
+    download_and_extract(url, extract_path)
 
     json_folder = f"{extract_path}/ChartQA Dataset/train/annotations"
     csv_folder = f"{extract_path}/ChartQA Dataset/train/tables"
@@ -70,7 +70,6 @@ def download_datasets():
 def update_code():
     """Dedicated function to update code and show current status"""
     pull_latest_code()
-    
     # Show file tree to verify update
     import os
     def show_tree(path, prefix="", max_depth=3, current_depth=0):
@@ -84,13 +83,24 @@ def update_code():
                 item_path = os.path.join(path, item)
                 is_last = i == len(items) - 1
                 current_prefix = "└── " if is_last else "├── "
-                print(f"{prefix}{current_prefix}{item}")
-                if os.path.isdir(item_path) and current_depth < max_depth - 1:
-                    next_prefix = prefix + ("    " if is_last else "│   ")
-                    show_tree(item_path, next_prefix, max_depth, current_depth + 1)
+                
+                # Special handling for images folders
+                if os.path.isdir(item_path) and item.lower() in ['images', 'image', 'png', 'jpg', 'jpeg']:
+                    try:
+                        image_files = [f for f in os.listdir(item_path) 
+                                     if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff'))]
+                        print(f"{prefix}{current_prefix}{item}/ ({len(image_files)} images)")
+                    except PermissionError:
+                        print(f"{prefix}{current_prefix}{item}/ (images - permission denied)")
+                elif os.path.isdir(item_path):
+                    print(f"{prefix}{current_prefix}{item}/")
+                    if current_depth < max_depth - 1:
+                        next_prefix = prefix + ("    " if is_last else "│   ")
+                        show_tree(item_path, next_prefix, max_depth, current_depth + 1)
+                else:
+                    print(f"{prefix}{current_prefix}{item}")
         except PermissionError:
             pass
-    
     print("\n📁 Repository structure:")
     show_tree("/root/CQA")
     
