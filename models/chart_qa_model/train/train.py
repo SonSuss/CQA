@@ -295,15 +295,15 @@ def train():
     else:
         trainer.train()
 
-    trainer.save_state()
+    # trainer.save_state()
     
-    model.config.use_cache = True
+    # model.config.use_cache = True
     
-    if training_args.lora_enable:
-        lora_save_model(model, training_args)
-    else:
-        safe_save_model_for_hf_trainer(trainer=trainer,
-                                       output_dir=training_args.output_dir)
+    # if training_args.lora_enable:
+    #     lora_save_model(model, training_args)
+    # else:
+    #     safe_save_model_for_hf_trainer(trainer=trainer,
+    #                                    output_dir=training_args.output_dir)
 
 
 if __name__ == "__main__":

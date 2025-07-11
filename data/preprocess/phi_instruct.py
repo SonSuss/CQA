@@ -13,13 +13,13 @@ from data.process import register_preprocess
 
 IGNORE_INDEX = -100
 
-@register_preprocess('phi_3_instruct')
+@register_preprocess('phi_instruct')
 def preprocess_phi_3_instruct(
     sources,
     tokenizer: transformers.PreTrainedTokenizer,
     has_image: bool = False
 ) -> Dict:
-    conv_template = conversation_lib.conv_phi_3_instruct.copy()
+    conv_template = conversation_lib.conv_phi_instruct.copy()
     roles = {"human": conv_template.roles[0], "gpt": conv_template.roles[1]}
 
     conversations = []
