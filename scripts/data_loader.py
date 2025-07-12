@@ -49,25 +49,131 @@ from PIL import Image
 #         json_filename = f"{data_folder}/{split}.json"
 #         save_dataset(split_set, json_filename, images_folder)
 
+
 def data_preprocess_for_chart_QA(data_path,output_path):
     input_path = os.path.join(data_path, "ChartQA Dataset")
     output_folder = os.path.join(data_path, output_path)
     os.makedirs(output_folder, exist_ok=True)
     image_path = os.path.join(output_folder,"images")
     os.makedirs(image_path, exist_ok=True)
-    src_data_img = ["train", "test", "val"]
-    for name in src_data_img:
+    src_data = ["train", "test", "val"]
+    val_set, train_set = [], []
+    image_track = {}
+    copied_images = set()  # Track copied images to avoid duplicates
+    
+    print("Copying images (avoiding duplicates)...")
+    total_copied = 0
+    total_skipped = 0
+    
+    for name in src_data:
         src_folder = os.path.join(input_path, name)
-        src_folder = os.path.join(src_folder, "png")
-        for img in os.listdir(src_folder):
-            img_path = os.path.join(src_folder, img)
+        src_img_folder = os.path.join(src_folder, "png")
+        if not os.path.exists(src_img_folder):
+            continue
+            
+        for img in os.listdir(src_img_folder):
+            img_path = os.path.join(src_img_folder, img)
             out_path = os.path.join(image_path, img)
+            img_id = os.path.splitext(img)[0]
+            
             if os.path.isfile(img_path):
-                try:
-                    shutil.copy2(img_path, out_path)
-                except FileExistsError:
-                    print(f"Skipped (exists): {img_path}")
-    print(len(os.listdir(image_path)))
+                # Check if we already copied this image
+                if img not in copied_images and not os.path.exists(out_path):
+                    try:
+                        shutil.copy(img_path, out_path)  # Use copy instead of copy2 (faster)
+                        copied_images.add(img)
+                        total_copied += 1
+                    except Exception as e:
+                        print(f"Error copying {img}: {e}")
+                        continue
+                else:
+                    total_skipped += 1
+                
+                # Always track the image location regardless of copy status
+                image_track[img_id] = out_path
+    
+    print(f"Images processed: {total_copied} copied, {total_skipped} skipped")
+
+    print(f"Images processed: {total_copied} copied, {total_skipped} skipped")
+
+    print("Processing JSON data...")
+    for name in src_data:
+        name_path = os.path.join(input_path, name)
+        data = []
+        
+        # Load augmented and human data
+        aug_file = f"{name_path}/{name}_augmented.json"
+        human_file = f"{name_path}/{name}_human.json"
+        
+        if os.path.exists(aug_file):
+            with open(aug_file, "r", encoding="utf-8") as f:
+                data += json.load(f)
+        
+        if os.path.exists(human_file):
+            with open(human_file, "r", encoding="utf-8") as f:
+                data += json.load(f)
+        
+        print(f"Processing {len(data)} items from {name} split...")
+        
+        if name == 'val':
+            for item in data:
+                img_id = os.path.splitext(item['imgname'])[0]
+                if img_id in image_track:
+                    entry = {
+                        "id": img_id,
+                        "image": image_track[img_id],
+                        "conversations": [
+                            {
+                                "from": "human",
+                                "value": "<image>\n" + item['query']
+                            },
+                            {
+                                "from": "gpt",
+                                "value": item['label']
+                            }
+                        ]
+                    }
+                    val_set.append(entry)
+        else:
+            for item in data:
+                img_id = os.path.splitext(item['imgname'])[0]
+                if img_id in image_track:
+                    entry = {
+                        "id": img_id,
+                        "image": image_track[img_id],
+                        "conversations": [
+                            {
+                                "from": "human",
+                                "value": "<image>\n" + item['query']
+                            },
+                            {
+                                "from": "gpt",
+                                "value": item['label']
+                            }
+                        ]
+                    }
+                    train_set.append(entry)
+
+    train_path = os.path.join(output_folder, "train.json")
+    val_path = os.path.join(output_folder, "val.json")
+
+    print("Saving JSON files...")
+    with open(train_path, "w", encoding="utf-8") as f:
+        json.dump(train_set, f, ensure_ascii=False, indent=2)
+
+    with open(val_path, "w", encoding="utf-8") as f:
+        json.dump(val_set, f, indent=2)
+    
+    print("Cleaning up original data...")
+    if os.path.exists(input_path) and os.path.isdir(input_path):
+        shutil.rmtree(input_path)
+
+    # Final results
+    print(f"Total images in output: {len(os.listdir(image_path))}")
+    if train_set:
+        print(f"Sample entry: {train_set[0]}")
+    print(f"Train_set len: {len(train_set)}")
+    print(f"Val_set len: {len(val_set)}")
 
 def download_and_extract(url, extract_path="data/"):
     try:

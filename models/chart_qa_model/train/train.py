@@ -90,7 +90,7 @@ logger.info("Model arguments: %s", model_args)
 logger.info("Data arguments: %s", data_args)
 logger.info("Training arguments: %s", training_args)
 
-def train():
+def train(model_args:ModelArguments, data_args: DataArguments, training_args: TrainingArguments):
     global local_rank
     local_rank = training_args.local_rank
     compute_dtype = (torch.float16 if training_args.fp16 else (torch.bfloat16 if training_args.bf16 else torch.float32))
