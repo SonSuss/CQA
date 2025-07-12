@@ -59,7 +59,6 @@ def data_preprocess_for_chart_QA(data_path,output_path):
     src_data = ["train", "test", "val"]
     val_set, train_set = [], []
     image_track = {}
-    copied_images = set()  # Track copied images to avoid duplicates
     
     print("Copying images (avoiding duplicates)...")
     total_copied = 0
@@ -73,22 +72,9 @@ def data_preprocess_for_chart_QA(data_path,output_path):
             
         for img in os.listdir(src_img_folder):
             img_path = os.path.join(src_img_folder, img)
-            out_path = os.path.join(image_path, img)
             img_id = os.path.splitext(img)[0]
             
             if os.path.isfile(img_path):
-                # Check if we already copied this image
-                if img not in copied_images:
-                    try:
-                        copied_images.add(img)
-                        total_copied += 1
-                    except Exception as e:
-                        print(f"Error copying {img}: {e}")
-                        continue
-                else:
-                    total_skipped += 1
-                
-                # Always track the image location regardless of copy status
                 image_track[img_id] = img_path
     
     print(f"Images processed: {total_copied} copied, {total_skipped} skipped")
@@ -163,12 +149,8 @@ def data_preprocess_for_chart_QA(data_path,output_path):
     with open(val_path, "w", encoding="utf-8") as f:
         json.dump(val_set, f, indent=2)
     
-    print("Cleaning up original data...")
-    if os.path.exists(input_path) and os.path.isdir(input_path):
-        shutil.rmtree(input_path)
-
     # Final results
-    print(f"Total images in output: {len(os.listdir(image_path))}")
+    print(f"Total images: {len(image_track)}")
     if train_set:
         print(f"Sample entry: {train_set[0]}")
     print(f"Train_set len: {len(train_set)}")
