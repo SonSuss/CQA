@@ -43,9 +43,9 @@ def pull_latest_code():
 @app.function(
     image=image,
     volumes={"/root/data": volume},
-    timeout=1800,  # 30 minutes - much more time
-    cpu=4,         # Match Kaggle's 4 CPUs
-    memory=16384   # Match Kaggle's 16GB RAM
+    timeout=1800,  # 30 minutes
+    cpu=1,         # Default CPU - no waste
+    memory=1024    # Default memory - minimal cost
 )
 def download_datasets():
     # Pull latest code first
@@ -125,9 +125,9 @@ def update_code():
 @app.function(
     image=image,
     volumes={"/root/data": volume},
-    timeout=600,  # 10 minutes for download only
-    cpu=2,
-    memory=4096
+    timeout=600,   # 10 minutes
+    cpu=1,         # Default CPU - no waste
+    memory=1024    # Default memory - minimal cost
 )
 def download_only():
     """Fast download without preprocessing"""
@@ -151,9 +151,9 @@ def download_only():
 @app.function(
     image=image,
     volumes={"/root/data": volume},
-    timeout=1200,  # 20 minutes for preprocessing
-    cpu=4,
-    memory=8192
+    timeout=1200,  # 20 minutes
+    cpu=1,         # Default CPU - no waste for I/O bound tasks
+    memory=2048    # Increase to 2GB for safety
 )
 def preprocess_only():
     """Separate preprocessing step with progress tracking"""
@@ -181,5 +181,6 @@ def preprocess_only():
     print(f"✅ Preprocessing completed in {preprocess_time:.2f} seconds")
 
     volume.commit()
+
 
 

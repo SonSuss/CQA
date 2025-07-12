@@ -78,9 +78,8 @@ def data_preprocess_for_chart_QA(data_path,output_path):
             
             if os.path.isfile(img_path):
                 # Check if we already copied this image
-                if img not in copied_images and not os.path.exists(out_path):
+                if img not in copied_images:
                     try:
-                        shutil.copy(img_path, out_path)  # Use copy instead of copy2 (faster)
                         copied_images.add(img)
                         total_copied += 1
                     except Exception as e:
@@ -90,7 +89,7 @@ def data_preprocess_for_chart_QA(data_path,output_path):
                     total_skipped += 1
                 
                 # Always track the image location regardless of copy status
-                image_track[img_id] = out_path
+                image_track[img_id] = img_path
     
     print(f"Images processed: {total_copied} copied, {total_skipped} skipped")
 
@@ -235,3 +234,4 @@ def __main__():
     json_folder = "data/extracted_files/ChartQA Dataset/train/annotations"
     csv_folder = "data/extracted_files/ChartQA Dataset/train/tables"
     check_corresponding_files(json_folder, csv_folder, 'train_names.json')
+
