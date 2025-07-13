@@ -143,10 +143,18 @@ def get_log_writer(log_dir, log_name="train.log", level=logging.INFO):
     logger.setLevel(level)
     logger.propagate = False  
     logger.handlers = []
+
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
     fh = logging.FileHandler(log_path)
     fh.setLevel(level)
-    fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+    fh.setFormatter(formatter)
     logger.addHandler(fh)
+    ch = logging.StreamHandler()
+    ch.setLevel(level)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+    
     return logger
 
         

@@ -11,86 +11,20 @@ from models.components.train.train_utils import *
 from models.components import conversation as conversation_lib
 from data.dataset import *
 
-import transformers
 import torch
 
 from peft import prepare_model_for_kbit_training
 from transformers import AutoTokenizer
 
-#model config
-model_args = ModelArguments(
-    model_name_or_path="microsoft/Phi-4-mini-instruct",
-    version="phi_instruct",
-    freeze_backbone=True,
-    tune_mm_mlp_adapter=False,
-    vision_tower="mPLUG/TinyChart-3B-768-siglip",
-    mm_vision_select_layer=-1,
-    pretrain_mm_mlp_adapter=None,
-    mm_projector_type="linear",
-    mm_use_im_start_end=False,
-    mm_use_im_patch_token=False,
-    mm_patch_merge_type="flat",
-    mm_vision_select_feature="patch",
-    resampler_hidden_size=768,
-    num_queries=128,
-    num_resampler_layers=3,
-    tune_vision_tower=True,
-    tune_entire_model=False,
-    tune_vit_from_layer=-1,
-    tune_embed_tokens=False,
-)
-
-data_args = DataArguments(
-    data_path="data/train.json",
-    eval_data_path="data/val.json",
-    lazy_preprocess=True,
-    is_multimodal=True,
-    image_folder="",
-    image_aspect_ratio="square",
-)
-
-training_args = TrainingArguments(
-    output_dir="./checkpoints",
-    num_train_epochs=3,
-    per_device_train_batch_size=4,
-    per_device_eval_batch_size=4,
-    gradient_accumulation_steps=4,
-    evaluation_strategy="no",
-    save_strategy="steps",
-    save_steps=1000,
-    save_total_limit=10,
-    # learning_rate=1e-4,
-    mm_projector_lr=1e-4,
-    vision_tower_lr=5e-5,
-    weight_decay=0.0,
-    warmup_ratio=0.1,
-    lr_scheduler_type="cosine",
-    logging_steps=1,
-    fp16=False,
-    bf16=True,
-    model_max_length=1024,
-    gradient_checkpointing=True,
-    dataloader_num_workers=8,
-    dataloader_persistent_workers=True,
-    report_to="tensorboard",
-    cache_dir="./cache",
-    optim="adamw_torch",
-    bits=16,
-    group_by_modality_length=True,
-    warmup_steps=100,
-    max_grad_norm=1.0
-)
-
-logger = get_log_writer(
-    log_dir=training_args.output_dir,
-    log_name="train.log",
-    level=logging.INFO
-)
-logger.info("Model arguments: %s", model_args)
-logger.info("Data arguments: %s", data_args)
-logger.info("Training arguments: %s", training_args)
-
 def train(model_args:ModelArguments, data_args: DataArguments, training_args: TrainingArguments):
+    logger = get_log_writer(
+        log_dir=training_args.output_dir,
+        log_name="train.log",
+        level=logging.INFO
+    )
+    logger.info("Model arguments: %s", model_args)
+    logger.info("Data arguments: %s", data_args)
+    logger.info("Training arguments: %s", training_args)
     global local_rank
     local_rank = training_args.local_rank
     compute_dtype = (torch.float16 if training_args.fp16 else (torch.bfloat16 if training_args.bf16 else torch.float32))
@@ -307,4 +241,75 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
 
 
 if __name__ == "__main__":
-    train()
+    # Example configuration for testing
+    from models.components.config import ModelArguments, DataArguments, TrainingArguments
+    
+    model_args = ModelArguments(
+        model_name_or_path="microsoft/Phi-4-mini-instruct",
+        version="phi_instruct",
+        freeze_backbone=True,
+        tune_mm_mlp_adapter=False,
+        vision_tower="mPLUG/TinyChart-3B-768-siglip",
+        mm_vision_select_layer=-1,
+        pretrain_mm_mlp_adapter=None,
+        mm_projector_type="linear",
+        mm_use_im_start_end=False,
+        mm_use_im_patch_token=False,
+        mm_patch_merge_type="flat",
+        mm_vision_select_feature="patch",
+        resampler_hidden_size=768,
+        num_queries=128,
+        num_resampler_layers=3,
+        tune_vision_tower=True,
+        tune_entire_model=False,
+        tune_vit_from_layer=-1,
+        tune_embed_tokens=False,
+    )
+
+    data_args = DataArguments(
+        data_path="data/train.json",
+        eval_data_path="data/val.json",
+        lazy_preprocess=True,
+        is_multimodal=True,
+        image_folder="",
+        image_aspect_ratio="square",
+    )
+
+    training_args = TrainingArguments(
+        output_dir="./checkpoints",
+        num_train_epochs=1,  # Reduced for testing
+        per_device_train_batch_size=2,  # Reduced for testing
+        per_device_eval_batch_size=2,
+        gradient_accumulation_steps=4,
+        evaluation_strategy="no",
+        save_strategy="steps",
+        save_steps=100,  # More frequent saves for testing
+        save_total_limit=3,  # Limit checkpoints for testing
+        mm_projector_lr=1e-4,
+        vision_tower_lr=5e-5,
+        weight_decay=0.0,
+        warmup_ratio=0.1,
+        lr_scheduler_type="cosine",
+        logging_steps=1,
+        fp16=False,
+        bf16=True,
+        model_max_length=1024,
+        gradient_checkpointing=True,
+        dataloader_num_workers=4,  # Reduced for testing
+        dataloader_persistent_workers=True,
+        report_to="tensorboard",
+        cache_dir="./cache",
+        optim="adamw_torch",
+        bits=16,
+        group_by_modality_length=True,
+        warmup_steps=50,  # Reduced for testing
+        max_grad_norm=1.0,
+        local_rank=-1,  # For single GPU testing
+        device="cuda" if torch.cuda.is_available() else "cpu"
+    )
+    
+    train(
+        model_args=model_args,
+        data_args=data_args,
+        training_args=training_args
+    )

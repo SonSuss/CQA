@@ -17,6 +17,7 @@ image = (
     .workdir("/root/CQA")
 )
 
+
 def pull_latest_code():
     """Pull the latest code from Git repository"""
     import subprocess
@@ -29,15 +30,15 @@ def pull_latest_code():
         # Pull latest changes
         result = subprocess.run(["git", "pull", "origin", "main"], 
                               capture_output=True, text=True, check=True)
-        print(f"✅ Git pull successful: {result.stdout}")
+        print(f"Git pull successful: {result.stdout}")
         
         # Show current commit
         commit_result = subprocess.run(["git", "rev-parse", "--short", "HEAD"], 
                                      capture_output=True, text=True, check=True)
-        print(f"📌 Current commit: {commit_result.stdout.strip()}")
-        
+        print(f"Current commit: {commit_result.stdout.strip()}")
+
     except subprocess.CalledProcessError as e:
-        print(f"❌ Git pull failed: {e.stderr}")
+        print(f"Git pull failed: {e.stderr}")
         print("Continuing with existing code...")
 
 @app.function(
@@ -47,30 +48,19 @@ def pull_latest_code():
     cpu=1,         # Default CPU - no waste
     memory=1024    # Default memory - minimal cost
 )
-def download_datasets():
-    # Pull latest code first
+def download_preprocess_datasets():
     pull_latest_code()
-    
     from scripts.data_loader import download_and_extract, data_preprocess_for_chart_QA
     import time
-
     url = "https://huggingface.co/datasets/ahmed-masry/ChartQA/resolve/main/ChartQA%20Dataset.zip"
     extract_path = "/root/data/Chart_QA"
 
-    print("⏱️ Starting download...")
-    start_time = time.time()
     download_and_extract(url, extract_path)
-    download_time = time.time() - start_time
-    print(f"✅ Download completed in {download_time:.2f} seconds")
 
-    print("⏱️ Starting data preprocessing...")
-    preprocess_start = time.time()
+    print("Starting data preprocessing...")
     data_preprocess_for_chart_QA(extract_path, "processed_data")
-    preprocess_time = time.time() - preprocess_start
-    print(f"✅ Preprocessing completed in {preprocess_time:.2f} seconds")
 
     volume.commit()
-    print(f"📊 Total processing time: {(time.time() - start_time):.2f} seconds")
 
 @app.function(
     image=image,
@@ -125,9 +115,9 @@ def update_code():
 @app.function(
     image=image,
     volumes={"/root/data": volume},
-    timeout=600,   # 10 minutes
-    cpu=1,         # Default CPU - no waste
-    memory=1024    # Default memory - minimal cost
+    timeout=600,  
+    cpu=1, 
+    memory=1024    
 )
 def download_only():
     """Fast download without preprocessing"""
@@ -151,9 +141,9 @@ def download_only():
 @app.function(
     image=image,
     volumes={"/root/data": volume},
-    timeout=1200,  # 20 minutes
-    cpu=1,         # Default CPU - no waste for I/O bound tasks
-    memory=2048    # Increase to 2GB for safety
+    timeout=1200, 
+    cpu=1,  
+    memory=1024 
 )
 def preprocess_only():
     """Separate preprocessing step with progress tracking"""
@@ -167,10 +157,10 @@ def preprocess_only():
     # Check if data exists
     input_path = os.path.join(extract_path, "ChartQA Dataset")
     if not os.path.exists(input_path):
-        print("❌ Data not found. Run download_only() first.")
+        print("Data not found. Run download_only() first.")
         return
     
-    print("⏱️ Starting optimized preprocessing...")
+    print("Starting optimized preprocessing...")
     start_time = time.time()
     
     # Use the original function but with timing
@@ -178,9 +168,58 @@ def preprocess_only():
     data_preprocess_for_chart_QA(extract_path, "processed_data")
     
     preprocess_time = time.time() - start_time
-    print(f"✅ Preprocessing completed in {preprocess_time:.2f} seconds")
+    print(f"Preprocessing completed in {preprocess_time:.2f} seconds")
 
     volume.commit()
 
 
-
+@app.function(
+    image=image,
+    volumes={"/root/data": volume},
+    timeout=300,
+    cpu=1,
+    memory=1024
+)
+def get_training_status():
+    """Get current training status and live logs"""
+    import os
+    import glob
+    
+    checkpoint_dir = "/root/data/checkpoints"
+    
+    status = {
+        "training_active": False,
+        "latest_checkpoint": None,
+        "total_checkpoints": 0,
+        "log_tail": ""
+    }
+    
+    if os.path.exists(checkpoint_dir):
+        # Find checkpoints
+        checkpoints = glob.glob(os.path.join(checkpoint_dir, "checkpoint-*"))
+        status["total_checkpoints"] = len(checkpoints)
+        
+        if checkpoints:
+            # Get latest checkpoint
+            latest_checkpoint = max(checkpoints, key=lambda x: int(x.split('-')[-1]))
+            status["latest_checkpoint"] = os.path.basename(latest_checkpoint)
+        
+        # Read latest log entries
+        log_file = os.path.join(checkpoint_dir, "train.log")
+        if os.path.exists(log_file):
+            try:
+                with open(log_file, 'r') as f:
+                    lines = f.readlines()
+                    status["log_tail"] = ''.join(lines[-10:])  # Last 10 lines
+            except Exception as e:
+                status["log_tail"] = f"Error reading log: {e}"
+    
+    print(f"🎯 Training Status:")
+    print(f"Total checkpoints: {status['total_checkpoints']}")
+    print(f"Latest checkpoint: {status['latest_checkpoint']}")
+    
+    if status["log_tail"]:
+        print(f"\n📋 Recent log entries:")
+        print(status["log_tail"])
+    
+    return status
