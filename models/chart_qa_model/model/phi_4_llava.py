@@ -111,7 +111,7 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
                 images,
             )
         else:
-            inputs_embeds = self.get_model().embed_tokens(inputs)
+            inputs_embeds = self.get_model().model.embed_tokens(inputs)
 
         return super().generate(
             position_ids=position_ids,
