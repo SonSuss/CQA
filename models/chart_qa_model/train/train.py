@@ -18,11 +18,12 @@ from peft import prepare_model_for_kbit_training
 from transformers import AutoTokenizer
 
 
-def train(model_args:ModelArguments, data_args: DataArguments, training_args: TrainingArguments):
+def train(model_args:ModelArguments, data_args: DataArguments, training_args: TrainingArguments, log_rewrite: bool):
     global local_rank
     logger = get_log_writer(log_dir=training_args.output_dir,
                             log_name="train.log",
-                            level=logging.INFO)
+                            level=logging.INFO,
+                            rewrite=log_rewrite)
     logger.info("Model arguments: %s", model_args)
     logger.info("Data arguments: %s", data_args)
     logger.info("Training arguments: %s", training_args)
@@ -31,7 +32,7 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
     bnb_model_from_pretrained_args = get_bnb_model_args(training_args)
     if model_args.vision_tower is not None:
         model_name = model_args.model_name_or_path
-        cfg_pretrained = PhiLlava_config.from_pretrained(model_name, rope_scaling={"type": "linear", "factor": 1.0} )
+        cfg_pretrained = PhiLlava_config.from_pretrained(model_name)
         model_class = PhiLlavaForCausalLM
         model = model_class.from_pretrained(
             model_args.model_name_or_path,

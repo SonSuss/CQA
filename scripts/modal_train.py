@@ -7,7 +7,7 @@ app = modal.App("TrainChartQA")
 volume = modal.Volume.from_name("chartqa", create_if_missing=True)
 
 
-cuda_version = "12.8.0"
+cuda_version = "12.6.0"
 flavor = "devel" 
 operating_sys = "ubuntu22.04"
 tag = f"nvidia/cuda:{cuda_version}-{flavor}-{operating_sys}"
@@ -31,17 +31,15 @@ training_image = (
             "shortuuid==1.0.13",
             "datasets", "tokenizers", "sentencepiece", "protobuf",
             "requests", "tqdm", "pillow", "gitpython", "tensorboard",
-            "psutil",  # For system monitoring
+            "psutil", 
         ],
     )
-    .pip_install(  # add flash-attn
-        "flash-attn==2.7.4.post1", extra_options="--no-build-isolation"
+    .pip_install( 
+        "flash-attn==2.8.1", extra_options="--no-build-isolation"
     )
     .run_commands([
         "apt-get update && apt-get install -y git build-essential",
         "git clone https://github.com/SonSuss/CQA.git /root/CQA",
-        "cd /root/CQA && git config --global --add safe.directory /root/CQA",
-        "echo 'export PYTHONPATH=/root/CQA:$PYTHONPATH' >> /root/.bashrc",
     ])
     .workdir("/root/CQA")
     .env({"PYTHONPATH": "/root/CQA"})
@@ -72,8 +70,7 @@ def pull_latest_code():
 
 # Training configuration constants
 MINUTES = 60
-TRAIN_GPU_COUNT = 1
-TRAIN_GPU = f"L40S:{TRAIN_GPU_COUNT}"
+TRAIN_GPU = f"L40S"
 TRAIN_CPU_COUNT = (1.0,8.0)
 TRAIN_MEMORY_GB = (8 * 1024,32 * 1024)  # 8GB to 32GB
 TRAIN_TIME = 2 # hours
@@ -81,8 +78,8 @@ TRAIN_TIME = 2 # hours
 @app.function(
     image=training_image,
     gpu=TRAIN_GPU,
-    timeout=5 * MINUTES,
-    cpu=TRAIN_CPU_COUNT
+    timeout= 30 * MINUTES,
+    cpu=1
 )
 def check_gpu_info():
     pull_latest_code()
@@ -90,7 +87,6 @@ def check_gpu_info():
     import torch
     import sys
     import platform
-    import subprocess
     import pkg_resources
     import os
     
@@ -294,12 +290,12 @@ def check_gpu_info():
     volumes={"/root/data": volume},
     gpu=TRAIN_GPU,
     cpu=TRAIN_CPU_COUNT,
-    memory=TRAIN_MEMORY_GB * 1024,
+    memory=TRAIN_MEMORY_GB,
     timeout= TRAIN_TIME * 60 * MINUTES,
 )
 def train_chartqa():
     import os
-    from models.chart_qa_model.train import train
+    from models.chart_qa_model.train.train import train
     from models.components.config import ModelArguments, DataArguments, TrainingArguments
     
     print("🔍 Checking paths and configuration...")
@@ -319,7 +315,6 @@ def train_chartqa():
     paths_to_check = {
         "Data file": data_path,
         "Eval data file": eval_data_path,
-        "Image folder": image_path,
     }
     
     print("\n📁 Path validation:")
@@ -402,4 +397,4 @@ def train_chartqa():
         max_grad_norm=1.0,
         local_rank=-1,  # For single GPU
     )
-    train(model_args, data_args, training_args)
+    train(model_args, data_args, training_args, log_rewrite=True)

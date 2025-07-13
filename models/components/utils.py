@@ -136,7 +136,7 @@ def rank0_print(*args):
         print(*args)
         
 
-def get_log_writer(log_dir, log_name="train.log", level=logging.INFO):
+def get_log_writer(log_dir, log_name="train.log", level=logging.INFO, rewrite=False):
     os.makedirs(log_dir, exist_ok=True)
     log_path = os.path.join(log_dir, log_name)
     logger = logging.getLogger(log_name)
@@ -146,7 +146,9 @@ def get_log_writer(log_dir, log_name="train.log", level=logging.INFO):
 
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
-    fh = logging.FileHandler(log_path)
+    # Set file mode based on rewrite parameter
+    file_mode = 'w' if rewrite else 'a'
+    fh = logging.FileHandler(log_path, mode=file_mode)
     fh.setLevel(level)
     fh.setFormatter(formatter)
     logger.addHandler(fh)
