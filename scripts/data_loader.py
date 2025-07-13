@@ -54,8 +54,6 @@ def data_preprocess_for_chart_QA(data_path,output_path):
     input_path = os.path.join(data_path, "ChartQA Dataset")
     output_folder = os.path.join(data_path, output_path)
     os.makedirs(output_folder, exist_ok=True)
-    image_path = os.path.join(output_folder,"images")
-    os.makedirs(image_path, exist_ok=True)
     src_data = ["train", "test", "val"]
     val_set, train_set = [], []
     image_track = {}

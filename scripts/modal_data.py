@@ -1,6 +1,6 @@
 import modal
 
-app = modal.App("TrainChartQA")
+app = modal.App("LoadChartQA")
 
 # Create or attach a persistent volume
 volume = modal.Volume.from_name("chartqa", create_if_missing=True)
@@ -124,16 +124,11 @@ def download_only():
     pull_latest_code()
     
     from scripts.data_loader import download_and_extract
-    import time
 
     url = "https://huggingface.co/datasets/ahmed-masry/ChartQA/resolve/main/ChartQA%20Dataset.zip"
     extract_path = "/root/data/Chart_QA"
 
-    print("⏱️ Starting download...")
-    start_time = time.time()
     download_and_extract(url, extract_path)
-    download_time = time.time() - start_time
-    print(f"✅ Download completed in {download_time:.2f} seconds")
 
     volume.commit()
     print("📁 Data downloaded and ready for preprocessing")

@@ -6,6 +6,7 @@ app = modal.App("TrainChartQA")
 # Create or attach a persistent volume
 volume = modal.Volume.from_name("chartqa", create_if_missing=True)
 
+
 cuda_version = "12.8.0"
 flavor = "devel" 
 operating_sys = "ubuntu22.04"
@@ -46,6 +47,29 @@ training_image = (
     .env({"PYTHONPATH": "/root/CQA"})
 )
 
+def pull_latest_code():
+    """Pull the latest code from Git repository"""
+    import subprocess
+    import os
+    
+    try:
+        # Change to repo directory
+        os.chdir("/root/CQA")
+        
+        # Pull latest changes
+        result = subprocess.run(["git", "pull", "origin", "main"], 
+                              capture_output=True, text=True, check=True)
+        print(f"Git pull successful: {result.stdout}")
+        
+        # Show current commit
+        commit_result = subprocess.run(["git", "rev-parse", "--short", "HEAD"], 
+                                     capture_output=True, text=True, check=True)
+        print(f"Current commit: {commit_result.stdout.strip()}")
+
+    except subprocess.CalledProcessError as e:
+        print(f"Git pull failed: {e.stderr}")
+        print("Continuing with existing code...")
+
 # Training configuration constants
 MINUTES = 60
 TRAIN_GPU_COUNT = 1
@@ -61,6 +85,7 @@ TRAIN_TIME = 2 # hours
     cpu=TRAIN_CPU_COUNT
 )
 def check_gpu_info():
+    pull_latest_code()
     """Check GPU, system, and library information for training environment"""
     import torch
     import sys
