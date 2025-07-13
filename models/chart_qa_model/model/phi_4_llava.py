@@ -5,9 +5,10 @@ from typing import Optional, List, Tuple, Union
 
 from transformers import AutoConfig, AutoModelForCausalLM
 from transformers.modeling_outputs import CausalLMOutputWithPast
-from transformers import Phi3ForCausalLM, Phi3Model
+
 
 from models.chart_qa_model.model.configuration_phi3 import Phi3Config
+from models.chart_qa_model.model.modeling_phi3 import Phi3ForCausalLM, Phi3Model
 from models.components.llava import LlavaMetaForCausalLM, LlavaMetaModel
 
 
@@ -110,7 +111,7 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
                 images,
             )
         else:
-            inputs_embeds = self.get_model().model.embed_tokens(inputs)
+            inputs_embeds = self.get_model().embed_tokens(inputs)
 
         return super().generate(
             position_ids=position_ids,
