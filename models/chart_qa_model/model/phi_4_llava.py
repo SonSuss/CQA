@@ -50,6 +50,8 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
         output_hidden_states: Optional[bool] = None,
         images: Optional[torch.FloatTensor] = None,
         return_dict: Optional[bool] = None,
+        cache_position: Optional[torch.LongTensor] = None,
+        **kwargs,
     ) -> Union[Tuple, CausalLMOutputWithPast]:
 
         if inputs_embeds is None:
@@ -79,7 +81,9 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
             use_cache=use_cache,
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
-            return_dict=return_dict
+            return_dict=return_dict,
+            cache_position=cache_position,
+            **kwargs
         )
 
     @torch.no_grad()
