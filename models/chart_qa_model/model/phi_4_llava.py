@@ -5,73 +5,14 @@ from typing import Optional, List, Tuple, Union
 
 from transformers import AutoConfig, AutoModelForCausalLM
 from transformers.modeling_outputs import CausalLMOutputWithPast
-from transformers import Phi3Config, Phi3ForCausalLM, Phi3Model
+from transformers import Phi3ForCausalLM, Phi3Model
 
+from models.chart_qa_model.model.configuration_phi3 import Phi3Config
 from models.components.llava import LlavaMetaForCausalLM, LlavaMetaModel
 
 
 class PhiLlava_config(Phi3Config):
     model_type = "Phi_llava"
-    
-    def _rope_scaling_validation(self):
-        """
-        Validate the `rope_scaling` configuration using the correct formula with partial_rotary_factor.
-        """
-        if self.rope_scaling is None:
-            return
-
-        if not isinstance(self.rope_scaling, dict) or len(self.rope_scaling) != 3:
-            raise ValueError(
-                "`rope_scaling` must be a dictionary with three fields, `type`, `short_factor` and `long_factor`, "
-                f"got {self.rope_scaling}"
-            )
-        rope_scaling_type = self.rope_scaling.get("type", None)
-        rope_scaling_short_factor = self.rope_scaling.get("short_factor", None)
-        rope_scaling_long_factor = self.rope_scaling.get("long_factor", None)
-        
-        if rope_scaling_type is None or rope_scaling_type not in ["longrope"]:
-            raise ValueError(f"`rope_scaling`'s type field must be one of ['longrope'], got {rope_scaling_type}")
-        
-        if not (
-            isinstance(rope_scaling_short_factor, list)
-            and all(isinstance(x, (int, float)) for x in rope_scaling_short_factor)
-        ):
-            raise ValueError(
-                f"`rope_scaling`'s short_factor field must be a list of numbers, got {rope_scaling_short_factor}"
-            )
-        
-        if not (
-            isinstance(rope_scaling_long_factor, list)
-            and all(isinstance(x, (int, float)) for x in rope_scaling_long_factor)
-        ):
-            raise ValueError(
-                f"`rope_scaling`'s long_factor field must be a list of numbers, got {rope_scaling_long_factor}"
-            )
-        
-        # Use the correct formula with partial_rotary_factor
-        rotary_ndims = int(self.hidden_size // self.num_attention_heads * self.partial_rotary_factor)
-        expected_length = rotary_ndims // 2
-        
-        print(f"🔧 RoPE Scaling Validation:")
-        print(f"  Hidden size: {self.hidden_size}")
-        print(f"  Num attention heads: {self.num_attention_heads}")
-        print(f"  Partial rotary factor: {getattr(self, 'partial_rotary_factor', 1.0)}")
-        print(f"  Rotary ndims: {rotary_ndims}")
-        print(f"  Expected length: {expected_length}")
-        print(f"  Actual short_factor length: {len(rope_scaling_short_factor)}")
-        print(f"  Actual long_factor length: {len(rope_scaling_long_factor)}")
-        
-        # Validate short_factor length
-        if not len(rope_scaling_short_factor) == expected_length:
-            raise ValueError(
-                f"`rope_scaling`'s short_factor field must have length {expected_length}, got {len(rope_scaling_short_factor)}"
-            )
-            
-        # Validate long_factor length  
-        if not len(rope_scaling_long_factor) == expected_length:
-            raise ValueError(
-                f"`rope_scaling`'s long_factor field must have length {expected_length}, got {len(rope_scaling_long_factor)}"
-            )
 
 class Phi_LlavaModel(LlavaMetaModel, Phi3Model):
     config_class = PhiLlava_config
