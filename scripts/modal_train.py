@@ -284,7 +284,7 @@ def check_gpu_info():
         "training_readiness": checks,
         "overall_ready": all_ready
     }
-
+    
 @app.function(
     image=training_image,
     volumes={"/root/data": volume},
@@ -293,7 +293,253 @@ def check_gpu_info():
     memory=TRAIN_MEMORY_GB,
     timeout= TRAIN_TIME * 60 * MINUTES,
 )
+def test_phi_llava_model():
+    pull_latest_code()
+    import torch
+    from models.chart_qa_model.model.phi_4_llava import PhiLlava_config, PhiLlavaForCausalLM
+    from transformers import AutoTokenizer
+    
+    print("🧪 TESTING PHI-LLAVA MODEL WITH FIXED CONFIG")
+    print("=" * 60)
+    
+    model_path = "microsoft/Phi-4-mini-instruct"
+    cache_dir = "/root/data/cache"
+    
+    try:
+        # Test our custom config
+        print("\n🔧 LOADING WITH CUSTOM PHI-LLAVA CONFIG:")
+        config = PhiLlava_config.from_pretrained(model_path, cache_dir=cache_dir)
+        print("✅ Custom config loaded successfully!")
+        
+        print(f"Model type: {config.model_type}")
+        print(f"Hidden size: {config.hidden_size}")
+        print(f"Num attention heads: {config.num_attention_heads}")
+        print(f"Expected rope_scaling length: {config.hidden_size // config.num_attention_heads // 2}")
+        
+        if hasattr(config, 'rope_scaling') and config.rope_scaling:
+            print(f"Short factor length: {len(config.rope_scaling['short_factor'])}")
+            print(f"Long factor length: {len(config.rope_scaling['long_factor'])}")
+        
+        # Test model loading
+        print(f"\n🚀 LOADING PHI-LLAVA MODEL:")
+        model = PhiLlavaForCausalLM.from_pretrained(
+            model_path,
+            config=config,
+            device_map="auto",
+            torch_dtype="auto",
+            trust_remote_code=True,
+            cache_dir=cache_dir
+        )
+        print("✅ Phi-LLaVA model loaded successfully!")
+        
+        # Test tokenizer
+        tokenizer = AutoTokenizer.from_pretrained(model_path, cache_dir=cache_dir)
+        print("✅ Tokenizer loaded successfully!")
+        
+        # Quick test
+        print(f"\n🧠 QUICK INFERENCE TEST:")
+        test_prompt = "Hello, how are you?"
+        inputs = tokenizer(test_prompt, return_tensors="pt")
+        
+        if torch.cuda.is_available():
+            inputs = {k: v.to('cuda') for k, v in inputs.items()}
+        
+        with torch.no_grad():
+            outputs = model.generate(
+                **inputs,
+                max_new_tokens=10,
+                do_sample=False,
+                pad_token_id=tokenizer.eos_token_id
+            )
+                
+        response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        print(f"Prompt: {test_prompt}")
+        print(f"Response: {response}")
+        
+        # Memory usage
+        if torch.cuda.is_available():
+            allocated = torch.cuda.memory_allocated() / 1024**3
+            cached = torch.cuda.memory_reserved() / 1024**3
+            print(f"\n💾 GPU MEMORY USAGE:")
+            print(f"Allocated: {allocated:.2f} GB")
+            print(f"Cached: {cached:.2f} GB")
+        
+        print("\n🎉 SUCCESS: Phi-LLaVA model works with fixed rope_scaling!")
+        return "Success"
+        
+    except Exception as e:
+        print(f"❌ Test failed: {e}")
+        print(f"Error type: {type(e).__name__}")
+        import traceback
+        traceback.print_exc()
+        return "Failed"
+    import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
+    
+    print("🧪 TESTING PHI-4 MODEL")
+    print("=" * 60)
+    
+    model_path = "microsoft/Phi-4-mini-instruct"
+    cache_dir = "/root/data/cache"
+    
+    print(f"📥 Loading model: {model_path}")
+    print(f"💾 Cache directory: {cache_dir}")
+    
+    try:
+        # First, let's examine the config without loading the model
+        print("\n🔍 EXAMINING MODEL CONFIGURATION:")
+        config = AutoConfig.from_pretrained(model_path, cache_dir=cache_dir)
+        
+        print(f"Model type: {config.model_type}")
+        print(f"Hidden size: {config.hidden_size}")
+        print(f"Num attention heads: {config.num_attention_heads}")
+        print(f"Max position embeddings: {config.max_position_embeddings}")
+        
+        # Check rope_scaling configuration
+        print(f"\n🔧 ROPE SCALING CONFIGURATION:")
+        if hasattr(config, 'rope_scaling') and config.rope_scaling is not None:
+            print(f"Rope scaling type: {config.rope_scaling.get('type', 'None')}")
+            
+            if 'short_factor' in config.rope_scaling:
+                short_factor = config.rope_scaling['short_factor']
+                print(f"Short factor length: {len(short_factor)}")
+                print(f"Short factor (first 10): {short_factor[:10]}")
+                
+            if 'long_factor' in config.rope_scaling:
+                long_factor = config.rope_scaling['long_factor']
+                print(f"Long factor length: {len(long_factor)}")
+                print(f"Long factor (first 10): {long_factor[:10]}")
+                
+            # Calculate expected length
+            expected_length = config.hidden_size // config.num_attention_heads // 2
+            print(f"\n📐 DIMENSION ANALYSIS:")
+            print(f"Expected length: {config.hidden_size} // {config.num_attention_heads} // 2 = {expected_length}")
+            
+            if 'short_factor' in config.rope_scaling:
+                actual_length = len(config.rope_scaling['short_factor'])
+                print(f"Actual short_factor length: {actual_length}")
+                print(f"Mismatch: {actual_length != expected_length}")
+                
+        else:
+            print("No rope_scaling configuration found")
+            
+        # Try to load the model and see what happens
+        print(f"\n🚀 ATTEMPTING TO LOAD MODEL:")
+        
+        try:
+            model = AutoModelForCausalLM.from_pretrained(
+                model_path,
+                device_map="auto",
+                torch_dtype="auto",
+                trust_remote_code=True,
+                cache_dir=cache_dir
+            )
+            print("✅ Model loaded successfully!")
+            
+            # Test tokenizer
+            tokenizer = AutoTokenizer.from_pretrained(model_path, cache_dir=cache_dir)
+            print("✅ Tokenizer loaded successfully!")
+            
+            # Quick inference test
+            print(f"\n🧠 QUICK INFERENCE TEST:")
+            test_prompt = "What is 2+2?"
+            inputs = tokenizer(test_prompt, return_tensors="pt")
+            
+            with torch.no_grad():
+                outputs = model.generate(
+                    **inputs,
+                    max_new_tokens=20,
+                    do_sample=False,
+                    temperature=0.1
+                )
+                
+            response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+            print(f"Prompt: {test_prompt}")
+            print(f"Response: {response}")
+            
+            # Memory usage
+            if torch.cuda.is_available():
+                allocated = torch.cuda.memory_allocated() / 1024**3
+                cached = torch.cuda.memory_reserved() / 1024**3
+                print(f"\n💾 GPU MEMORY USAGE:")
+                print(f"Allocated: {allocated:.2f} GB")
+                print(f"Cached: {cached:.2f} GB")
+                
+        except Exception as model_error:
+            print(f"❌ Model loading failed: {model_error}")
+            print(f"Error type: {type(model_error).__name__}")
+            
+            # If it's a rope_scaling error, let's examine it more closely
+            if "rope_scaling" in str(model_error):
+                print(f"\n🔍 ROPE SCALING ERROR ANALYSIS:")
+                print(f"This is the rope_scaling error we need to fix!")
+                
+                # Let's try to fix it manually
+                print(f"Attempting to fix rope_scaling configuration...")
+                
+                if hasattr(config, 'rope_scaling') and config.rope_scaling is not None:
+                    if 'short_factor' in config.rope_scaling:
+                        current_length = len(config.rope_scaling['short_factor'])
+                        expected_length = config.hidden_size // config.num_attention_heads // 2
+                        
+                        if current_length != expected_length:
+                            print(f"Fixing short_factor: {current_length} -> {expected_length}")
+                            if current_length < expected_length:
+                                padding = expected_length - current_length
+                                config.rope_scaling['short_factor'] = (
+                                    config.rope_scaling['short_factor'] + 
+                                    [config.rope_scaling['short_factor'][-1]] * padding
+                                )
+                            else:
+                                config.rope_scaling['short_factor'] = config.rope_scaling['short_factor'][:expected_length]
+                                
+                    if 'long_factor' in config.rope_scaling:
+                        current_length = len(config.rope_scaling['long_factor'])
+                        expected_length = config.hidden_size // config.num_attention_heads // 2
+                        
+                        if current_length != expected_length:
+                            print(f"Fixing long_factor: {current_length} -> {expected_length}")
+                            if current_length < expected_length:
+                                padding = expected_length - current_length
+                                config.rope_scaling['long_factor'] = (
+                                    config.rope_scaling['long_factor'] + 
+                                    [config.rope_scaling['long_factor'][-1]] * padding
+                                )
+                            else:
+                                config.rope_scaling['long_factor'] = config.rope_scaling['long_factor'][:expected_length]
+                    
+                    # Try loading again with fixed config
+                    print("Attempting to load model with fixed configuration...")
+                    try:
+                        model = AutoModelForCausalLM.from_pretrained(
+                            model_path,
+                            config=config,
+                            device_map="auto",
+                            torch_dtype="auto",
+                            trust_remote_code=True,
+                            cache_dir=cache_dir
+                        )
+                        print("✅ Model loaded successfully with fixed config!")
+                    except Exception as retry_error:
+                        print(f"❌ Still failed: {retry_error}")
+            
+    except Exception as e:
+        print(f"❌ Configuration loading failed: {e}")
+        print(f"Error type: {type(e).__name__}")
+        
+    print("\n🎯 TEST COMPLETE")
+    return "Test completed"
+
+@app.function(
+    image=training_image,
+    volumes={"/root/data": volume},
+    gpu=TRAIN_GPU,
+    cpu=4.0,  # Fixed CPU value 
+    memory=16 * 1024,  # Fixed memory value (16GB)
+    timeout= TRAIN_TIME * 60 * MINUTES,
+)
 def train_chartqa():
+    pull_latest_code()
     import os
     from models.chart_qa_model.train.train import train
     from models.components.config import ModelArguments, DataArguments, TrainingArguments
