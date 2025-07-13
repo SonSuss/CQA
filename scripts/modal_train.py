@@ -6,9 +6,15 @@ app = modal.App("TrainChartQA")
 # Create or attach a persistent volume
 volume = modal.Volume.from_name("chartqa", create_if_missing=True)
 
-# Training image with GPU dependencies - using valid CUDA base image
+cuda_version = "12.8.0"
+flavor = "devel" 
+operating_sys = "ubuntu22.04"
+tag = f"nvidia/cuda:{cuda_version}-{flavor}-{operating_sys}"
+gpu = "L40S"
+
 training_image = (
-    modal.Image.from_registry("nvidia/cuda:12.1.1-devel-ubuntu22.04", add_python="3.11")
+    modal.Image.from_registry(tag, add_python="3.11")
+    .pip_install("bitsandbytes", gpu=gpu)
     .pip_install(
         [
             "torch", "torchvision", "torchaudio",
@@ -26,11 +32,9 @@ training_image = (
             "requests", "tqdm", "pillow", "gitpython", "tensorboard",
             "psutil",  # For system monitoring
         ],
-        extra_index_url="https://download.pytorch.org/whl/cu121"  # Match CUDA 12.1
     )
-    .pip_install(
-        ["flash-attn"],
-        extra_options="--no-build-isolation"
+    .pip_install(  # add flash-attn
+        "flash-attn==2.7.4.post1", extra_options="--no-build-isolation"
     )
     .run_commands([
         "apt-get update && apt-get install -y git build-essential",
@@ -46,15 +50,15 @@ training_image = (
 MINUTES = 60
 TRAIN_GPU_COUNT = 1
 TRAIN_GPU = f"L40S:{TRAIN_GPU_COUNT}"
-TRAIN_CPU_COUNT = 8
-TRAIN_MEMORY_GB = 32
+TRAIN_CPU_COUNT = (1.0,8.0)
+TRAIN_MEMORY_GB = (8 * 1024,32 * 1024)  # 8GB to 32GB
 TRAIN_TIME = 2 # hours
-
 
 @app.function(
     image=training_image,
     gpu=TRAIN_GPU,
     timeout=5 * MINUTES,
+    cpu=TRAIN_CPU_COUNT
 )
 def check_gpu_info():
     """Check GPU, system, and library information for training environment"""
@@ -268,72 +272,48 @@ def check_gpu_info():
     memory=TRAIN_MEMORY_GB * 1024,
     timeout= TRAIN_TIME * 60 * MINUTES,
 )
-def train_chartqa_accelerate(
-    num_epochs: int = 2,
-    batch_size: int = 4,
-    quick_check: bool = False,
-):
-    
+def train_chartqa():
     import os
-    import time
-    from accelerate import Accelerator
-    from accelerate.utils import set_seed
-    
-    print("🚀 Starting ChartQA training with Accelerate optimization...")
-    print(f"📊 Training config: epochs={num_epochs}, batch_size={batch_size}")
-    
-    # Check what models are available in cache
-    print("\n🔍 Checking for cached models...")
-    cache_check = check_cache_and_models.remote()
-    print(f"Found {len(cache_check.get('found_models', {}))} cached models")
-    
-    # Check if preprocessed data exists
-    data_path = "/root/data/Chart_QA/processed_data"
-    if not os.path.exists(data_path):
-        print("❌ Preprocessed data not found. Run preprocess_only() first.")
-        result = {"status": "failed", "error": "No preprocessed data found"}
-        print("🎯 Early Exit Result:")
-        for key, value in result.items():
-            print(f"  {key}: {value}")
-        return result
-    
-    # Initialize accelerator with optimizations
-    accelerator = Accelerator(
-        gradient_accumulation_steps=2,
-        mixed_precision="bf16",  # Use bfloat16 for better performance
-        log_with="tensorboard",
-        project_dir="/root/data/checkpoints",
-        cpu=False,  # Force GPU usage
-    )
-    
-    print(f"🔧 Accelerator: device={accelerator.device}, processes={accelerator.num_processes}")
-    
-    # Check VRAM
-    import torch
-    if torch.cuda.is_available():
-        props = torch.cuda.get_device_properties(0)
-        total_vram = props.total_memory / 1024**3
-        print(f"🎯 GPU: {torch.cuda.get_device_name(0)}")
-        print(f"💾 Total VRAM: {total_vram:.2f} GB")
-        
-        # Memory optimization based on VRAM
-        if total_vram >= 40:  # L40S has 48GB
-            effective_batch_size = batch_size * 2  # Can handle larger batches
-            gradient_accumulation = 1
-            print("🚀 High VRAM detected - using larger batch size")
-        else:
-            effective_batch_size = batch_size
-            gradient_accumulation = 2
-            print("⚡ Standard VRAM - using gradient accumulation")
-    
-    set_seed(42)  # For reproducibility
-    start_time = time.time()
-    
-    # Import training components
-    from models.chart_qa_model.train.train import train
+    from models.chart_qa_model.train import train
     from models.components.config import ModelArguments, DataArguments, TrainingArguments
     
-    # Model configuration
+    print("🔍 Checking paths and configuration...")
+    
+    # Check if we're in the right working directory
+    current_dir = os.getcwd()
+    print(f"Current working directory: {current_dir}")
+    
+    # Define paths for Modal environment
+    data_path = "/root/data/Chart_QA/processed_data/train.json"
+    eval_data_path = "/root/data/Chart_QA/processed_data/val.json"
+    image_path = "/root/data/Chart_QA/processed_data/images"
+    output_dir = "/root/data/checkpoints"
+    cache_dir = "/root/data/cache"
+    
+    # Check if paths exist
+    paths_to_check = {
+        "Data file": data_path,
+        "Eval data file": eval_data_path,
+        "Image folder": image_path,
+    }
+    
+    print("\n📁 Path validation:")
+    missing_paths = []
+    
+    for desc, path in paths_to_check.items():
+        if os.path.exists(path):
+            print(f"  ✅ {desc}: {path}")
+        else:
+            print(f"  ❌ {desc}: {path}")
+            missing_paths.append(f"{desc}: {path}")
+    
+    # Raise error if any paths are missing
+    if missing_paths:
+        error_msg = f"❌ Missing required paths:\n" + "\n".join(f"  - {path}" for path in missing_paths)
+        print(f"\n{error_msg}")
+        raise FileNotFoundError(f"Required paths do not exist: {missing_paths}")
+    
+    #model config
     model_args = ModelArguments(
         model_name_or_path="microsoft/Phi-4-mini-instruct",
         version="phi_instruct",
@@ -341,113 +321,60 @@ def train_chartqa_accelerate(
         tune_mm_mlp_adapter=False,
         vision_tower="mPLUG/TinyChart-3B-768-siglip",
         mm_vision_select_layer=-1,
-        mm_projector_type="linear",
+        pretrain_mm_mlp_adapter=None,
+        mm_projector_type="resampler",
         mm_use_im_start_end=False,
         mm_use_im_patch_token=False,
+        mm_patch_merge_type="flat",
+        mm_vision_select_feature="patch",
+        resampler_hidden_size=768,
+        num_queries=128,
+        num_resampler_layers=3,
         tune_vision_tower=True,
         tune_entire_model=False,
+        tune_vit_from_layer=-1,
+        tune_embed_tokens=False,
     )
 
     data_args = DataArguments(
-        data_path=f"{data_path}/train.json",
-        eval_data_path=f"{data_path}/val.json",
+        data_path=data_path,
+        eval_data_path=eval_data_path,
         lazy_preprocess=True,
         is_multimodal=True,
-        image_folder="",
+        image_folder="",  # Adjusted for volume
         image_aspect_ratio="square",
     )
 
-
-    # Accelerate-optimized training arguments
+    # Test configuration with smaller values for quick validation
     training_args = TrainingArguments(
-        output_dir="/root/data/checkpoints",
-        num_train_epochs=num_epochs,
-        per_device_train_batch_size=effective_batch_size,
-        per_device_eval_batch_size=effective_batch_size,
-        gradient_accumulation_steps=gradient_accumulation,
+        output_dir=output_dir,
+        num_train_epochs=1,  # Reduced for testing
+        per_device_train_batch_size=2,  # Reduced for testing
+        per_device_eval_batch_size=2,  # Reduced for testing
+        gradient_accumulation_steps=2,  # Reduced for testing
         evaluation_strategy="no",
         save_strategy="steps",
-        save_steps=100 if quick_check else 500,
-        save_total_limit=3,
+        save_steps=50,  # More frequent saves for testing
+        save_total_limit=3,  # Reduced for testing
         mm_projector_lr=1e-4,
         vision_tower_lr=5e-5,
         weight_decay=0.0,
         warmup_ratio=0.1,
         lr_scheduler_type="cosine",
-        logging_steps=5 if quick_check else 10,
+        logging_steps=1,
         fp16=False,
-        bf16=True,  # Better than fp16 for training stability
+        bf16=True,
         model_max_length=1024,
         gradient_checkpointing=True,
-        dataloader_num_workers=4,
-        dataloader_persistent_workers=True,
+        dataloader_num_workers=4,  # Reduced for testing
+        dataloader_persistent_workers=False,  # Disabled for testing
         report_to="tensorboard",
-        cache_dir="/root/data/cache",
-        optim="adamw_torch_fused",  # Faster optimizer
+        cache_dir=cache_dir,
+        optim="adamw_torch",
         bits=16,
         group_by_modality_length=True,
-        warmup_steps=50 if quick_check else 100,
+        warmup_steps=10,  # Reduced for testing
         max_grad_norm=1.0,
-        ddp_find_unused_parameters=False,  # Accelerate optimization
-        dataloader_pin_memory=True,  # Faster data loading
-        remove_unused_columns=False,  # Keep for multimodal
-        local_rank=-1,
+        local_rank=-1,  # For single GPU
     )
-    try:
-        # Monitor VRAM before training
-        if torch.cuda.is_available():
-            torch.cuda.reset_peak_memory_stats()
-            initial_memory = torch.cuda.memory_allocated() / 1024**3
-            print(f"💾 Initial VRAM usage: {initial_memory:.2f} GB")
-        
-        # Run training with accelerate
-        train(
-            model_args=model_args,
-            data_args=data_args,
-            training_args=training_args
-        )
-        
-        # Final VRAM stats
-        if torch.cuda.is_available():
-            peak_memory = torch.cuda.max_memory_allocated() / 1024**3
-            final_memory = torch.cuda.memory_allocated() / 1024**3
-            print(f"💾 Peak VRAM usage: {peak_memory:.2f} GB")
-            print(f"💾 Final VRAM usage: {final_memory:.2f} GB")
-        
-        training_time = time.time() - start_time
-        print(f"✅ Accelerate training completed in {training_time:.2f} seconds")
-        
-        volume.commit()
-        
-        result = {
-            "status": "success",
-            "training_time": training_time,
-            "epochs": num_epochs,
-            "batch_size": effective_batch_size,
-            "peak_vram_gb": peak_memory if torch.cuda.is_available() else 0,
-            "accelerator_device": str(accelerator.device),
-            "output_dir": "/root/data/checkpoints"
-        }
-        
-        print("🎯 Training Result:")
-        for key, value in result.items():
-            print(f"  {key}: {value}")
-        
-        return result
-        
-    except Exception as e:
-        print(f"❌ Accelerate training failed: {e}")
-        import traceback
-        traceback.print_exc()
-        
-        error_result = {
-            "status": "failed", 
-            "error": str(e),
-            "training_time": time.time() - start_time
-        }
-        
-        print("🎯 Training Error Result:")
-        for key, value in error_result.items():
-            print(f"  {key}: {value}")
-        
-        return error_result
+    train(model_args, data_args, training_args)
