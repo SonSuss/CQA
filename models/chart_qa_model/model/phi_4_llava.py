@@ -126,12 +126,7 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
                 **kwargs
             )
         else:
-            # For text-only generation, ensure input_ids are properly shaped
-            if input_ids is not None and input_ids.dim() > 2:
-                # Flatten extra dimensions if present
-                input_ids = input_ids.view(input_ids.shape[0], -1)
-            
-            # For text-only generation, just use the parent class
+            # For text-only generation, use parent class directly
             return super().generate(
                 input_ids=input_ids,
                 **kwargs
@@ -141,14 +136,23 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
                                       inputs_embeds=None, **kwargs):
         images = kwargs.pop("images", None)
         image_sizes = kwargs.pop("image_sizes", None)
-        inputs = super().prepare_inputs_for_generation(
-            input_ids, past_key_values=past_key_values, inputs_embeds=inputs_embeds, **kwargs
-        )
+        
+        # If we have images, use custom logic
         if images is not None:
+            inputs = super().prepare_inputs_for_generation(
+                input_ids, past_key_values=past_key_values, inputs_embeds=inputs_embeds, **kwargs
+            )
             inputs['images'] = images
-        if image_sizes is not None:
-            inputs['image_sizes'] = image_sizes
-        return inputs
+            if image_sizes is not None:
+                inputs['image_sizes'] = image_sizes
+            return inputs
+        else:
+            # For text-only, use the standard Phi3 logic without any custom additions
+            from models.chart_qa_model.model.modeling_phi3 import Phi3ForCausalLM
+            return Phi3ForCausalLM.prepare_inputs_for_generation(
+                self, input_ids, past_key_values=past_key_values, 
+                inputs_embeds=inputs_embeds, **kwargs
+            )
 
 # Register the tokenizer
 def get_tokenizer():

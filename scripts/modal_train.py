@@ -345,8 +345,28 @@ def test_phi_llava_model():
         
         # Quick test
         print(f"\n🧠 QUICK INFERENCE TEST:")
-        test_prompt = "Hello, how are you?"
+        # Check if tokenizer has a chat template
+        print(f"Tokenizer chat template: {getattr(tokenizer, 'chat_template', 'None')}")
+        print(f"Special tokens: {tokenizer.special_tokens_map}")
+        
+        # Use proper instruction format for Phi-4-mini-instruct
+        if hasattr(tokenizer, 'apply_chat_template'):
+            # Use the tokenizer's chat template if available
+            messages = [
+                {"role": "user", "content": "Hello, how are you?"}
+            ]
+            try:
+                test_prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+                print("Using chat template format:")
+            except:
+                test_prompt = "<|user|>\nHello, how are you?<|end|>\n<|assistant|>\n"
+                print("Using manual format (chat template failed):")
+        else:
+            test_prompt = "<|user|>\nHello, how are you?<|end|>\n<|assistant|>\n"
+            print("Using manual format (no chat template):")
+        
         inputs = tokenizer(test_prompt, return_tensors="pt")
+        print("Formatted prompt:", repr(test_prompt))
         print("Inputs: ", inputs)
         
         # if torch.cuda.is_available():
@@ -378,12 +398,44 @@ def test_phi_llava_model():
             
         # Test generation with simple parameters
         print(f"\n🚀 TESTING GENERATION:")
+        
+        # First try with the base Phi3 model directly for comparison
+        print("Testing base Phi3 generation first...")
+        try:
+            from models.chart_qa_model.model.modeling_phi3 import Phi3ForCausalLM
+            base_model = Phi3ForCausalLM.from_pretrained(
+                model_path,
+                config=config,
+                device_map="auto",
+                torch_dtype="auto",
+                trust_remote_code=True,
+                cache_dir=cache_dir
+            )
+            
+            with torch.no_grad():
+                base_outputs = base_model.generate(
+                    inputs['input_ids'],
+                    attention_mask=inputs['attention_mask'],
+                    max_new_tokens=3,
+                    do_sample=False,
+                    pad_token_id=tokenizer.eos_token_id,
+                    use_cache=False
+                )
+                print(f"✅ Base Phi3 generation successful!")
+                print(f"Base output shape: {base_outputs.shape}")
+                base_response = tokenizer.decode(base_outputs[0], skip_special_tokens=True)
+                print(f"Base response: {base_response}")
+        except Exception as base_error:
+            print(f"❌ Base Phi3 generation failed: {base_error}")
+        
+        # Now try our custom model
+        print("\nTesting our PhiLlava model...")
         try:
             with torch.no_grad():
                 outputs = model.generate(
                     inputs['input_ids'],
                     attention_mask=inputs['attention_mask'],
-                    max_new_tokens=5,
+                    max_new_tokens=3,
                     do_sample=False,
                     pad_token_id=tokenizer.eos_token_id,
                     use_cache=False  # Disable cache to avoid complications
