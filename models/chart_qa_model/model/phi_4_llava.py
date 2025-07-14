@@ -55,7 +55,8 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
         **kwargs,
     ) -> Union[Tuple, CausalLMOutputWithPast]:
 
-        if inputs_embeds is None:
+        if inputs_embeds is None and images is not None:
+            # Only prepare multimodal inputs if we actually have images
             (
                 input_ids,
                 position_ids,
@@ -87,14 +88,6 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
             logits_to_keep=logits_to_keep,
             **kwargs
         )
-        
-        # Ensure logits have correct shape for generation
-        if hasattr(outputs, 'logits') and outputs.logits.dim() > 3:
-            # If logits have more than 3 dimensions, reshape to [batch_size, seq_len, vocab_size]
-            batch_size = outputs.logits.shape[0]
-            seq_len = outputs.logits.shape[1] if outputs.logits.dim() > 1 else 1
-            vocab_size = outputs.logits.shape[-1]
-            outputs.logits = outputs.logits.view(batch_size, seq_len, vocab_size)
         
         return outputs
 
