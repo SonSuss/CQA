@@ -353,18 +353,39 @@ def test_phi_llava_model():
         inputs = tokenizer(prompt,
                 return_tensors="pt").to("cuda")
 
-        # Compare forward passes
-        with torch.no_grad():
-            # Official model
-            output_official = model_official(**inputs)
-            print(f"Official logits shape: {output_official.logits.shape}")
-            # Custom model
-            output_custom = model_custom(**inputs)
-            print(f"Custom logits shape: {output_custom.logits.shape}")
-            
-            # Check if shapes match
-            if output_official.logits.shape != output_custom.logits.shape:
-                print(f"❌ SHAPE MISMATCH! This is likely the cause of your error.")
+        # Test generation with both models
+        print("\n🔍 DETAILED GENERATION COMPARISON:")
+
+        try:
+            # Test official model generation
+            print("Testing official model generation...")
+            with torch.no_grad():
+                outputs_official = model_official.generate(**inputs, 
+                                                        do_sample=True, 
+                                                        max_new_tokens=5)  # Small number for testing
+                print("✅ Official model generation successful!")
+                response = tokenizer.decode(outputs_official[0], skip_special_tokens=True)
+                print(f"Response from official model: {response}")
+
+        except Exception as e:
+            print(f"❌ Official model generation failed: {e}")
+
+        try:
+            # Test custom model generation
+            print("Testing custom model generation...")
+            with torch.no_grad():
+                outputs_custom = model_custom.generate(**inputs, 
+                                                    do_sample=True, 
+                                                    max_new_tokens=5)  # Small number for testing
+                print("✅ Custom model generation successful!")
+                response = tokenizer.decode(outputs_custom[0], skip_special_tokens=True)
+                print(f"Response from custom model: {response}")
+                
+        except Exception as e:
+            print(f"❌ Custom model generation failed: {e}")
+            print("This confirms the issue is in your custom model's generation logic")
+            import traceback
+            traceback.print_exc()
 
         # Tokenize the prompt and move the tensors to the GPU
 
