@@ -939,10 +939,9 @@ class Phi3ForCausalLM(Phi3PreTrainedModel, GenerationMixin):
             # logits_to_keep is a tensor with indices
             logits = self.lm_head(hidden_states[:, logits_to_keep, :])
 
+        # Debug: Ensure logits have correct dimensions
         if logits.dim() != 3:
-            logits = logits.squeeze()
-            if logits.dim() == 2:
-                logits = logits.unsqueeze(0)
+            logits = self.lm_head(hidden_states)
 
         loss = None
         if labels is not None:
