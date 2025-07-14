@@ -126,35 +126,23 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
                 **kwargs
             )
         else:
-            # For text-only generation, use Microsoft's approach - just call parent directly
-            # Remove images from kwargs to avoid parameter conflicts
-            clean_kwargs = {k: v for k, v in kwargs.items() if k != 'images'}
-            return super().generate(
-                input_ids=input_ids,
-                **clean_kwargs
-            )
+            # For text-only generation, bypass any custom logic entirely
+            # Just use the basic Phi3ForCausalLM generation without any overrides
+            from models.chart_qa_model.model.modeling_phi3 import Phi3ForCausalLM
+            return Phi3ForCausalLM.generate(self, input_ids=input_ids, **kwargs)
 
     def prepare_inputs_for_generation(self, input_ids, past_key_values=None,
                                       inputs_embeds=None, **kwargs):
         images = kwargs.pop("images", None)
         image_sizes = kwargs.pop("image_sizes", None)
-        
-        # If we have images, use custom logic
+        inputs = super().prepare_inputs_for_generation(
+            input_ids, past_key_values=past_key_values, inputs_embeds=inputs_embeds, **kwargs
+        )
         if images is not None:
-            inputs = super().prepare_inputs_for_generation(
-                input_ids, past_key_values=past_key_values, inputs_embeds=inputs_embeds, **kwargs
-            )
             inputs['images'] = images
-            if image_sizes is not None:
-                inputs['image_sizes'] = image_sizes
-            return inputs
-        else:
-            # For text-only, use the standard Phi3 logic without any custom additions
-            from models.chart_qa_model.model.modeling_phi3 import Phi3ForCausalLM
-            return Phi3ForCausalLM.prepare_inputs_for_generation(
-                self, input_ids, past_key_values=past_key_values, 
-                inputs_embeds=inputs_embeds, **kwargs
-            )
+        if image_sizes is not None:
+            inputs['image_sizes'] = image_sizes
+        return inputs
 
 # Register the tokenizer
 def get_tokenizer():

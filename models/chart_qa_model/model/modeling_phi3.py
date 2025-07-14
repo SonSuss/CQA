@@ -926,8 +926,24 @@ class Phi3ForCausalLM(Phi3PreTrainedModel, GenerationMixin):
 
         hidden_states = outputs[0]
         # Only compute necessary logits, and do not upcast them to float if we are not computing the loss
-        slice_indices = slice(-logits_to_keep, None) if isinstance(logits_to_keep, int) else logits_to_keep
-        logits = self.lm_head(hidden_states[:, slice_indices, :])
+        # Fix: Handle logits_to_keep properly to avoid dimension issues during generation
+        if isinstance(logits_to_keep, int):
+            if logits_to_keep == 0:
+                # Compute logits for all tokens
+                logits = self.lm_head(hidden_states)
+            else:
+                # Compute logits for the last logits_to_keep tokens
+                slice_indices = slice(-logits_to_keep, None)
+                logits = self.lm_head(hidden_states[:, slice_indices, :])
+        else:
+            # logits_to_keep is a tensor with indices
+            logits = self.lm_head(hidden_states[:, logits_to_keep, :])
+
+        # Debug: Ensure logits have correct dimensions
+        if logits.dim() != 3:
+            print(f"WARNING: Logits have {logits.dim()} dimensions, expected 3. Shape: {logits.shape}")
+            # Fallback: compute all logits if slicing caused issues
+            logits = self.lm_head(hidden_states)
 
         loss = None
         if labels is not None:

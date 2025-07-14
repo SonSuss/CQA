@@ -1,4 +1,5 @@
 import modal
+import torch
 
 
 app = modal.App("TrainChartQA")
@@ -296,7 +297,9 @@ def check_gpu_info():
 def test_phi_llava_model():
     pull_latest_code()
     import torch
-    from models.chart_qa_model.model.phi_4_llava import PhiLlava_config, PhiLlavaForCausalLM
+    # from models.chart_qa_model.model.phi_4_llava import PhiLlava_config, PhiLlavaForCausalLM
+    from models.chart_qa_model.model.modeling_phi3 import Phi3ForCausalLM
+    from models.chart_qa_model.model.configuration_phi3 import Phi3Config
     from transformers import AutoTokenizer
     
     print("🧪 TESTING PHI-LLAVA MODEL WITH FIXED CONFIG")
@@ -306,163 +309,149 @@ def test_phi_llava_model():
     cache_dir = "/root/data/cache"
     
     try:
-        # Test our custom config
-        print("\n🔧 LOADING WITH CUSTOM PHI-LLAVA CONFIG:")
-        config = PhiLlava_config.from_pretrained(model_path, cache_dir=cache_dir)
-        print("✅ Custom config loaded successfully!")
+        # Import necessary libraries
+        import torch
+        from transformers import AutoTokenizer, AutoModelForCausalLM, set_seed
+
+        # Set a seed for reproducibility
+        set_seed(2024)
+
+        # Define the prompt for the model. In this case, the prompt is a request for C# code.
+        prompt = "Write a C# code that reads the content of multiple text files and save the result as CSV"
+
+        # Define the model checkpoint and Phi-3 Model Required
+        model_checkpoint = "microsoft/Phi-3-mini-4k-instruct"
+
+        # Load the tokenizer from the model checkpoint
+        # trust_remote_code=True allows the execution of code from the model files
+        tokenizer = AutoTokenizer.from_pretrained(model_checkpoint,trust_remote_code=True)
+
+        # Load the model from the model checkpoint
+        # trust_remote_code=True allows the execution of code from the model files
+        # torch_dtype="auto" automatically determines the appropriate torch.dtype
+        # device_map="cuda" specifies that the model should be loaded to the GPU
+        # model = Phi3ForCausalLM.from_pretrained(model_checkpoint,
+        #                                         trust_remote_code=True,
+        #                                         torch_dtype="auto",
+        #                                         device_map="cuda")
         
-        print(f"Model type: {config.model_type}")
-        print(f"Hidden size: {config.hidden_size}")
-        print(f"Num attention heads: {config.num_attention_heads}")
-        print(f"Expected rope_scaling length: {config.hidden_size // config.num_attention_heads // 2}")
-        
-        if hasattr(config, 'rope_scaling') and config.rope_scaling:
-            print(f"Short factor length: {len(config.rope_scaling['short_factor'])}")
-            print(f"Long factor length: {len(config.rope_scaling['long_factor'])}")
-        
-        # Test model loading
-        print(f"\n🚀 LOADING PHI-LLAVA MODEL:")
-        model = PhiLlavaForCausalLM.from_pretrained(
-            model_path,
-            config=config,
-            device_map="auto",
-            torch_dtype="auto",
+        # Test 1: Official model
+        model_official = AutoModelForCausalLM.from_pretrained(
+            model_checkpoint,
             trust_remote_code=True,
-            cache_dir=cache_dir
+            torch_dtype="auto",
+            device_map="cuda"
         )
-        print("✅ Phi-LLaVA model loaded successfully!")
-        
-        # Test tokenizer
-        tokenizer = AutoTokenizer.from_pretrained(model_path, cache_dir=cache_dir)
-        tokenizer.model_max_length = 2048
-        tokenizer.pad_token = tokenizer.unk_token  # use unk rather than eos token to prevent endless generation
-        tokenizer.pad_token_id = tokenizer.convert_tokens_to_ids(tokenizer.pad_token)
-        tokenizer.padding_side = 'right'
-        print("✅ Tokenizer loaded successfully!")
-        
-        print("tokenizer :",tokenizer)
-        volume.commit()
-        
-        # Quick test
-        print(f"\n🧠 QUICK INFERENCE TEST:")
-        # Check if tokenizer has a chat template
-        print(f"Tokenizer chat template: {getattr(tokenizer, 'chat_template', 'None')}")
-        print(f"Special tokens: {tokenizer.special_tokens_map}")
-        
-        # Use proper instruction format for Phi-4-mini-instruct
-        if hasattr(tokenizer, 'apply_chat_template'):
-            # Use the tokenizer's chat template if available
-            messages = [
-                {"role": "user", "content": "Hello, how are you?"}
-            ]
-            try:
-                test_prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-                print("Using chat template format:")
-            except:
-                test_prompt = "<|user|>\nHello, how are you?<|end|>\n<|assistant|>\n"
-                print("Using manual format (chat template failed):")
-        else:
-            test_prompt = "<|user|>\nHello, how are you?<|end|>\n<|assistant|>\n"
-            print("Using manual format (no chat template):")
-        
-        inputs = tokenizer(test_prompt, return_tensors="pt")
-        print("Formatted prompt:", repr(test_prompt))
-        print("Inputs: ", inputs)
-        
-        # if torch.cuda.is_available():
-        #     inputs = {k: v.to('cuda') for k, v in inputs.items()}
-        
-        # Debug: Test a simple forward pass first
-        print(f"\n🔍 DEBUGGING TENSOR SHAPES:")
-        print(f"Input tensor shapes:")
-        for k, v in inputs.items():
-            print(f"  {k}: {v.shape}")
-        
-        # Test forward pass
-        print(f"\n🧪 TESTING FORWARD PASS:")
-        if torch.cuda.is_available():
-            inputs = {k: v.to('cuda') for k, v in inputs.items()}
-            
+
+        # Test 2: Your custom model  
+        model_custom = Phi3ForCausalLM.from_pretrained(
+            model_checkpoint,
+            trust_remote_code=True,
+            torch_dtype="auto",
+            device_map="cuda"
+        )
+        inputs = tokenizer(prompt,
+                return_tensors="pt").to("cuda")
+
+        # Compare forward passes
         with torch.no_grad():
-            # Try a simple forward pass first
-            forward_inputs = {
-                'input_ids': inputs['input_ids'],
-                'attention_mask': inputs['attention_mask']
-            }
-            outputs = model(**forward_inputs)
-            print(f"Forward pass output type: {type(outputs)}")
-            if hasattr(outputs, 'logits'):
-                print(f"Logits shape: {outputs.logits.shape}")
-                print(f"Logits dtype: {outputs.logits.dtype}")
-                print(f"Logits device: {outputs.logits.device}")
+            # Official model
+            output_official = model_official(**inputs)
+            print(f"Official logits shape: {output_official.logits.shape}")
+            # Custom model
+            output_custom = model_custom(**inputs)
+            print(f"Custom logits shape: {output_custom.logits.shape}")
             
-        # Test generation with simple parameters
-        print(f"\n🚀 TESTING GENERATION:")
-        
-        # First try with the base Phi3 model directly for comparison
-        print("Testing base Phi3 generation first...")
-        try:
-            from models.chart_qa_model.model.modeling_phi3 import Phi3ForCausalLM
-            base_model = Phi3ForCausalLM.from_pretrained(
-                model_path,
-                config=config,
-                device_map="auto",
-                torch_dtype="auto",
-                trust_remote_code=True,
-                cache_dir=cache_dir
-            )
-            
-            with torch.no_grad():
-                base_outputs = base_model.generate(
-                    inputs['input_ids'],
-                    attention_mask=inputs['attention_mask'],
-                    max_new_tokens=3,
-                    do_sample=False,
-                    pad_token_id=tokenizer.eos_token_id,
-                    use_cache=False
-                )
-                print(f"✅ Base Phi3 generation successful!")
-                print(f"Base output shape: {base_outputs.shape}")
-                base_response = tokenizer.decode(base_outputs[0], skip_special_tokens=True)
-                print(f"Base response: {base_response}")
-        except Exception as base_error:
-            print(f"❌ Base Phi3 generation failed: {base_error}")
-        
-        # Now try our custom model
-        print("\nTesting our PhiLlava model...")
-        try:
-            with torch.no_grad():
-                outputs = model.generate(
-                    inputs['input_ids'],
-                    attention_mask=inputs['attention_mask'],
-                    max_new_tokens=3,
-                    do_sample=False,
-                    pad_token_id=tokenizer.eos_token_id,
-                    use_cache=False  # Disable cache to avoid complications
-                )
-                print(f"Generation successful!")
-                print(f"Output shape: {outputs.shape}")
-                response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-                print(f"Prompt: {test_prompt}")
-                print(f"Response: {response}")
-        except Exception as gen_error:
-            print(f"Generation failed: {gen_error}")
-            print(f"Generation error type: {type(gen_error).__name__}")
-            import traceback
-            traceback.print_exc()
-        
-        # with torch.no_grad():
-        #     outputs = model.generate(
-        #         **inputs,
-        #         max_new_tokens=10,
-        #         do_sample=False,
-        #         pad_token_id=tokenizer.eos_token_id
-        #     )
-                
+            # Check if shapes match
+            if output_official.logits.shape != output_custom.logits.shape:
+                print(f"❌ SHAPE MISMATCH! This is likely the cause of your error.")
+
+        # Tokenize the prompt and move the tensors to the GPU
+
+
+        # Generate a response from the model
+        # do_sample=True means the model will generate text by sampling from the distribution of possible outputs
+        # max_new_tokens=200 limits the length of the generated text to 200 tokens
+
+        # Decode the generated tokens and remove any special tokens
         # response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        # print(f"Prompt: {test_prompt}")
-        # print(f"Response: {response}")
+        # print(response)
+        # # Test our custom config
+        # print("\n🔧 LOADING WITH CUSTOM PHI-LLAVA CONFIG:")
+        # config = Phi3Config.from_pretrained(model_path, cache_dir=cache_dir)
+        # print("✅ Custom config loaded successfully!")
         
+        # print(f"Model type: {config.model_type}")
+        # print(f"Hidden size: {config.hidden_size}")
+        # print(f"Num attention heads: {config.num_attention_heads}")
+        # print(f"Expected rope_scaling length: {config.hidden_size // config.num_attention_heads // 2}")
+        
+        # if hasattr(config, 'rope_scaling') and config.rope_scaling:
+        #     print(f"Short factor length: {len(config.rope_scaling['short_factor'])}")
+        #     print(f"Long factor length: {len(config.rope_scaling['long_factor'])}")
+        
+        # device = "cuda" if torch.cuda.is_available() else "cpu"
+        # print(f"Using device: {device}")
+        
+        # # Test model loading - Microsoft's approach from tuning script
+        # model_kwargs = dict(
+        #     use_cache=False,
+        #     trust_remote_code=True,
+        #     attn_implementation="flash_attention_2",
+        #     torch_dtype=torch.bfloat16,
+        #     device_map=device 
+        # )
+        # print(f"\n🚀 LOADING PHI-LLAVA MODEL:")
+        # model = Phi3ForCausalLM.from_pretrained(
+        #     model_path,
+        #     **model_kwargs
+        # )
+        # # model.eval()
+        # # model = torch.compile(model)
+        # print("✅ Phi-3 model loaded successfully!")
+
+
+        # # Test tokenizer
+        # tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, cache_dir=cache_dir)
+        # # tokenizer.model_max_length = 2048
+        # # tokenizer.pad_token = tokenizer.unk_token
+        # # tokenizer.pad_token_id = tokenizer.convert_tokens_to_ids(tokenizer.pad_token)
+        # # tokenizer.padding_side = 'right'
+        # print("✅ Tokenizer loaded successfully!")
+        
+        # print("tokenizer :",tokenizer)
+        # volume.commit()
+        
+        # # Quick test
+        # print(f"\n🧠 QUICK INFERENCE TEST:")
+        # # Check if tokenizer has a chat template
+        # print(f"Tokenizer chat template: {getattr(tokenizer, 'chat_template', 'None')}")
+        # print(f"Special tokens: {tokenizer.special_tokens_map}")
+        
+        # # Use proper instruction format for Phi-4-mini-instruct
+        # if hasattr(tokenizer, 'apply_chat_template'):
+        #     # Use the tokenizer's chat template if available
+        #     messages = [
+        #         {"role": "user", "content": "Hello, who are you?"}
+        #     ]
+        #     try:
+        #         test_prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        #         print("Using chat template format:")
+        #     except:
+        #         test_prompt = "<|user|>\nHello, how are you?<|end|>\n<|assistant|>\n"
+        #         print("Using manual format (chat template failed):")
+        # else:
+        #     test_prompt = "<|user|>\nHello, how are you?<|end|>\n<|assistant|>\n"
+        #     print("Using manual format (no chat template):")
+        
+        # inputs = tokenizer(test_prompt, return_tensors="pt").to(device)
+            
+        # with torch.no_grad():
+        #     outputs = model.generate(**inputs, do_sample=True, max_new_tokens=120)
+        #     print(outputs)
+        #     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        #     print("Response: ", response)
+
         # Memory usage
         if torch.cuda.is_available():
             allocated = torch.cuda.memory_allocated() / 1024**3
@@ -471,7 +460,7 @@ def test_phi_llava_model():
             print(f"Allocated: {allocated:.2f} GB")
             print(f"Cached: {cached:.2f} GB")
         
-        print("\n🎉 SUCCESS: Phi-LLaVA model works with fixed rope_scaling!")
+        print("SUCCESS")
         return "Success"
         
     except Exception as e:
