@@ -126,10 +126,12 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
                 **kwargs
             )
         else:
-            # For text-only generation, use parent class directly
+            # For text-only generation, use Microsoft's approach - just call parent directly
+            # Remove images from kwargs to avoid parameter conflicts
+            clean_kwargs = {k: v for k, v in kwargs.items() if k != 'images'}
             return super().generate(
                 input_ids=input_ids,
-                **kwargs
+                **clean_kwargs
             )
 
     def prepare_inputs_for_generation(self, input_ids, past_key_values=None,
