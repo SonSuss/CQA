@@ -334,33 +334,82 @@ def test_phi_llava_model():
         
         # Test tokenizer
         tokenizer = AutoTokenizer.from_pretrained(model_path, cache_dir=cache_dir)
-        # tokenizer.model_max_length = 2048
-        # tokenizer.pad_token = tokenizer.unk_token  # use unk rather than eos token to prevent endless generation
-        # tokenizer.pad_token_id = tokenizer.convert_tokens_to_ids(tokenizer.pad_token)
-        # tokenizer.padding_side = 'right'
+        tokenizer.model_max_length = 2048
+        tokenizer.pad_token = tokenizer.unk_token  # use unk rather than eos token to prevent endless generation
+        tokenizer.pad_token_id = tokenizer.convert_tokens_to_ids(tokenizer.pad_token)
+        tokenizer.padding_side = 'right'
         print("✅ Tokenizer loaded successfully!")
         
+        print("tokenizer :",tokenizer)
         volume.commit()
         
         # Quick test
         print(f"\n🧠 QUICK INFERENCE TEST:")
         test_prompt = "Hello, how are you?"
         inputs = tokenizer(test_prompt, return_tensors="pt")
+        print("Inputs: ", inputs)
         
+        # if torch.cuda.is_available():
+        #     inputs = {k: v.to('cuda') for k, v in inputs.items()}
+        
+        # Debug: Test a simple forward pass first
+        print(f"\n🔍 DEBUGGING TENSOR SHAPES:")
+        print(f"Input tensor shapes:")
+        for k, v in inputs.items():
+            print(f"  {k}: {v.shape}")
+        
+        # Test forward pass
+        print(f"\n🧪 TESTING FORWARD PASS:")
         if torch.cuda.is_available():
             inputs = {k: v.to('cuda') for k, v in inputs.items()}
-        
+            
         with torch.no_grad():
-            outputs = model.generate(
-                **inputs,
-                max_new_tokens=10,
-                do_sample=False,
-                pad_token_id=tokenizer.eos_token_id
-            )
+            # Try a simple forward pass first
+            forward_inputs = {
+                'input_ids': inputs['input_ids'],
+                'attention_mask': inputs['attention_mask']
+            }
+            outputs = model(**forward_inputs)
+            print(f"Forward pass output type: {type(outputs)}")
+            if hasattr(outputs, 'logits'):
+                print(f"Logits shape: {outputs.logits.shape}")
+                print(f"Logits dtype: {outputs.logits.dtype}")
+                print(f"Logits device: {outputs.logits.device}")
+            
+        # Test generation with simple parameters
+        print(f"\n🚀 TESTING GENERATION:")
+        try:
+            with torch.no_grad():
+                outputs = model.generate(
+                    inputs['input_ids'],
+                    attention_mask=inputs['attention_mask'],
+                    max_new_tokens=5,
+                    do_sample=False,
+                    pad_token_id=tokenizer.eos_token_id,
+                    use_cache=False  # Disable cache to avoid complications
+                )
+                print(f"Generation successful!")
+                print(f"Output shape: {outputs.shape}")
+                response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+                print(f"Prompt: {test_prompt}")
+                print(f"Response: {response}")
+        except Exception as gen_error:
+            print(f"Generation failed: {gen_error}")
+            print(f"Generation error type: {type(gen_error).__name__}")
+            import traceback
+            traceback.print_exc()
+        
+        # with torch.no_grad():
+        #     outputs = model.generate(
+        #         **inputs,
+        #         max_new_tokens=10,
+        #         do_sample=False,
+        #         pad_token_id=tokenizer.eos_token_id
+        #     )
                 
-        response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        print(f"Prompt: {test_prompt}")
-        print(f"Response: {response}")
+        # response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        # print(f"Prompt: {test_prompt}")
+        # print(f"Response: {response}")
         
         # Memory usage
         if torch.cuda.is_available():

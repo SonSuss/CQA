@@ -72,7 +72,7 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
                 images,
             )
 
-        return super().forward(
+        outputs = super().forward(
             input_ids=input_ids,
             attention_mask=attention_mask,
             position_ids=position_ids,
@@ -87,6 +87,16 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
             logits_to_keep=logits_to_keep,
             **kwargs
         )
+        
+        # Ensure logits have correct shape for generation
+        if hasattr(outputs, 'logits') and outputs.logits.dim() > 3:
+            # If logits have more than 3 dimensions, reshape to [batch_size, seq_len, vocab_size]
+            batch_size = outputs.logits.shape[0]
+            seq_len = outputs.logits.shape[1] if outputs.logits.dim() > 1 else 1
+            vocab_size = outputs.logits.shape[-1]
+            outputs.logits = outputs.logits.view(batch_size, seq_len, vocab_size)
+        
+        return outputs
 
     @torch.no_grad()
     def generate(
@@ -123,6 +133,11 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
                 **kwargs
             )
         else:
+            # For text-only generation, ensure input_ids are properly shaped
+            if input_ids is not None and input_ids.dim() > 2:
+                # Flatten extra dimensions if present
+                input_ids = input_ids.view(input_ids.shape[0], -1)
+            
             # For text-only generation, just use the parent class
             return super().generate(
                 input_ids=input_ids,
