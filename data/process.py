@@ -43,7 +43,7 @@ models_dir = os.path.join(os.path.dirname(__file__), 'preprocess')
 import_modules(models_dir, "data.preprocess")
 
 
-def PreprocessSelect(version, logger=None):
+def PreprocessSelect(version):
     result = PREPROCESS_REGISTRY.get(version, None)
     if result is None:
         for name in PREPROCESS_REGISTRY.keys():
@@ -53,8 +53,6 @@ def PreprocessSelect(version, logger=None):
     if result is None:
         result = PREPROCESS_REGISTRY['default']
     
-    if logger:
-        logger.info(f"Selected preprocess class: {result.__name__ if hasattr(result, '__name__') else result}")
     
     rank0_print(f"Selected preprocess class: {result.__name__ if hasattr(result, '__name__') else result}")
     return result
@@ -92,7 +90,7 @@ def preprocess(
     has_image: bool = False,
     logger=None
 ) -> Dict:
-    preprocess_cls = PreprocessSelect(conversation_lib.default_conversation.version, logger)
+    preprocess_cls = PreprocessSelect(conversation_lib.default_conversation.version)
     if logger:
         logger.info(f"Using preprocess class: {preprocess_cls.__name__ if hasattr(preprocess_cls, '__name__') else preprocess_cls}")
     else:
