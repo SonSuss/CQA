@@ -50,13 +50,9 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
         output_hidden_states: Optional[bool] = None,
         images: Optional[torch.FloatTensor] = None,
         return_dict: Optional[bool] = None,
-        cache_position: Optional[torch.LongTensor] = None,
-        logits_to_keep: Optional[int] = 0,
-        **kwargs,
     ) -> Union[Tuple, CausalLMOutputWithPast]:
 
-        if inputs_embeds is None and images is not None:
-            # Only prepare multimodal inputs if we actually have images
+        if inputs_embeds is None:
             (
                 input_ids,
                 position_ids,
@@ -73,7 +69,7 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
                 images,
             )
 
-        outputs = super().forward(
+        return super().forward(
             input_ids=input_ids,
             attention_mask=attention_mask,
             position_ids=position_ids,
@@ -83,53 +79,46 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
             use_cache=use_cache,
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
-            return_dict=return_dict,
-            cache_position=cache_position,
-            logits_to_keep=logits_to_keep,
-            **kwargs
+            return_dict=return_dict
         )
-        
-        return outputs
 
     @torch.no_grad()
     def generate(
         self,
-        input_ids: Optional[torch.Tensor] = None,
+        inputs: Optional[torch.Tensor] = None,
         images: Optional[torch.Tensor] = None,
         **kwargs,
     ) -> torch.LongTensor:
+        position_ids = kwargs.pop("position_ids", None)
+        attention_mask = kwargs.pop("attention_mask", None)
+        if "inputs_embeds" in kwargs:
+            raise NotImplementedError("`inputs_embeds` is not supported")
+
         if images is not None:
-            # Only use custom logic when we have images
-            position_ids = kwargs.pop("position_ids", None)
-            attention_mask = kwargs.pop("attention_mask", None)
-            
             (
-                input_ids,
+                inputs,
                 position_ids,
                 attention_mask,
                 _,
                 inputs_embeds,
                 _
             ) = self.prepare_inputs_labels_for_multimodal(
-                input_ids,
+                inputs,
                 position_ids,
                 attention_mask,
                 None,
                 None,
                 images,
             )
-            
-            return super().generate(
-                position_ids=position_ids,
-                attention_mask=attention_mask,
-                inputs_embeds=inputs_embeds,
-                **kwargs
-            )
         else:
-            # For text-only generation, bypass any custom logic entirely
-            # Just use the basic Phi3ForCausalLM generation without any overrides
-            from models.chart_qa_model.model.modeling_phi3 import Phi3ForCausalLM
-            return Phi3ForCausalLM.generate(self, input_ids=input_ids, **kwargs)
+            inputs_embeds = self.get_model().model.embed_tokens(inputs)
+
+        return super().generate(
+            position_ids=position_ids,
+            attention_mask=attention_mask,
+            inputs_embeds=inputs_embeds,
+            **kwargs
+        )
 
     def prepare_inputs_for_generation(self, input_ids, past_key_values=None,
                                       inputs_embeds=None, **kwargs):
