@@ -391,10 +391,10 @@ Answer the questions.""",
     sep="<|im_end|>",
 )
 
-conv_phi_instruct = Conversation(
-    system="",
+conv_phi4_instruct = Conversation(
+    system="You are a helpful assistant that analyzes charts and graphs. When answering questions about visual data, examine the chart carefully, think through the information step by step, then provide a direct and brief answer.",
     roles=("<|user|>\n", "<|assistant|>\n"),
-    version="phi",
+    version="phi4_instruct",
     messages=(),
     offset=0,
     sep_style=SeparatorStyle.PHI,
@@ -412,7 +412,7 @@ conv_templates = {
     "mistral_instruct": conv_mistral_instruct,
     "chatml_direct": conv_chatml_direct,
     "mistral_direct": conv_chatml_direct,
-    "phi_instruct": conv_phi_instruct,
+    "phi4_instruct": conv_phi4_instruct,
 
     "plain": conv_llava_plain,
     "v0_plain": conv_llava_plain,

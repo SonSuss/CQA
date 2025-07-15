@@ -244,7 +244,7 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
 if __name__ == "__main__":
     model_args = ModelArguments(
         model_name_or_path="microsoft/Phi-4-mini-instruct",
-        version="phi_instruct",
+        version="phi4_instruct",
         freeze_backbone=True,
         tune_mm_mlp_adapter=False,
         vision_tower="mPLUG/TinyChart-3B-768-siglip",
@@ -303,4 +303,4 @@ if __name__ == "__main__":
         warmup_steps=100,
         max_grad_norm=1.0
     )
-    train(model_args=model_args, data_args=data_args, training_args=training_args)
+    train(model_args=model_args, data_args=data_args, training_args=training_args, log_rewrite=True)

@@ -309,180 +309,8 @@ def test_phi_llava_model():
     cache_dir = "/root/data/cache"
     
     try:
-        # Import necessary libraries
-        import torch
-        from transformers import AutoTokenizer, AutoModelForCausalLM, set_seed
-
-        # Set a seed for reproducibility
-        set_seed(2024)
-
-        # Define the prompt for the model. In this case, the prompt is a request for C# code.
-        prompt = "Write a C# code that reads the content of multiple text files and save the result as CSV"
-
-        # Define the model checkpoint and Phi-3 Model Required
-        model_checkpoint = "microsoft/Phi-3-mini-4k-instruct"
-
-        # Load the tokenizer from the model checkpoint
-        # trust_remote_code=True allows the execution of code from the model files
-        tokenizer = AutoTokenizer.from_pretrained(model_checkpoint,trust_remote_code=True)
-
-        # Load the model from the model checkpoint
-        # trust_remote_code=True allows the execution of code from the model files
-        # torch_dtype="auto" automatically determines the appropriate torch.dtype
-        # device_map="cuda" specifies that the model should be loaded to the GPU
-        # model = Phi3ForCausalLM.from_pretrained(model_checkpoint,
-        #                                         trust_remote_code=True,
-        #                                         torch_dtype="auto",
-        #                                         device_map="cuda")
-        
-        # Test 1: Official model
-        model_official = AutoModelForCausalLM.from_pretrained(
-            model_checkpoint,
-            trust_remote_code=True,
-            torch_dtype="auto",
-            device_map="cuda"
-        )
-
-        # Test 2: Your custom model  
-        model_custom = Phi3ForCausalLM.from_pretrained(
-            model_checkpoint,
-            trust_remote_code=True,
-            torch_dtype="auto",
-            device_map="cuda"
-        )
-        inputs = tokenizer(prompt,
-                return_tensors="pt").to("cuda")
-
-        # Test generation with both models
-        print("\n🔍 DETAILED GENERATION COMPARISON:")
-
-        try:
-            # Test official model generation
-            print("Testing official model generation...")
-            with torch.no_grad():
-                outputs_official = model_official.generate(**inputs, 
-                                                        do_sample=True, 
-                                                        max_new_tokens=5)  # Small number for testing
-                print("✅ Official model generation successful!")
-                response = tokenizer.decode(outputs_official[0], skip_special_tokens=True)
-                print(f"Response from official model: {response}")
-
-        except Exception as e:
-            print(f"❌ Official model generation failed: {e}")
-
-        try:
-            # Test custom model generation
-            print("Testing custom model generation...")
-            with torch.no_grad():
-                outputs_custom = model_custom.generate(**inputs, 
-                                                    do_sample=True, 
-                                                    max_new_tokens=5)  # Small number for testing
-                print("✅ Custom model generation successful!")
-                response = tokenizer.decode(outputs_custom[0], skip_special_tokens=True)
-                print(f"Response from custom model: {response}")
-                
-        except Exception as e:
-            print(f"❌ Custom model generation failed: {e}")
-            print("This confirms the issue is in your custom model's generation logic")
-            import traceback
-            traceback.print_exc()
-
-        # Tokenize the prompt and move the tensors to the GPU
-
-
-        # Generate a response from the model
-        # do_sample=True means the model will generate text by sampling from the distribution of possible outputs
-        # max_new_tokens=200 limits the length of the generated text to 200 tokens
-
-        # Decode the generated tokens and remove any special tokens
-        # response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        # print(response)
-        # # Test our custom config
-        # print("\n🔧 LOADING WITH CUSTOM PHI-LLAVA CONFIG:")
-        # config = Phi3Config.from_pretrained(model_path, cache_dir=cache_dir)
-        # print("✅ Custom config loaded successfully!")
-        
-        # print(f"Model type: {config.model_type}")
-        # print(f"Hidden size: {config.hidden_size}")
-        # print(f"Num attention heads: {config.num_attention_heads}")
-        # print(f"Expected rope_scaling length: {config.hidden_size // config.num_attention_heads // 2}")
-        
-        # if hasattr(config, 'rope_scaling') and config.rope_scaling:
-        #     print(f"Short factor length: {len(config.rope_scaling['short_factor'])}")
-        #     print(f"Long factor length: {len(config.rope_scaling['long_factor'])}")
-        
-        # device = "cuda" if torch.cuda.is_available() else "cpu"
-        # print(f"Using device: {device}")
-        
-        # # Test model loading - Microsoft's approach from tuning script
-        # model_kwargs = dict(
-        #     use_cache=False,
-        #     trust_remote_code=True,
-        #     attn_implementation="flash_attention_2",
-        #     torch_dtype=torch.bfloat16,
-        #     device_map=device 
-        # )
-        # print(f"\n🚀 LOADING PHI-LLAVA MODEL:")
-        # model = Phi3ForCausalLM.from_pretrained(
-        #     model_path,
-        #     **model_kwargs
-        # )
-        # # model.eval()
-        # # model = torch.compile(model)
-        # print("✅ Phi-3 model loaded successfully!")
-
-
-        # # Test tokenizer
-        # tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, cache_dir=cache_dir)
-        # # tokenizer.model_max_length = 2048
-        # # tokenizer.pad_token = tokenizer.unk_token
-        # # tokenizer.pad_token_id = tokenizer.convert_tokens_to_ids(tokenizer.pad_token)
-        # # tokenizer.padding_side = 'right'
-        # print("✅ Tokenizer loaded successfully!")
-        
-        # print("tokenizer :",tokenizer)
-        # volume.commit()
-        
-        # # Quick test
-        # print(f"\n🧠 QUICK INFERENCE TEST:")
-        # # Check if tokenizer has a chat template
-        # print(f"Tokenizer chat template: {getattr(tokenizer, 'chat_template', 'None')}")
-        # print(f"Special tokens: {tokenizer.special_tokens_map}")
-        
-        # # Use proper instruction format for Phi-4-mini-instruct
-        # if hasattr(tokenizer, 'apply_chat_template'):
-        #     # Use the tokenizer's chat template if available
-        #     messages = [
-        #         {"role": "user", "content": "Hello, who are you?"}
-        #     ]
-        #     try:
-        #         test_prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-        #         print("Using chat template format:")
-        #     except:
-        #         test_prompt = "<|user|>\nHello, how are you?<|end|>\n<|assistant|>\n"
-        #         print("Using manual format (chat template failed):")
-        # else:
-        #     test_prompt = "<|user|>\nHello, how are you?<|end|>\n<|assistant|>\n"
-        #     print("Using manual format (no chat template):")
-        
-        # inputs = tokenizer(test_prompt, return_tensors="pt").to(device)
-            
-        # with torch.no_grad():
-        #     outputs = model.generate(**inputs, do_sample=True, max_new_tokens=120)
-        #     print(outputs)
-        #     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        #     print("Response: ", response)
-
-        # Memory usage
-        if torch.cuda.is_available():
-            allocated = torch.cuda.memory_allocated() / 1024**3
-            cached = torch.cuda.memory_reserved() / 1024**3
-            print(f"\n💾 GPU MEMORY USAGE:")
-            print(f"Allocated: {allocated:.2f} GB")
-            print(f"Cached: {cached:.2f} GB")
-        
-        print("SUCCESS")
-        return "Success"
+        #test go here
+        pass
         
     except Exception as e:
         print(f"❌ Test failed: {e}")
@@ -516,7 +344,6 @@ def train_chartqa():
     # Define paths for Modal environment
     data_path = "/root/data/Chart_QA/processed_data/train.json"
     eval_data_path = "/root/data/Chart_QA/processed_data/val.json"
-    image_path = "/root/data/Chart_QA/processed_data/images"
     output_dir = "/root/data/checkpoints"
     cache_dir = "/root/data/cache"
     
@@ -545,7 +372,7 @@ def train_chartqa():
     #model config
     model_args = ModelArguments(
         model_name_or_path="microsoft/Phi-4-mini-instruct",
-        version="phi_instruct",
+        version="phi4_instruct",
         freeze_backbone=True,
         tune_mm_mlp_adapter=False,
         vision_tower="mPLUG/TinyChart-3B-768-siglip",
