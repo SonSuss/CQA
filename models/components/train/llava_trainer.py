@@ -169,23 +169,14 @@ class LLaVATrainer(Trainer):
     #override the log method to use custom logger instead of printing to console
     def log(self, logs, *args, **kwargs):
         if self.custom_logger is not None:
-            # Log all available metrics in a clean format
-            important_metrics = []
-            for key, value in logs.items():
-                if isinstance(value, float):
-                    if key == 'grad_norm':
-                        important_metrics.append(f"{key}: {value:.2f}")
-                    elif key == 'learning_rate':
-                        important_metrics.append(f"{key}: {value:.1e}")  # Scientific notation for small values
-                    else:
-                        important_metrics.append(f"{key}: {value:.4f}")
-                else:
-                    important_metrics.append(f"{key}: {value}")
+            # Direct formatting for known keys
+            loss = logs.get('loss', 0)
+            grad_norm = logs.get('grad_norm', 0)
+            learning_rate = logs.get('learning_rate', 0)
+            epoch = logs.get('epoch', 0)
             
-            if important_metrics:
-                self.custom_logger.info(" | ".join(important_metrics))
+            self.custom_logger.info(f"loss: {loss:.4f} | grad_norm: {grad_norm:.2f} | learning_rate: {learning_rate:.1e} | epoch: {epoch:.2f}")
         else:
-            # Call parent log method with all parameters
             super().log(logs, *args, **kwargs)
             
     def create_optimizer(self):
