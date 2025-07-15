@@ -5,7 +5,7 @@ import torch
 app = modal.App("TrainChartQA")
 
 # Create or attach a persistent volume
-volume = modal.Volume.from_name("chartqa", create_if_missing=True)
+volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4", create_if_missing=True)
 
 
 cuda_version = "12.6.0"
@@ -74,7 +74,7 @@ MINUTES = 60
 TRAIN_GPU = gpu
 TRAIN_CPU_COUNT = (1.0,8.0)
 TRAIN_MEMORY_GB = (8 * 1024,32 * 1024)  # 8GB to 32GB
-TRAIN_TIME = 2 # hours
+TRAIN_TIME = 8 # hours
 
 @app.function(
     image=training_image,
@@ -366,17 +366,6 @@ def preload_models():
     )
     del phi_model
     torch.cuda.empty_cache()
-    print(f"\n📥 2. DOWNLOADING VISION TOWER (CUSTOM SIGLIP-TOME)")
-    
-    vision_tower_name = "mPLUG/TinyChart-3B-768-siglip"
-    vision_tower = SigLipVisionTower(
-        vision_tower_name,
-        cache_dir=cache_dir,delay_load=False
-    )
-    vision_tower_config = SigLipVisionConfig.from_pretrained(
-        vision_tower_name,
-        cache_dir=cache_dir
-    )
     
     volume.commit()
 
@@ -464,13 +453,13 @@ def train_chartqa():
     training_args = TrainingArguments(
         output_dir=output_dir,
         num_train_epochs=3, 
-        per_device_train_batch_size=8,
+        per_device_train_batch_size=6,
         per_device_eval_batch_size=4,
         gradient_accumulation_steps=1,
         evaluation_strategy="no",
         save_strategy="steps",
-        save_steps=500,  # More frequent saves for testing
-        save_total_limit=10,  # Reduced for testing
+        save_steps=500, 
+        save_total_limit=5,
         mm_projector_lr=1e-4,
         vision_tower_lr=5e-5,
         weight_decay=0.0,
@@ -493,3 +482,5 @@ def train_chartqa():
         local_rank=-1,  # For single GPU
     )
     train(model_args, data_args, training_args, log_rewrite=True)
+    
+    volume.commit()
