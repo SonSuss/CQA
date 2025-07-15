@@ -40,7 +40,6 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
             cache_dir=training_args.cache_dir,
             **bnb_model_from_pretrained_args,
             attn_implementation="flash_attention_2",
-            attn_implementation=None,
             torch_dtype=compute_dtype,
             trust_remote_code=True
         )
@@ -50,7 +49,6 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
             cache_dir=training_args.cache_dir,
             **bnb_model_from_pretrained_args,
             attn_implementation="flash_attention_2",
-            attn_implementation=None,
             torch_dtype=compute_dtype,
             trust_remote_code=True
         )
