@@ -12,7 +12,7 @@ cuda_version = "12.6.0"
 flavor = "devel" 
 operating_sys = "ubuntu22.04"
 tag = f"nvidia/cuda:{cuda_version}-{flavor}-{operating_sys}"
-gpu = "L40S"
+gpu = "A100-40GB"
 
 training_image = (
     modal.Image.from_registry(tag, add_python="3.11")
@@ -71,7 +71,7 @@ def pull_latest_code():
 
 # Training configuration constants
 MINUTES = 60
-TRAIN_GPU = f"L40S"
+TRAIN_GPU = gpu
 TRAIN_CPU_COUNT = (1.0,8.0)
 TRAIN_MEMORY_GB = (8 * 1024,32 * 1024)  # 8GB to 32GB
 TRAIN_TIME = 2 # hours
@@ -79,8 +79,8 @@ TRAIN_TIME = 2 # hours
 @app.function(
     image=training_image,
     gpu=TRAIN_GPU,
-    timeout= 30 * MINUTES,
-    cpu=1
+    timeout= 60 * MINUTES,
+    cpu=TRAIN_CPU_COUNT
 )
 def check_gpu_info():
     pull_latest_code()
@@ -320,6 +320,65 @@ def test_phi_llava_model():
         return "Failed"
     
     
+@app.function(
+    image=training_image,
+    volumes={"/root/data": volume},
+    gpu=TRAIN_GPU,
+    cpu=TRAIN_CPU_COUNT,
+    memory=TRAIN_MEMORY_GB,
+    timeout=60 * MINUTES,
+)
+def preload_models():
+    import os
+    import torch
+    from models.chart_qa_model.model.modeling_phi3 import Phi3ForCausalLM
+    from models.chart_qa_model.model.configuration_phi3 import Phi3Config
+    from models.components.vision_towers.siglip_tome.siglip_tome import SigLipVisionTower, SigLipVisionConfig
+    from transformers import AutoTokenizer
+    cache_dir= "/root/data/cache"
+    os.makedirs(cache_dir, exist_ok=True)
+    model_name="microsoft/Phi-4-mini-instruct"
+    
+    print("  📝 Downloading tokenizer...")
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_name,
+        cache_dir=cache_dir,
+        model_max_length=1024,  # Same as training
+        padding_side="right",
+        use_fast=False,
+        trust_remote_code=True
+    )
+    print("  ⚙️ Downloading model config...")
+    config = Phi3Config.from_pretrained(
+        model_name,
+        cache_dir=cache_dir,
+        trust_remote_code=True
+    )
+    print("  🧠 Downloading Phi-4 model weights...")
+    phi_model = Phi3ForCausalLM.from_pretrained(
+        model_name,
+        config=config,
+        cache_dir=cache_dir,
+        torch_dtype=torch.bfloat16,  # Same as training
+        device_map="cpu",  # Keep on CPU during download
+        trust_remote_code=True,
+        attn_implementation="flash_attention_2"  # Same as training
+    )
+    del phi_model
+    torch.cuda.empty_cache()
+    print(f"\n📥 2. DOWNLOADING VISION TOWER (CUSTOM SIGLIP-TOME)")
+    
+    vision_tower_name = "mPLUG/TinyChart-3B-768-siglip"
+    vision_tower = SigLipVisionTower(
+        vision_tower_name,
+        cache_dir=cache_dir,delay_load=False
+    )
+    vision_tower_config = SigLipVisionConfig.from_pretrained(
+        vision_tower_name,
+        cache_dir=cache_dir
+    )
+    
+    volume.commit()
 
 @app.function(
     image=training_image,
@@ -405,28 +464,28 @@ def train_chartqa():
     training_args = TrainingArguments(
         output_dir=output_dir,
         num_train_epochs=3, 
-        per_device_train_batch_size=4,
+        per_device_train_batch_size=8,
         per_device_eval_batch_size=4,
-        gradient_accumulation_steps=4,
+        gradient_accumulation_steps=1,
         evaluation_strategy="no",
         save_strategy="steps",
-        save_steps=1000,  # More frequent saves for testing
+        save_steps=500,  # More frequent saves for testing
         save_total_limit=10,  # Reduced for testing
         mm_projector_lr=1e-4,
         vision_tower_lr=5e-5,
         weight_decay=0.0,
         warmup_ratio=0.1,
         lr_scheduler_type="cosine",
-        logging_steps=1,
+        logging_steps=25,
         fp16=False,
         bf16=True,
         model_max_length=1024,
         gradient_checkpointing=True,
-        dataloader_num_workers=8, 
+        dataloader_num_workers=12, 
         dataloader_persistent_workers=True,
         report_to="tensorboard",
         cache_dir=cache_dir,
-        optim="adamw_torch",
+        optim="adamw_torch_fused",
         bits=16,
         group_by_modality_length=True,
         warmup_steps=100,
