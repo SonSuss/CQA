@@ -167,12 +167,23 @@ class LLaVATrainer(Trainer):
                 return super()._get_train_sampler()
             
     #override the log method to use custom logger instead of printing to console
-    def log(self, logs,*args, **kwargs):
+    def log(self, logs, *args, **kwargs):
         if self.custom_logger is not None:
+            # Create a condensed one-line summary
+            important_metrics = []
+            
             for key, value in logs.items():
-                self.custom_logger.info(f"{key}: {value}")
+                if key in ['loss', 'learning_rate', 'epoch', 'train_loss', 'eval_loss']:
+                    if isinstance(value, float):
+                        important_metrics.append(f"{key}: {value:.4f}")
+                    else:
+                        important_metrics.append(f"{key}: {value}")
+            
+            if important_metrics:
+                self.custom_logger.info(" | ".join(important_metrics))
         else:
-            super().log(logs,*args, **kwargs)
+            # Call parent log method with all parameters
+            super().log(logs, *args, **kwargs)
             
     def create_optimizer(self):
         """

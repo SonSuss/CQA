@@ -404,14 +404,14 @@ def train_chartqa():
     # Test configuration with smaller values for quick validation
     training_args = TrainingArguments(
         output_dir=output_dir,
-        num_train_epochs=1,  # Reduced for testing
-        per_device_train_batch_size=2,  # Reduced for testing
-        per_device_eval_batch_size=2,  # Reduced for testing
-        gradient_accumulation_steps=2,  # Reduced for testing
+        num_train_epochs=3, 
+        per_device_train_batch_size=4,
+        per_device_eval_batch_size=4,
+        gradient_accumulation_steps=4,
         evaluation_strategy="no",
         save_strategy="steps",
-        save_steps=50,  # More frequent saves for testing
-        save_total_limit=3,  # Reduced for testing
+        save_steps=1000,  # More frequent saves for testing
+        save_total_limit=10,  # Reduced for testing
         mm_projector_lr=1e-4,
         vision_tower_lr=5e-5,
         weight_decay=0.0,
@@ -422,14 +422,14 @@ def train_chartqa():
         bf16=True,
         model_max_length=1024,
         gradient_checkpointing=True,
-        dataloader_num_workers=4,  # Reduced for testing
-        dataloader_persistent_workers=False,  # Disabled for testing
+        dataloader_num_workers=8, 
+        dataloader_persistent_workers=True,
         report_to="tensorboard",
         cache_dir=cache_dir,
         optim="adamw_torch",
         bits=16,
         group_by_modality_length=True,
-        warmup_steps=10,  # Reduced for testing
+        warmup_steps=100,
         max_grad_norm=1.0,
         local_rank=-1,  # For single GPU
     )

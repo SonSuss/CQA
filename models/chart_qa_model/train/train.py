@@ -213,9 +213,9 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
     logger.info(f"Input embeddings trainable: {embed_trainable:,}")
     logger.info(f"Output embeddings trainable: {output_embed_trainable:,}")
     
-    logger.info("mm_projector: ",model.get_model().mm_projector)
-    logger.info("trainable parameters: ", sum(p.numel() for p in model.parameters() if p.requires_grad))
-    logger.info("total parameters: ", sum(p.numel() for p in model.parameters()))
+    logger.info("mm_projector: %s", model.get_model().mm_projector)
+    logger.info("trainable parameters: %s", sum(p.numel() for p in model.parameters() if p.requires_grad))
+    logger.info("total parameters: %s", sum(p.numel() for p in model.parameters()))
     
     trainer = LLaVATrainer(model=model,
                            tokenizer=tokenizer,
