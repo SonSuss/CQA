@@ -169,9 +169,11 @@ class LLaVATrainer(Trainer):
     #override the log method to use custom logger instead of printing to console
     def log(self, logs, *args, **kwargs):
         if self.custom_logger is not None:
-            # Create a condensed one-line summary
-            important_metrics = []
+            # Debug: print all available keys first
+            self.custom_logger.info(f"Available log keys: {list(logs.keys())}")
             
+            # Then log important metrics
+            important_metrics = []
             for key, value in logs.items():
                 if key in ['loss', 'learning_rate', 'epoch', 'train_loss', 'eval_loss']:
                     if isinstance(value, float):

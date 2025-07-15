@@ -53,10 +53,10 @@ def PreprocessSelect(version, logger=None):
     if result is None:
         result = PREPROCESS_REGISTRY['default']
     
-    if logger:
-        logger.info(f"Selected preprocess class: {result.__name__ if hasattr(result, '__name__') else result}")
+    # if logger:
+    #     logger.info(f"Selected preprocess class: {result.__name__ if hasattr(result, '__name__') else result}")
     
-    rank0_print(f"Selected preprocess class: {result.__name__ if hasattr(result, '__name__') else result}")
+    # rank0_print(f"Selected preprocess class: {result.__name__ if hasattr(result, '__name__') else result}")
     return result
 
 
