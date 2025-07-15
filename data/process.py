@@ -43,7 +43,7 @@ models_dir = os.path.join(os.path.dirname(__file__), 'preprocess')
 import_modules(models_dir, "data.preprocess")
 
 
-def PreprocessSelect(version):
+def PreprocessSelect(version, logger=None):
     result = PREPROCESS_REGISTRY.get(version, None)
     if result is None:
         for name in PREPROCESS_REGISTRY.keys():
@@ -52,6 +52,9 @@ def PreprocessSelect(version):
                 break
     if result is None:
         result = PREPROCESS_REGISTRY['default']
+    
+    if logger:
+        logger.info(f"Selected preprocess class: {result.__name__ if hasattr(result, '__name__') else result}")
     
     rank0_print(f"Selected preprocess class: {result.__name__ if hasattr(result, '__name__') else result}")
     return result
