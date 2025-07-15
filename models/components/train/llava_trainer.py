@@ -170,6 +170,8 @@ class LLaVATrainer(Trainer):
     def log(self, logs, *args, **kwargs):
         if self.custom_logger is not None:
             # Direct formatting for known keys
+            logs = logs.copy()
+            logs['epoch'] = self.state.epoch
             loss = logs.get('loss', 0)
             grad_norm = logs.get('grad_norm', 0)
             learning_rate = logs.get('learning_rate', 0)
