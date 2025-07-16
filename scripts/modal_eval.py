@@ -95,5 +95,13 @@ def model_inference():
     
     image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/289.png"
     text = "What's the leftmost value of bar in \"All adults\" category?" #48
-    response = inference_model([image_path], text, model, tokenizer, image_processor, context_len, conv_mode="phi4_instruct", max_new_tokens=1024)
+    response = inference_model(
+            image_path,  # Remove the list brackets - function expects single path
+            text, 
+            model, 
+            tokenizer, 
+            image_processor, 
+            conv_mode="phi4_instruct",  # This goes in the conv_mode position
+            max_new_tokens=1024
+    )
     print(f"Response: {response}")
