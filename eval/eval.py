@@ -10,7 +10,7 @@ import shortuuid
 
 from CQA.models.components.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
 from CQA.models.components.conversation import conv_templates, SeparatorStyle
-from models.data_generator.builder import load_pretrained_model
+from CQA.models.chart_qa_model.builder import load_pretrained_model
 from CQA.models.components.utils import disable_torch_init
 from CQA.models.components.mm_utils import tokenizer_image_token, process_images, get_model_name_from_path
 from torch.utils.data import Dataset, DataLoader

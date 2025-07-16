@@ -3,10 +3,10 @@ import json
 import argparse
 import pandas as pd
 from collections import defaultdict
-from models.data_generator.eval.eval_metric import chartqa_evaluator, chartqapot_evaluator
-from models.data_generator.eval.eval_metric import chartqa_oracle_merger_evaluator, chartqa_rule_merger_evaluator
-from models.data_generator.eval.eval_chart2text import chart2text_evaluator
-from models.data_generator.eval.eval_chart2table import chart2table_evaluator
+from eval.eval_metric import chartqa_evaluator, chartqapot_evaluator
+from eval_metric import chartqa_oracle_merger_evaluator, chartqa_rule_merger_evaluator
+from eval_chart2text import chart2text_evaluator
+from eval.eval_chart2table import chart2table_evaluator
 
 def read_jsonl(jsonl_path):
     with open(jsonl_path, 'r') as f:

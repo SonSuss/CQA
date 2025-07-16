@@ -74,7 +74,8 @@ MINUTES = 60
 TRAIN_GPU = gpu
 TRAIN_CPU_COUNT = (1.0,8.0)
 TRAIN_MEMORY_GB = (8 * 1024,32 * 1024)  # 8GB to 32GB
-TRAIN_TIME = 8 # hours
+TRAIN_TIME = 10 # hours
+CHECKPOINT = "/root/data/checkpoints-siglip-mlp2x_gelu-phi4"
 
 @app.function(
     image=training_image,
@@ -392,7 +393,7 @@ def train_chartqa():
     # Define paths for Modal environment
     data_path = "/root/data/Chart_QA/processed_data/train.json"
     eval_data_path = "/root/data/Chart_QA/processed_data/val.json"
-    output_dir = "/root/data/checkpoints"
+    output_dir = CHECKPOINT
     cache_dir = "/root/data/cache"
     
     # Check if paths exist
@@ -426,7 +427,7 @@ def train_chartqa():
         vision_tower="mPLUG/TinyChart-3B-768-siglip",
         mm_vision_select_layer=-1,
         pretrain_mm_mlp_adapter=None,
-        mm_projector_type="resampler",
+        mm_projector_type="mlp2x_gelu",
         mm_use_im_start_end=False,
         mm_use_im_patch_token=False,
         mm_patch_merge_type="flat",
@@ -453,16 +454,16 @@ def train_chartqa():
     training_args = TrainingArguments(
         output_dir=output_dir,
         num_train_epochs=3, 
-        per_device_train_batch_size=6,
+        per_device_train_batch_size=7,
         per_device_eval_batch_size=4,
         gradient_accumulation_steps=1,
         evaluation_strategy="no",
         save_strategy="steps",
-        save_steps=500, 
-        save_total_limit=5,
-        mm_projector_lr=1e-4,
-        vision_tower_lr=5e-5,
-        weight_decay=0.0,
+        save_steps=1000, 
+        save_total_limit=1,
+        mm_projector_lr=8e-5,
+        vision_tower_lr=2e-5,
+        weight_decay=0.01,
         warmup_ratio=0.1,
         lr_scheduler_type="cosine",
         logging_steps=25,
@@ -477,10 +478,89 @@ def train_chartqa():
         optim="adamw_torch_fused",
         bits=16,
         group_by_modality_length=True,
-        warmup_steps=100,
-        max_grad_norm=1.0,
+        warmup_steps=150,
+        max_grad_norm=0.5,
         local_rank=-1,  # For single GPU
     )
     train(model_args, data_args, training_args, log_rewrite=True)
     
     volume.commit()
+    
+@app.function(
+    image=training_image,
+    volumes={"/root/data": volume},
+    timeout=15 * MINUTES,
+)
+def remove_old_checkpoints():
+    import os
+    import shutil
+    import glob
+    
+    checkpoint_base = CHECKPOINT
+    if not os.path.exists(checkpoint_base):
+        print(f"📁 No checkpoint directory found at: {checkpoint_base}")
+        return {"status": "no_checkpoints", "removed": 0, "space_saved_gb": 0}
+    checkpoint_pattern = os.path.join(checkpoint_base, "checkpoint-*")
+    checkpoint_dirs = glob.glob(checkpoint_pattern)
+    if not checkpoint_dirs:
+        print("Checkpoint directory exists but no checkpoint-* folders found")
+        return {"status": "empty_dir", "removed": 0, "space_saved_gb": 0}
+    # Sort by step number (checkpoint-1000, checkpoint-2000, etc.)
+    def get_step_number(path):
+        try:
+            basename = os.path.basename(path)
+            step_str = basename.split("-")[1]
+            return int(step_str)
+        except (IndexError, ValueError):
+            return 0
+    
+    checkpoint_dirs.sort(key=get_step_number)
+    
+    print(f"Found {len(checkpoint_dirs)} checkpoint directories:")
+    for cp_dir in checkpoint_dirs:
+        basename = os.path.basename(cp_dir)
+        step = get_step_number(cp_dir)
+        print(f"{basename} (step {step})")
+        
+    if len(checkpoint_dirs) <= 1:
+        print("Only one checkpoint found, keeping it")
+        return {"status": "single_checkpoint", "removed": 0, "space_saved_gb": 0}
+    
+    latest_checkpoint = checkpoint_dirs[-1]  # Last one after sorting
+    to_remove = checkpoint_dirs[:-1]  # All except the last one
+    
+    print(f"\nKeeping latest: {os.path.basename(latest_checkpoint)}")
+    print(f"Removing {len(to_remove)} old checkpoints:")
+    total_space_saved = 0
+    removed_count = 0
+    for cp_dir in to_remove:
+        basename = os.path.basename(cp_dir)
+        
+        try:
+            # Quick size estimation (count files)
+            file_count = sum(len(files) for _, _, files in os.walk(cp_dir))
+            estimated_size_gb = file_count * 0.1  # Rough estimate: 100MB per file average
+
+            print(f"Removing {basename} (~{estimated_size_gb:.1f} GB estimated)")
+
+            # Remove the directory
+            shutil.rmtree(cp_dir)
+            
+            total_space_saved += estimated_size_gb
+            removed_count += 1
+            
+            print(f"Successfully removed")
+            
+        except Exception as e:
+            print(f"Failed to remove {basename}: {e}")
+        print(f"\nCleanup Summary:")
+    print(f"Checkpoints removed: {removed_count}")
+    print(f"Estimated space saved: ~{total_space_saved:.1f} GB")
+    print(f"Remaining checkpoint: {os.path.basename(latest_checkpoint)}")
+    volume.commit()
+    return {
+        "status": "cleanup_complete",
+        "removed": removed_count,
+        "space_saved_gb": total_space_saved,
+        "kept_checkpoint": os.path.basename(latest_checkpoint)
+    }

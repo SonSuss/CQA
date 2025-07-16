@@ -1,11 +1,11 @@
 from transformers import AutoTokenizer, BitsAndBytesConfig
-from models.data_generator.model.sigllama import SigLlamaForCausalLM, SiglipLlamaConfig
-from CQA.models.components.constants import DEFAULT_IMAGE_PATCH_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
+from models.chart_qa_model.model.phi_4_llava import PhiLlavaForCausalLM, PhiLlava_config
+from models.components.constants import DEFAULT_IMAGE_PATCH_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
 
 
 import torch
 
-def load_pretrained_llava_model(model_path, model_name, load_8bit=False, load_4bit=False, device_map="auto", device="cuda", **kwargs):
+def load_pretrained_llava_model(model_path, load_8bit=False, load_4bit=False, device_map="auto", device="cuda", **kwargs):
     kwargs = {"device_map": device_map, **kwargs}
 
     if device != "cuda":
@@ -28,9 +28,10 @@ def load_pretrained_llava_model(model_path, model_name, load_8bit=False, load_4b
         
     #load Llava model
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False, padding_side="right")
-    model = SigLlamaForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
+    model = PhiLlavaForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
     mm_use_im_start_end = getattr(model.config, "mm_use_im_start_end", False)
     mm_use_im_patch_token = getattr(model.config, "mm_use_im_patch_token", True)
+    
     
     if mm_use_im_patch_token:
         tokenizer.add_tokens([DEFAULT_IMAGE_PATCH_TOKEN], special_tokens=True)

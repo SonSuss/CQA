@@ -18,7 +18,7 @@ TEMP_DIR=${OUTPUT}/temp_${time_stamp}
 mkdir -p ${TEMP_DIR}
 
 for ((chunk_idx=0; chunk_idx<num_chunks; chunk_idx++)); do
-    CUDA_VISIBLE_DEVICES=$chunk_idx python -u models/data_generator/eval/eval.py \
+    CUDA_VISIBLE_DEVICES=$chunk_idx python -u eval/eval.py \
         --model_path ${MODEL_PATH} \
         --data_path ${TEST_DATA_PATH} \
         --image_folder '' \
