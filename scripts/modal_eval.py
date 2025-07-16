@@ -90,11 +90,10 @@ def model_inference():
     from eval.inference_model import inference_model
     from models.chart_qa_model.builder import load_pretrained_llava_model
     
-    tokenizer, model, image_processor, context_len = load_pretrained_llava_model(MODEL_PATH, 
-                                                                            model_base=None,
+    tokenizer, model, image_processor, context_len = load_pretrained_llava_model(MODEL_PATH,
                                                                             device="cuda")
     
     image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/289.png"
     text = "What's the leftmost value of bar in \"All adults\" category?" #48
     response = inference_model([image_path], text, model, tokenizer, image_processor, context_len, conv_mode="phi4_instruct", max_new_tokens=1024)
-    print(response)
+    print(f"Response: {response}")
