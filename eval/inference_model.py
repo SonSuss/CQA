@@ -52,9 +52,30 @@ def inference_model(image_path ,input, model, tokenizer, image_processor, conv_m
             stopping_criteria=[stopping_criteria],
         )
 
-    outputs = tokenizer.batch_decode(
-        output_ids, skip_special_tokens=True
-    )[0]
+    # outputs = tokenizer.batch_decode(
+    #     output_ids, skip_special_tokens=True
+    # )[0]
+    # outputs = outputs.strip()
+    # if outputs.endswith(stop_str):
+    #     outputs = outputs[: -len(stop_str)]
+    # outputs = outputs.strip()
+    # return outputs
+    
+    input_token_len = input_ids.shape[1]
+    generated_tokens = output_ids[:, input_token_len:]
+    
+    # Filter out any invalid token IDs
+    valid_tokens = []
+    for token_id in generated_tokens[0]:
+        if token_id is not None and token_id >= 0 and token_id < len(tokenizer):
+            valid_tokens.append(token_id.item())
+    
+    # Decode only valid tokens
+    if valid_tokens:
+        outputs = tokenizer.decode(valid_tokens, skip_special_tokens=True)
+    else:
+        outputs = ""
+    
     outputs = outputs.strip()
     if outputs.endswith(stop_str):
         outputs = outputs[: -len(stop_str)]
