@@ -32,12 +32,18 @@ def load_pretrained_llava_model(model_path, load_8bit=False, load_4bit=False, de
     mm_use_im_start_end = getattr(model.config, "mm_use_im_start_end", False)
     mm_use_im_patch_token = getattr(model.config, "mm_use_im_patch_token", True)
     
-    
-    if mm_use_im_patch_token:
-        tokenizer.add_tokens([DEFAULT_IMAGE_PATCH_TOKEN], special_tokens=True)
+    tokens_to_add = []
+    if mm_use_im_patch_token and DEFAULT_IMAGE_PATCH_TOKEN not in tokenizer.vocab:
+        tokens_to_add.append(DEFAULT_IMAGE_PATCH_TOKEN)
     if mm_use_im_start_end:
-        tokenizer.add_tokens([DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN], special_tokens=True)
-    model.resize_token_embeddings(len(tokenizer))
+        if DEFAULT_IM_START_TOKEN not in tokenizer.vocab:
+            tokens_to_add.append(DEFAULT_IM_START_TOKEN)
+        if DEFAULT_IM_END_TOKEN not in tokenizer.vocab:
+            tokens_to_add.append(DEFAULT_IM_END_TOKEN)
+    
+    if tokens_to_add:
+        tokenizer.add_tokens(tokens_to_add, special_tokens=True)
+        model.resize_token_embeddings(len(tokenizer))
     
     vision_tower = model.get_vision_tower()
     if not vision_tower.is_loaded:

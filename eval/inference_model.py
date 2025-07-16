@@ -47,9 +47,12 @@ def inference_model(image_path ,input, model, tokenizer, image_processor, conv_m
             temperature=temperature,
             top_p=top_p,
             pad_token_id=tokenizer.pad_token_id,
+            eos_token_id=tokenizer.eos_token_id,
             max_new_tokens=max_new_tokens,
             use_cache=True,
             stopping_criteria=[stopping_criteria],
+            output_scores=False,
+            return_dict_in_generate=False,
         )
 
     # outputs = tokenizer.batch_decode(
