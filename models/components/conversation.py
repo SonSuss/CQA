@@ -400,9 +400,20 @@ conv_phi4_instruct = Conversation(
     sep_style=SeparatorStyle.PHI,
     sep="<|end|>\n",
 )
+conv_chart_qa = Conversation(
+    system="Answer the question about the chart briefly and directly.",
+    roles=("Question: ", "Answer: "),
+    version="chart_qa",
+    messages=(),
+    offset=0,
+    sep_style=SeparatorStyle.TWO,
+    sep=" ",
+    sep2="\n",
+)
 
 default_conversation = conv_vicuna_v1
 conv_templates = {
+    "chart_qa": conv_chart_qa,
     "default": conv_vicuna_v0,
     "v0": conv_vicuna_v0,
     "v1": conv_vicuna_v1,

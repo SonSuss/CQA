@@ -102,8 +102,88 @@ def model_inference():
             tokenizer, 
             image_processor, 
             conv_mode="phi4_instruct",  # This goes in the conv_mode position
-            temperature=0.1,
-            top_p=0.95,
-            max_new_tokens=50,
+            temperature=0.0,
+            top_p=1.0,
+            max_new_tokens=100,
     )
     print(f"Response: {response}")
+    
+@app.function(
+    image=training_image,
+    volumes={"/root/data": volume},
+    gpu=VAL_GPU,
+    timeout=15 * MINUTES,
+    cpu=VAL_CPU_COUNT,
+    memory=VAL_MEMORY_GB,
+)
+def simple_text_test():
+    """Test model with text-only input first"""
+    pull_latest_code()
+    from models.chart_qa_model.builder import load_pretrained_llava_model
+    
+    tokenizer, model, image_processor, context_len = load_pretrained_llava_model(
+        MODEL_PATH, 
+        device="cuda"
+    )
+    
+    # Simple text-only test
+    text = "What is 2+2?"
+    input_ids = tokenizer.encode(text, return_tensors="pt").to(model.device)
+    
+    with torch.no_grad():
+        output_ids = model.generate(
+            input_ids,
+            max_new_tokens=10,
+            temperature=0.0,
+            do_sample=False,
+            pad_token_id=tokenizer.eos_token_id,
+        )
+    
+    response = tokenizer.decode(output_ids[0][input_ids.shape[1]:], skip_special_tokens=True)
+    print(f"Text-only response: '{response}'")
+    return {"response": response}
+
+@app.function(
+    image=training_image,
+    volumes={"/root/data": volume},
+    gpu=VAL_GPU,
+    timeout=15 * MINUTES,  # Increase timeout
+    cpu=VAL_CPU_COUNT,
+    memory=VAL_MEMORY_GB,
+)
+def model_inference():
+    pull_latest_code()
+    from eval.inference_model import inference_model
+    from models.chart_qa_model.builder import load_pretrained_llava_model
+    
+    print("🔄 Loading model...")
+    tokenizer, model, image_processor, context_len = load_pretrained_llava_model(
+        MODEL_PATH, 
+        device="cuda"
+    )
+    
+    # 🛠️ FIX: Set pad token properly
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.pad_token_id = tokenizer.eos_token_id
+    
+    print("✅ Model loaded successfully")
+    
+    image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/289.png"
+    text = "What's the leftmost value of bar in \"All adults\" category?"
+    
+    print("🔄 Running vision inference...")
+    response = inference_model(
+        image_path,
+        text, 
+        model, 
+        tokenizer, 
+        image_processor, 
+        conv_mode="chart_qa",      # This worked best
+        temperature=0.1,            # 🛠️ FIX: Slight randomness to break repetition
+        top_p=0.9,                  # 🛠️ FIX: Nucleus sampling
+        max_new_tokens=10,          # 🛠️ FIX: Force short, focused answers
+    )
+    
+    print(f"✅ Vision response: '{response}'")
+    return {"response": response, "text_test_works": True}
