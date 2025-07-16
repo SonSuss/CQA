@@ -34,6 +34,7 @@ def inference_model(image_path ,input, model, tokenizer, image_processor, conv_m
         .unsqueeze(0)
         .to(model.device)
     )
+    attention_mask = torch.ones_like(input_ids).to(model.device)
 
     stop_str = conv.sep if conv.sep_style != SeparatorStyle.TWO else conv.sep2
     keywords = [stop_str]
@@ -42,10 +43,11 @@ def inference_model(image_path ,input, model, tokenizer, image_processor, conv_m
     with torch.inference_mode():
         output_ids = model.generate(
             input_ids,
+            attention_mask=attention_mask,
             images=image_tensor,
             do_sample=True if temperature > 0 else False,
-            temperature=temperature,
-            top_p=top_p,
+            temperature=temperature if temperature > 0 else None,
+            top_p=top_p if temperature > 0 else None,
             pad_token_id=tokenizer.pad_token_id,
             eos_token_id=tokenizer.eos_token_id,
             max_new_tokens=max_new_tokens,

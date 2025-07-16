@@ -102,6 +102,8 @@ def model_inference():
             tokenizer, 
             image_processor, 
             conv_mode="phi4_instruct",  # This goes in the conv_mode position
-            max_new_tokens=1024
+            temperature=0.1,
+            top_p=0.95,
+            max_new_tokens=50,
     )
     print(f"Response: {response}")
