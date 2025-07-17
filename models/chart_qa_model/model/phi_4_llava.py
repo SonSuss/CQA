@@ -76,7 +76,7 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
             attention_mask=attention_mask,
             position_ids=position_ids,
             past_key_values=past_key_values,
-            inputs_embeds=inputs_embeds,
+            # inputs_embeds=inputs_embeds,
             labels=labels,
             use_cache=use_cache,
             output_attentions=output_attentions,
