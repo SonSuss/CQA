@@ -52,20 +52,12 @@ def inference_model(image_path ,input, model, tokenizer, image_processor, conv_m
             pad_token_id=tokenizer.pad_token_id,
             eos_token_id=tokenizer.eos_token_id,
             max_new_tokens=max_new_tokens,
-            use_cache=True,
+            # use_cache=True,
             stopping_criteria=[stopping_criteria],
             output_scores=False,
             return_dict_in_generate=False,
         )
 
-    # outputs = tokenizer.batch_decode(
-    #     output_ids, skip_special_tokens=True
-    # )[0]
-    # outputs = outputs.strip()
-    # if outputs.endswith(stop_str):
-    #     outputs = outputs[: -len(stop_str)]
-    # outputs = outputs.strip()
-    # return outputs
     
     input_token_len = input_ids.shape[1]
     generated_tokens = output_ids[:, input_token_len:]
