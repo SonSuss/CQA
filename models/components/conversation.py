@@ -392,7 +392,9 @@ Answer the questions.""",
 )
 
 conv_phi4_instruct = Conversation(
-    system="You are a helpful assistant that analyzes charts and graphs. When answering questions about visual data, examine the chart carefully, think through the information step by step.",
+    system="A chat between a curious user and an artificial intelligence assistant. "
+           "The assistant is able to understand the visual content that the user provides, and assist the user with a variety of tasks using natural language."
+           "The visual content will be provided with the following format: <Image>visual content</Image>.",
     roles=("<|user|>\n", "<|assistant|>\n"),
     version="phi4_instruct",
     messages=(),

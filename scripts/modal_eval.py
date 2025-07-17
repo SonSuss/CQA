@@ -75,7 +75,7 @@ VAL_GPU = gpu
 VAL_CPU_COUNT = (1.0,8.0)
 VAL_MEMORY_GB = (8 * 1024,32 * 1024)  # 8GB to 32GB
 VAL_TIME = 10 # hours
-MODEL_PATH = "/root/data/checkpoints-siglip-mlp2x_gelu-phi4"
+MODEL_PATH = "/root/data/checkpoints"
 
 @app.function(
     image=training_image,
