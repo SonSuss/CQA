@@ -76,7 +76,7 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
             attention_mask=attention_mask,
             position_ids=position_ids,
             past_key_values=past_key_values,
-            # inputs_embeds=inputs_embeds,
+            inputs_embeds=inputs_embeds,
             labels=labels,
             use_cache=use_cache,
             output_attentions=output_attentions,
@@ -122,62 +122,62 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
             **kwargs
         )
         
-    # @torch.no_grad()
-    # def forward(
-    # self,
-    # input_ids: torch.LongTensor = None,
-    # attention_mask: Optional[torch.Tensor] = None,
-    # position_ids: Optional[torch.LongTensor] = None,
-    # past_key_values: Optional[List[torch.FloatTensor]] = None,
-    # inputs_embeds: Optional[torch.FloatTensor] = None,
-    # labels: Optional[torch.LongTensor] = None,
-    # use_cache: Optional[bool] = None,
-    # output_attentions: Optional[bool] = None,
-    # output_hidden_states: Optional[bool] = None,
-    # images: Optional[torch.FloatTensor] = None,
-    # return_dict: Optional[bool] = None,
-    # cache_position: Optional[torch.LongTensor] = None,  # Add this line
-    # **kwargs  # Add this to catch any other new arguments
-    # ) -> Union[Tuple, CausalLMOutputWithPast]:
-    #     if inputs_embeds is None:
-    #         (
-    #             input_ids,
-    #             position_ids,
-    #             attention_mask,
-    #             past_key_values,
-    #             inputs_embeds,
-    #             labels
-    #         ) = self.prepare_inputs_labels_for_multimodal(
-    #             input_ids,
-    #             position_ids,
-    #             attention_mask,
-    #             past_key_values,
-    #             labels,
-    #             images,
-    #         )
+    @torch.no_grad()
+    def forward(
+    self,
+    input_ids: torch.LongTensor = None,
+    attention_mask: Optional[torch.Tensor] = None,
+    position_ids: Optional[torch.LongTensor] = None,
+    past_key_values: Optional[List[torch.FloatTensor]] = None,
+    inputs_embeds: Optional[torch.FloatTensor] = None,
+    labels: Optional[torch.LongTensor] = None,
+    use_cache: Optional[bool] = None,
+    output_attentions: Optional[bool] = None,
+    output_hidden_states: Optional[bool] = None,
+    images: Optional[torch.FloatTensor] = None,
+    return_dict: Optional[bool] = None,
+    cache_position: Optional[torch.LongTensor] = None,  # Add this line
+    **kwargs  # Add this to catch any other new arguments
+    ) -> Union[Tuple, CausalLMOutputWithPast]:
+        if inputs_embeds is None:
+            (
+                input_ids,
+                position_ids,
+                attention_mask,
+                past_key_values,
+                inputs_embeds,
+                labels
+            ) = self.prepare_inputs_labels_for_multimodal(
+                input_ids,
+                position_ids,
+                attention_mask,
+                past_key_values,
+                labels,
+                images,
+            )
 
-    #     # Build kwargs for parent forward call
-    #     forward_kwargs = {
-    #         "input_ids": input_ids,
-    #         "attention_mask": attention_mask,
-    #         "position_ids": position_ids,
-    #         "past_key_values": past_key_values,
-    #         "inputs_embeds": inputs_embeds,
-    #         "labels": labels,
-    #         "use_cache": use_cache,
-    #         "output_attentions": output_attentions,
-    #         "output_hidden_states": output_hidden_states,
-    #         "return_dict": return_dict
-    #     }
+        # Build kwargs for parent forward call
+        forward_kwargs = {
+            "input_ids": input_ids,
+            "attention_mask": attention_mask,
+            "position_ids": position_ids,
+            "past_key_values": past_key_values,
+            "inputs_embeds": inputs_embeds,
+            "labels": labels,
+            "use_cache": use_cache,
+            "output_attentions": output_attentions,
+            "output_hidden_states": output_hidden_states,
+            "return_dict": return_dict
+        }
         
-    #     # Add cache_position if provided
-    #     if cache_position is not None:
-    #         forward_kwargs["cache_position"] = cache_position
+        # Add cache_position if provided
+        if cache_position is not None:
+            forward_kwargs["cache_position"] = cache_position
         
-    #     # Add any other kwargs that were passed
-    #     forward_kwargs.update(kwargs)
+        # Add any other kwargs that were passed
+        forward_kwargs.update(kwargs)
 
-    #     return super().forward(**forward_kwargs)
+        return super().forward(**forward_kwargs)
 
     def prepare_inputs_for_generation(self, input_ids, past_key_values=None,
                                       inputs_embeds=None, **kwargs):
