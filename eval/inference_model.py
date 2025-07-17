@@ -52,7 +52,7 @@ def inference_model(image_path ,input, model, tokenizer, image_processor, conv_m
             pad_token_id=tokenizer.pad_token_id,
             eos_token_id=tokenizer.eos_token_id,
             max_new_tokens=max_new_tokens,
-            # use_cache=True,
+            use_cache=True,
             stopping_criteria=[stopping_criteria],
             output_scores=False,
             return_dict_in_generate=False,
