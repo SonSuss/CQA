@@ -6,15 +6,9 @@ import torch.nn as nn
 
 # from models.components.vision_towers.siglip_tome.siglip_tome import build_vision_tower
 # from models.components.vision_towers.vit.vit import build_vision_tower
+from models.components.constants import *
 from models.components.mm_projector import build_vision_projector
 
-
-IGNORE_INDEX = -100
-IMAGE_TOKEN_INDEX = -200
-DEFAULT_IMAGE_TOKEN = "<image>"
-DEFAULT_IMAGE_PATCH_TOKEN = "<im_patch>"
-DEFAULT_IM_START_TOKEN = "<im_start>"
-DEFAULT_IM_END_TOKEN = "<im_end>"
 
 def build_vision_tower(config, delay_load=False):
     if config.mm_vision_tower == "mPLUG/TinyChart-3B-768-siglip":
@@ -330,6 +324,8 @@ class LlavaMetaForCausalLM(ABC):
         return None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
 
     def initialize_vision_tokenizer(self, model_args, tokenizer):
+        tokenizer.add_tokens([DEFAULT_IMAGE_TOKEN], special_tokens=True)
+        
         if model_args.mm_use_im_patch_token:
             tokenizer.add_tokens([DEFAULT_IMAGE_PATCH_TOKEN], special_tokens=True)
             self.resize_token_embeddings(len(tokenizer))

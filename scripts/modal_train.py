@@ -589,4 +589,6 @@ def test_add_token():
         )
 
     tokenizer.add_tokens([DEFAULT_IMAGE_TOKEN,DEFAULT_IMAGE_PATCH_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN, IMAGE_PLACEHOLDER], special_tokens=True)
-    print(tokenizer.config)
+    print(tokenizer)
+    tokenizer.save_pretrained(cache_dir)
+    volume.commit()
