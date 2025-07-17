@@ -76,37 +76,6 @@ VAL_CPU_COUNT = (1.0,8.0)
 VAL_MEMORY_GB = (8 * 1024,32 * 1024)  # 8GB to 32GB
 VAL_TIME = 10 # hours
 MODEL_PATH = "/root/data/checkpoints"
-
-@app.function(
-    image=training_image,
-    volumes={"/root/data": volume},
-    gpu=VAL_GPU,
-    timeout= 5 * MINUTES,
-    cpu=VAL_CPU_COUNT,
-    memory=VAL_MEMORY_GB,
-)
-def model_inference():
-    pull_latest_code()
-    from eval.inference_model import inference_model
-    from models.chart_qa_model.builder import load_pretrained_llava_model
-    
-    tokenizer, model, image_processor, context_len = load_pretrained_llava_model(MODEL_PATH,
-                                                                            device="cuda")
-    
-    image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/289.png"
-    text = "What's the leftmost value of bar in \"All adults\" category?" #48
-    response = inference_model(
-            image_path,  # Remove the list brackets - function expects single path
-            text, 
-            model, 
-            tokenizer, 
-            image_processor, 
-            conv_mode="phi4_instruct",  # This goes in the conv_mode position
-            temperature=0.0,
-            top_p=1.0,
-            max_new_tokens=100,
-    )
-    print(f"Response: {response}")
     
 @app.function(
     image=training_image,
@@ -147,7 +116,7 @@ def simple_text_test():
     image=training_image,
     volumes={"/root/data": volume},
     gpu=VAL_GPU,
-    timeout=15 * MINUTES,  # Increase timeout
+    timeout=15 * MINUTES, 
     cpu=VAL_CPU_COUNT,
     memory=VAL_MEMORY_GB,
 )
@@ -169,21 +138,28 @@ def model_inference():
     
     print("✅ Model loaded successfully")
     
-    image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/289.png"
-    text = "What's the leftmost value of bar in \"All adults\" category?"
+    # image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/289.png"
+    # text = "What's the leftmost value of bar in \"All adults\" category?"
+    
+    image_path = "/root/data/Chart_QA/ChartQA Dataset/train/png/34.png"
+    texts= [
+        "Are the lines diverging?", #Yes
+        "What is the second least difference in the two voters' opinions?",] #29
+    
     
     print("🔄 Running vision inference...")
-    response = inference_model(
-        image_path,
-        text, 
-        model, 
-        tokenizer, 
-        image_processor, 
-        conv_mode="phi4_instruct", 
-        temperature=0.0,   
-        top_p=1.0,                 
-        max_new_tokens=50,        
-    )
+    for text in texts:
+        response = inference_model(
+            image_path,
+            text, 
+            model, 
+            tokenizer, 
+            image_processor, 
+            conv_mode="phi4_instruct", 
+            temperature=0.0,   
+            top_p=1.0,                 
+            max_new_tokens=1000,        
+        )
+        print(f"✅ Vision response: '{response}'")
         
-    print(f"✅ Vision response: '{response}'")
-    return {"response": response, "text_test_works": True}
+    # return {"response": response, "text_test_works": True}

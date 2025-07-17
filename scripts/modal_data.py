@@ -3,7 +3,7 @@ import modal
 app = modal.App("LoadChartQA")
 
 # Create or attach a persistent volume
-volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4", create_if_missing=True)
+volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_2", create_if_missing=True)
 
 # Define image with dependencies
 image = (

@@ -75,6 +75,11 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
         use_fast=True,
         trust_remote_code=True
         )
+    #this is model finetuning for phi4 example in model itself
+    tokenizer.pad_token = tokenizer.unk_token
+    tokenizer.pad_token_id = tokenizer.convert_tokens_to_ids(tokenizer.pad_token)
+    tokenizer.padding_side = 'right'
+    
     
     if model_args.version == "v0":
         if tokenizer.pad_token is None:
@@ -248,8 +253,8 @@ if __name__ == "__main__":
         vision_tower="mPLUG/TinyChart-3B-768-siglip",
         mm_vision_select_layer=-1,
         pretrain_mm_mlp_adapter=None,
-        mm_projector_type="linear",
-        mm_use_im_start_end=False,
+        mm_projector_type="resampler",
+        mm_use_im_start_end=True,
         mm_use_im_patch_token=False,
         mm_patch_merge_type="flat",
         mm_vision_select_feature="patch",
@@ -265,6 +270,7 @@ if __name__ == "__main__":
         data_path="data/train.json",
         eval_data_path="data/val.json",
         lazy_preprocess=True,
+        mm_use_im_start_end=True,
         is_multimodal=True,
         image_folder="",
         image_aspect_ratio="square",
