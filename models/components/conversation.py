@@ -13,7 +13,7 @@ class SeparatorStyle(Enum):
     MPT = auto()
     PLAIN = auto()
     LLAMA_2 = auto()
-    PHI = auto()
+    PHI4 = auto()
     QWEN_2 = auto()
 
 
@@ -43,8 +43,11 @@ class Conversation:
                 messages.insert(1, (self.roles[1], "Received."))
             else:
                 messages[0] = (init_role, "<image>\n" + init_msg)
-
-        if self.sep_style == SeparatorStyle.SINGLE:
+        if self.sep_style == SeparatorStyle.PHI4:
+            ret = ""
+            print(messages)
+            
+        elif self.sep_style == SeparatorStyle.SINGLE:
             ret = self.system + self.sep
             for role, message in messages:
                 if message:
@@ -415,7 +418,7 @@ conv_phi4_instruct = Conversation(
     version="phi4_instruct",
     messages=(),
     offset=0,
-    sep_style=SeparatorStyle.PHI,
+    sep_style=SeparatorStyle.PHI4,
     sep="<|end|>\n",
 )
 conv_chart_qa = Conversation(
