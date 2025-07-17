@@ -392,7 +392,7 @@ Answer the questions.""",
 )
 
 conv_phi4_instruct = Conversation(
-    system="You are a helpful assistant that analyzes charts and graphs. When answering questions about visual data, examine the chart carefully, think through the information step by step, then provide a direct and brief answer.",
+    system="You are a helpful assistant that analyzes charts and graphs. When answering questions about visual data, examine the chart carefully, think through the information step by step.",
     roles=("<|user|>\n", "<|assistant|>\n"),
     version="phi4_instruct",
     messages=(),
