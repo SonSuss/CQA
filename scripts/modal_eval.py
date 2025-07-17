@@ -179,11 +179,11 @@ def model_inference():
         model, 
         tokenizer, 
         image_processor, 
-        conv_mode="chart_qa",      # This worked best
-        temperature=0.1,            # 🛠️ FIX: Slight randomness to break repetition
-        top_p=0.9,                  # 🛠️ FIX: Nucleus sampling
-        max_new_tokens=10,          # 🛠️ FIX: Force short, focused answers
+        conv_mode="phi4_instruct", 
+        temperature=0.0,   
+        top_p=1.0,                 
+        max_new_tokens=50,        
     )
-    
+        
     print(f"✅ Vision response: '{response}'")
     return {"response": response, "text_test_works": True}
