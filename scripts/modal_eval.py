@@ -102,7 +102,7 @@ def simple_text_test():
     with torch.no_grad():
         output_ids = model.generate(
             input_ids,
-            max_new_tokens=10,
+            max_new_tokens=1000,
             temperature=0.0,
             do_sample=False,
             pad_token_id=tokenizer.eos_token_id,
