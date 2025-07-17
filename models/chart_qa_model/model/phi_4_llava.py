@@ -5,7 +5,7 @@ from typing import Optional, List, Tuple, Union
 
 from transformers import AutoConfig, AutoModelForCausalLM
 from transformers.modeling_outputs import CausalLMOutputWithPast
-
+from transformers.generation.utils import GenerateOutput
 
 from models.chart_qa_model.model.configuration_phi3 import Phi3Config
 from models.chart_qa_model.model.modeling_phi3 import Phi3ForCausalLM, Phi3Model
@@ -84,60 +84,41 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
 
     @torch.no_grad()
     def generate(
-    self,
-    input_ids: torch.LongTensor = None,
-    attention_mask: Optional[torch.Tensor] = None,
-    position_ids: Optional[torch.LongTensor] = None,
-    past_key_values: Optional[List[torch.FloatTensor]] = None,
-    inputs_embeds: Optional[torch.FloatTensor] = None,
-    labels: Optional[torch.LongTensor] = None,
-    use_cache: Optional[bool] = None,
-    output_attentions: Optional[bool] = None,
-    output_hidden_states: Optional[bool] = None,
-    images: Optional[torch.FloatTensor] = None,
-    return_dict: Optional[bool] = None,
-    cache_position: Optional[torch.LongTensor] = None,  # Add this line
-    **kwargs  # Add this to catch any other new arguments
-    ) -> Union[Tuple, CausalLMOutputWithPast]:
-        if inputs_embeds is None:
+        self,
+        inputs: Optional[torch.Tensor] = None,
+        images: Optional[torch.Tensor] = None,
+        **kwargs,
+    ) -> Union[GenerateOutput, torch.LongTensor]:
+        position_ids = kwargs.pop("position_ids", None)
+        attention_mask = kwargs.pop("attention_mask", None)
+        if "inputs_embeds" in kwargs:
+            raise NotImplementedError("`inputs_embeds` is not supported")
+
+        if images is not None:
             (
-                input_ids,
+                inputs,
                 position_ids,
                 attention_mask,
-                past_key_values,
+                _,
                 inputs_embeds,
-                labels
+                _
             ) = self.prepare_inputs_labels_for_multimodal(
-                input_ids,
+                inputs,
                 position_ids,
                 attention_mask,
-                past_key_values,
-                labels,
+                None,
+                None,
                 images,
             )
+        else:
+            inputs_embeds = self.get_model().embed_tokens(inputs)
 
-        # Build kwargs for parent forward call
-        forward_kwargs = {
-            "input_ids": input_ids,
-            "attention_mask": attention_mask,
-            "position_ids": position_ids,
-            "past_key_values": past_key_values,
-            "inputs_embeds": inputs_embeds,
-            "labels": labels,
-            "use_cache": use_cache,
-            "output_attentions": output_attentions,
-            "output_hidden_states": output_hidden_states,
-            "return_dict": return_dict
-        }
-        
-        # Add cache_position if provided
-        if cache_position is not None:
-            forward_kwargs["cache_position"] = cache_position
-        
-        # Add any other kwargs that were passed
-        forward_kwargs.update(kwargs)
-
-        return super().forward(**forward_kwargs)
+        return super().generate(
+            position_ids=position_ids,
+            attention_mask=attention_mask,
+            inputs_embeds=inputs_embeds,
+            **kwargs
+        )
 
     def prepare_inputs_for_generation(self, input_ids, past_key_values=None,
                                       inputs_embeds=None, **kwargs):
