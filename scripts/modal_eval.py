@@ -158,8 +158,7 @@ def model_inference():
             image_processor, 
             conv_mode="phi4_instruct", 
             temperature=0.0,   
-            top_p=1.0,                 
-            max_new_tokens=1000,        
+            top_p=1.0,        
         )
         print(f"✅ Vision response: '{response}'")
         
