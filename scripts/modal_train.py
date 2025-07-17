@@ -565,4 +565,28 @@ def remove_old_checkpoints():
         "kept_checkpoint": os.path.basename(latest_checkpoint)
     }
     
+@app.function(
+    image=training_image,
+    volumes={"/root/data": volume},
+    gpu=TRAIN_GPU,
+    cpu=4.0,  # Fixed CPU value 
+    memory=16 * 1024,  # Fixed memory value (16GB)
+    timeout= 10 * MINUTES,
+)
+def test_add_token():
+    from transformers import AutoTokenizer
     
+    from models.components.constants import DEFAULT_IMAGE_TOKEN, DEFAULT_IMAGE_PATCH_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN, IMAGE_PLACEHOLDER
+
+    model_name= "microsoft/Phi-4-mini-instruct"
+    cache_dir = "/root/data/test_cache"
+    tokenizer = AutoTokenizer.from_pretrained(model_name,
+        cache_dir=cache_dir,
+        model_max_length=1024,
+        padding_side="right",
+        use_fast=True,
+        trust_remote_code=True
+        )
+
+    tokenizer.add_tokens([DEFAULT_IMAGE_TOKEN,DEFAULT_IMAGE_PATCH_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN, IMAGE_PLACEHOLDER], special_tokens=True)
+    print(tokenizer.config)

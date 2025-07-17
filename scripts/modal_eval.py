@@ -99,6 +99,7 @@ def simple_text_test():
     text = "What is 2+2?"
     input_ids = tokenizer.encode(text, return_tensors="pt").to(model.device)
     
+    
     with torch.no_grad():
         output_ids = model.generate(
             input_ids,
@@ -108,7 +109,7 @@ def simple_text_test():
             pad_token_id=tokenizer.eos_token_id,
         )
     
-    response = tokenizer.decode(output_ids[0][input_ids.shape[1]:], skip_special_tokens=True)
+    response = tokenizer.decode(output_ids[0], skip_special_tokens=True)
     print(f"Text-only response: '{response}'")
     return {"response": response}
 
