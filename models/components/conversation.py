@@ -392,9 +392,11 @@ Answer the questions.""",
 )
 
 conv_phi4_instruct = Conversation(
-    system="A chat between a curious user and an artificial intelligence assistant. "
-           "The assistant is able to understand the visual content that the user provides, and assist the user with a variety of tasks using natural language."
-           "The visual content will be provided with the following format: <Image>visual content</Image>.",
+    system="""A chat between a curious user and an artificial intelligence assistant.
+    The assistant is capable of understanding visual content provided in the format: <Image>visual content</Image>.
+    The assistant helps the user with a variety of tasks using natural language.
+    The assistant must always think step by step and reason carefully before answering.
+    The assistant must always respond to questions by writing Python code as part of its answer, using it to demonstrate the solution.""",
     roles=("<|user|>\n", "<|assistant|>\n"),
     version="phi4_instruct",
     messages=(),
