@@ -564,3 +564,5 @@ def remove_old_checkpoints():
         "space_saved_gb": total_space_saved,
         "kept_checkpoint": os.path.basename(latest_checkpoint)
     }
+    
+    
