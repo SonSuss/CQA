@@ -14,6 +14,7 @@ class SeparatorStyle(Enum):
     PLAIN = auto()
     LLAMA_2 = auto()
     PHI = auto()
+    QWEN_2 = auto()
 
 
 @dataclasses.dataclass
@@ -91,31 +92,6 @@ class Conversation:
                         ret += " " + message + " " + self.sep2
                 else:
                     ret += ""
-            ret = ret.lstrip(self.sep)
-        elif self.sep_style == SeparatorStyle.TINY_LLAMA:
-            sep = "</s>"
-            wrap_sys = lambda msg: f"<|system|>\n{msg}\n"
-            wrap_user = lambda msg: f"<|user|>\n{msg}\n"
-            wrap_assistant = lambda msg: f"<|assistant|>\n{msg}"
-            ret = ""
-
-            for i, (role, message) in enumerate(messages):
-                if i == 0:
-                    assert message, "first message should not be none"
-                    assert role == self.roles[0], "first message should come from user"
-                if message:
-                    if type(message) is tuple:
-                        message, _, _ = message
-                    if i % 2 == 0:
-                        message = wrap_user(message)
-                        if i == 0:
-                            message = wrap_sys(self.system) + message
-                        ret += self.sep + message
-                    else:
-                        message = wrap_assistant(message) + self.sep2
-                        ret += message
-                else:
-                    ret += "<|assistant|>\n"
             ret = ret.lstrip(self.sep)
         elif self.sep_style == SeparatorStyle.QWEN_2:
             ret = self.system + self.sep
