@@ -52,9 +52,9 @@ class LazySupervisedDataset(Dataset):
 
     def __getitem__(self, i) -> Dict[str, torch.Tensor]:
         
-        # rank0_print(f"Fetching item {i}...")
+        rank0_print(f"Fetching item {i}...")
         sources = self.list_data_dict[i]
-        # rank0_print(f"Sources: {sources}")
+        rank0_print(f"Sources: {sources}")
         
         
         if isinstance(i, int):
@@ -112,58 +112,55 @@ class LazySupervisedDataset(Dataset):
 
 @dataclass
 class DataCollatorForSupervisedDataset(object):
-    """Collate examples for supervised fine-tuning with LLaMA 3 support."""
+    """Collate examples for supervised fine-tuning."""
 
     tokenizer: transformers.PreTrainedTokenizer
 
     def __call__(self, instances: Sequence[Dict]) -> Dict[str, torch.Tensor]:
         input_ids, labels = tuple([instance[key] for instance in instances]
                                   for key in ("input_ids", "labels"))
-
-        # Pad input_ids and labels to the same max length
+        if self.tokenizer.pad_token_id == self.tokenizer.eos_token_id:
+            for input_id in input_ids:
+                input_id[input_id == self.tokenizer.eos_token_id] = -300
         input_ids = torch.nn.utils.rnn.pad_sequence(
             input_ids,
             batch_first=True,
-            padding_value=self.tokenizer.pad_token_id
-        )
-
-        labels = torch.nn.utils.rnn.pad_sequence(
-            labels,
-            batch_first=True,
-            padding_value=IGNORE_INDEX
-        )
-
-        # Truncate to max sequence length (useful for LLaMA 3's long context)
-        max_length = self.tokenizer.model_max_length
-        input_ids = input_ids[:, :max_length]
-        labels = labels[:, :max_length]
-
-        # Compute attention mask
+            padding_value=self.tokenizer.pad_token_id)
+        labels = torch.nn.utils.rnn.pad_sequence(labels,
+                                                 batch_first=True,
+                                                 padding_value=IGNORE_INDEX)
+        input_ids = input_ids[:, :self.tokenizer.model_max_length]
         attention_mask = input_ids.ne(self.tokenizer.pad_token_id)
+        labels = labels[:, :self.tokenizer.model_max_length]
+        # FIXME: This is a hack for handling phi and stablelm, as they have the same eos, pad and unk. We want the model
+        # FIXME: to predict the eos in the input ids, but we also use the id of eos to pad sequence, so we use a temp
+        # FIXME: eos id first, and convert them back.
+        if self.tokenizer.pad_token_id == self.tokenizer.eos_token_id:
+            for input_id in input_ids:
+                input_id[input_id == -300] = self.tokenizer.eos_token_id
 
-        batch = {
-            "input_ids": input_ids,
-            "labels": labels,
-            "attention_mask": attention_mask
-        }
+        batch = dict(
+            input_ids=input_ids,
+            labels=labels,
+            attention_mask=attention_mask,
+        )
 
-        # Multimodal image support
         if 'image' in instances[0]:
             images = [instance['image'] for instance in instances]
             if all(x is not None and x.shape == images[0].shape for x in images):
                 batch['images'] = torch.stack(images)
             else:
                 batch['images'] = images
-
-        # Optional Q/A keys
+        
         if 'question' in instances[0]:
-            batch['questions'] = [instance['question'] for instance in instances]
+            questions = [instance['question'] for instance in instances]
+            batch['questions'] = questions
 
         if 'answer' in instances[0]:
-            batch['answers'] = [instance['answer'] for instance in instances]
+            answers = [instance['answer'] for instance in instances]
+            batch['answers'] = answers
 
         return batch
-
 
 def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer,
                                 data_args) -> Dict:

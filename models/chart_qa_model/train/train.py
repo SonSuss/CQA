@@ -70,8 +70,6 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
     tokenizer = AutoTokenizer.from_pretrained(
     model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
-        model_max_length=training_args.model_max_length,
-        padding_side="right",
         use_fast=True,
         trust_remote_code=True
         )
@@ -79,6 +77,7 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
     tokenizer.pad_token = tokenizer.unk_token
     tokenizer.pad_token_id = tokenizer.convert_tokens_to_ids(tokenizer.pad_token)
     tokenizer.padding_side = 'right'
+    tokenizer.model_max_length = training_args.model_max_length
     
     
     if model_args.version == "v0":
@@ -109,13 +108,15 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
             model_args=model_args,
             fsdp=training_args.fsdp
         )
-        if model_args.tune_vision_tower:
-            for p in model.get_vision_tower().parameters():
-                p.requires_grad = True
-            print(f"Vision tower frozen - trainable params: {sum(p.numel() for p in model.get_vision_tower().parameters() if p.requires_grad)}")
-        
+
         vision_tower = model.get_vision_tower()
         vision_tower.to(dtype=torch.bfloat16 if training_args.bf16 else torch.float16, device=training_args.device)
+        
+        if model_args.tune_vision_tower:
+            # for p in model.get_vision_tower().parameters():
+            #     p.requires_grad = True
+            unlock_vit(training_args, model_args, vision_tower)
+            logger.info(f"Vision tower frozen - trainable params: {sum(p.numel() for p in model.get_vision_tower().parameters() if p.requires_grad)}")
 
         if training_args.gradient_checkpointing:
             vision_tower.vision_tower.gradient_checkpointing_enable(
@@ -243,7 +244,7 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
         safe_save_model_for_hf_trainer(trainer=trainer,
                                        output_dir=training_args.output_dir)
         
-    # tokenizer.save_pretrained(training_args.output_dir)
+    tokenizer.save_pretrained(training_args.output_dir)
 
 
 if __name__ == "__main__":
@@ -253,7 +254,7 @@ if __name__ == "__main__":
         freeze_backbone=True,
         tune_mm_mlp_adapter=False,
         vision_tower="mPLUG/TinyChart-3B-768-siglip",
-        mm_vision_select_layer=-1,
+        mm_vision_select_layer=-2,
         pretrain_mm_mlp_adapter=None,
         mm_projector_type="resampler",
         mm_use_im_start_end=True,
@@ -272,7 +273,7 @@ if __name__ == "__main__":
         data_path="data/train.json",
         eval_data_path="data/val.json",
         lazy_preprocess=True,
-        mm_use_im_start_end=True,
+        mm_use_im_start_end=False,
         is_multimodal=True,
         image_folder="",
         image_aspect_ratio="square",

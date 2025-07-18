@@ -3,7 +3,7 @@ import modal
 app = modal.App("TrainChartQA")
 
 # Create or attach a persistent volume
-volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4", create_if_missing=True)
+volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_2", create_if_missing=True)
 
 
 cuda_version = "12.6.0"
@@ -423,7 +423,7 @@ def train_chartqa():
         freeze_backbone=True,
         tune_mm_mlp_adapter=False,
         vision_tower="mPLUG/TinyChart-3B-768-siglip",
-        mm_vision_select_layer=-1,
+        mm_vision_select_layer=-2,
         pretrain_mm_mlp_adapter=None,
         mm_projector_type="resampler",
         mm_use_im_start_end=False,
@@ -452,7 +452,7 @@ def train_chartqa():
     training_args = TrainingArguments(
         output_dir=output_dir,
         num_train_epochs=3, 
-        per_device_train_batch_size=7,
+        per_device_train_batch_size=8,
         per_device_eval_batch_size=4,
         gradient_accumulation_steps=1,
         evaluation_strategy="no",
@@ -467,7 +467,7 @@ def train_chartqa():
         logging_steps=25,
         fp16=False,
         bf16=True,
-        model_max_length=1024,
+        model_max_length=2048,
         gradient_checkpointing=True,
         dataloader_num_workers=12, 
         dataloader_persistent_workers=True,
@@ -581,3 +581,117 @@ def test_something():
     conv.append_message(conv.roles[1], None)
     prompt = conv.get_prompt()
     print("Prompt:", prompt)
+
+@app.function(
+    image=training_image,
+    volumes={"/root/data": volume},
+    gpu=TRAIN_GPU,
+    cpu=4.0,  # Fixed CPU value 
+    memory=16 * 1024,  # Fixed memory value (16GB)
+    timeout= TRAIN_TIME * 60 * MINUTES,
+)
+def check_dataloader():
+    pull_latest_code()
+    import os
+    from models.chart_qa_model.train.train import train
+    from models.components.config import ModelArguments, DataArguments, TrainingArguments
+    
+    print("🔍 Checking paths and configuration...")
+    
+    # Check if we're in the right working directory
+    current_dir = os.getcwd()
+    print(f"Current working directory: {current_dir}")
+    
+    # Define paths for Modal environment
+    data_path = "/root/data/Chart_QA/processed_data/train.json"
+    eval_data_path = "/root/data/Chart_QA/processed_data/val.json"
+    output_dir = CHECKPOINT
+    cache_dir = "/root/data/cache"
+    
+    # Check if paths exist
+    paths_to_check = {
+        "Data file": data_path,
+        "Eval data file": eval_data_path,
+    }
+    
+    print("\n📁 Path validation:")
+    missing_paths = []
+    
+    for desc, path in paths_to_check.items():
+        if os.path.exists(path):
+            print(f"  ✅ {desc}: {path}")
+        else:
+            print(f"  ❌ {desc}: {path}")
+            missing_paths.append(f"{desc}: {path}")
+    
+    # Raise error if any paths are missing
+    if missing_paths:
+        error_msg = f"❌ Missing required paths:\n" + "\n".join(f"  - {path}" for path in missing_paths)
+        print(f"\n{error_msg}")
+        raise FileNotFoundError(f"Required paths do not exist: {missing_paths}")
+    
+    #model config
+    model_args = ModelArguments(
+        model_name_or_path="microsoft/Phi-4-mini-instruct",
+        version="phi4_instruct",
+        freeze_backbone=True,
+        tune_mm_mlp_adapter=False,
+        vision_tower="mPLUG/TinyChart-3B-768-siglip",
+        mm_vision_select_layer=-2,
+        pretrain_mm_mlp_adapter=None,
+        mm_projector_type="resampler",
+        mm_use_im_start_end=False,
+        mm_use_im_patch_token=False,
+        mm_patch_merge_type="flat",
+        mm_vision_select_feature="patch",
+        resampler_hidden_size=768,
+        num_queries=128,
+        num_resampler_layers=3,
+        tune_vision_tower=True,
+        tune_entire_model=False,
+        tune_vit_from_layer=-1,
+        tune_embed_tokens=False,
+    )
+
+    data_args = DataArguments(
+        data_path=data_path,
+        eval_data_path=eval_data_path,
+        lazy_preprocess=True,
+        is_multimodal=True,
+        image_folder="",  # Adjusted for volume
+        image_aspect_ratio="square",
+    )
+
+    # Test configuration with smaller values for quick validation
+    training_args = TrainingArguments(
+        output_dir=output_dir,
+        num_train_epochs=3, 
+        per_device_train_batch_size=8,
+        per_device_eval_batch_size=4,
+        gradient_accumulation_steps=1,
+        evaluation_strategy="no",
+        save_strategy="steps",
+        save_steps=1000, 
+        save_total_limit=1,
+        mm_projector_lr=8e-5,
+        vision_tower_lr=2e-5,
+        weight_decay=0.01,
+        warmup_ratio=0.1,
+        lr_scheduler_type="cosine",
+        logging_steps=25,
+        fp16=False,
+        bf16=True,
+        model_max_length=2048,
+        gradient_checkpointing=True,
+        dataloader_num_workers=12, 
+        dataloader_persistent_workers=True,
+        report_to="tensorboard",
+        cache_dir=cache_dir,
+        optim="adamw_torch_fused",
+        bits=16,
+        group_by_modality_length=True,
+        warmup_steps=150,
+        max_grad_norm=0.5,
+        local_rank=-1,  # For single GPU
+    )
+    train(model_args, data_args, training_args, log_rewrite=True)
