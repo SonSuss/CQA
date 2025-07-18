@@ -1,6 +1,4 @@
 import modal
-import torch
-
 
 app = modal.App("TrainChartQA")
 
