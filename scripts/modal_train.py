@@ -695,3 +695,5 @@ def check_dataloader():
         local_rank=-1,  # For single GPU
     )
     train(model_args, data_args, training_args, log_rewrite=True)
+
+    volume.uncommit()
