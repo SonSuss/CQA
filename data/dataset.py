@@ -55,8 +55,10 @@ class LazySupervisedDataset(Dataset):
         rank0_print(f"Fetching item {i}...")
         sources = self.list_data_dict[i]
         rank0_print(f"Sources: {sources}")
+        rank0_print(sources[0])
+
         
-        return 
+        raise NotImplementedError("This method should be implemented in subclasses.")
         
         if isinstance(i, int):
             sources = [sources]
