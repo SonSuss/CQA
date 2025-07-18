@@ -571,12 +571,15 @@ def remove_old_checkpoints():
     timeout= 10 * MINUTES,
 )
 def test_something():
+    pull_latest_code()
     from models.components.conversation import conv_templates
     
     qs= "hello mathafaka!"
     
     conv = conv_templates["phi4_instruct"].copy()
-    conv.append_message(conv.roles[0], qs)
-    conv.append_message(conv.roles[1], None)
+    print(conv)
+    conv.append_message(conv.roles[0], None)
+    conv.append_message(conv.roles[1], qs)
+    conv.append_message(conv.roles[2], None)
     prompt = conv.get_prompt()
     print("Prompt:", prompt)

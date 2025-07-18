@@ -45,7 +45,13 @@ class Conversation:
                 messages[0] = (init_role, "<image>\n" + init_msg)
         if self.sep_style == SeparatorStyle.PHI4:
             ret = ""
-            print(messages)
+            for role, message in messages:
+                if message:
+                    if type(message) is tuple:
+                        message, _, _ = message
+                    ret += f"{role}\n{message}\n"
+                else:
+                    ret += f"{role}\n"
             
         elif self.sep_style == SeparatorStyle.SINGLE:
             ret = self.system + self.sep
@@ -414,7 +420,7 @@ conv_phi4_instruct = Conversation(
     The assistant helps the user with a variety of tasks using natural language.
     The assistant must always think step by step and reason carefully before answering.
     The assistant must always respond to questions by writing Python code as part of its answer, using it to demonstrate the solution.""",
-    roles=("<|user|>\n", "<|assistant|>\n"),
+    roles=("<|system|>", "<|user|>", "<|assistant|>"),
     version="phi4_instruct",
     messages=(),
     offset=0,
