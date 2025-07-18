@@ -25,6 +25,7 @@ def inference_model(image_path ,input, model, tokenizer, image_processor, conv_m
     conv.append_message(conv.roles[0], qs)
     conv.append_message(conv.roles[1], None)
     prompt = conv.get_prompt()
+    
     print("Prompt:", prompt)
 
     image = Image.open(image_path).convert("RGB")

@@ -44,7 +44,7 @@ class Conversation:
             else:
                 messages[0] = (init_role, "<image>\n" + init_msg)
         if self.sep_style == SeparatorStyle.PHI4:
-            ret = ""
+            ret = self.system + "\n"
             for role, message in messages:
                 if message:
                     if type(message) is tuple:
@@ -415,12 +415,10 @@ Answer the questions.""",
 )
 
 conv_phi4_instruct = Conversation(
-    system="""A chat between a curious user and an artificial intelligence assistant.
-    The assistant is capable of understanding visual content provided in the format: <Image>visual content</Image>.
-    The assistant helps the user with a variety of tasks using natural language.
-    The assistant must always think step by step and reason carefully before answering.
-    The assistant must always respond to questions by writing Python code as part of its answer, using it to demonstrate the solution.""",
-    roles=("<|system|>", "<|user|>", "<|assistant|>"),
+    system="""Answer the question about the chart. 
+    First, think step by step and reason carefully to reach the solution. 
+    Then, only return the brief and direct answer, without explanation.""",
+    roles=("<|user|>", "<|assistant|>"),
     version="phi4_instruct",
     messages=(),
     offset=0,

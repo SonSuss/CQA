@@ -577,9 +577,7 @@ def test_something():
     qs= "hello mathafaka!"
     
     conv = conv_templates["phi4_instruct"].copy()
-    print(conv)
-    conv.append_message(conv.roles[0], None)
-    conv.append_message(conv.roles[1], qs)
-    conv.append_message(conv.roles[2], None)
+    conv.append_message(conv.roles[0], qs)
+    conv.append_message(conv.roles[1], None)
     prompt = conv.get_prompt()
     print("Prompt:", prompt)
