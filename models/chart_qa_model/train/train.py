@@ -174,50 +174,17 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
     vision_tower_params = sum(p.numel() for p in model.get_model().vision_tower.parameters())
     vision_tower_trainable = sum(p.numel() for p in model.get_model().vision_tower.parameters() if p.requires_grad)
     mm_projector_params = sum(p.numel() for p in model.get_model().mm_projector.parameters() if p.requires_grad)
-    llm_backbone_params = sum(p.numel() for p in model.model.parameters() if p.requires_grad)
     logger.info(f"Vision Tower total params: {vision_tower_params:,}")
     logger.info(f"Vision Tower trainable params: {vision_tower_trainable:,}")
     logger.info(f"MM Projector trainable params: {mm_projector_params:,}")
-    logger.info(f"LLM Backbone trainable params: {llm_backbone_params:,}")
     logger.info(f"mm_projector: {model.get_model().mm_projector}")
-    
-    
-    total_trainable = 0
-    component_counts = {}
-    for name, param in model.named_parameters():
-        if param.requires_grad:
-            component = name.split('.')[0] if '.' in name else name
-            if component not in component_counts:
-                component_counts[component] = 0
-            component_counts[component] += param.numel()
-            total_trainable += param.numel()
 
-    logger.info("Trainable parameters by component:")
-    for component, count in sorted(component_counts.items()):
-        logger.info(f"  {component}: {count:,}")
-    logger.info(f"Calculated total trainable by component: {total_trainable:,}")
-
-    total_trainable = 0
-    module_counts = {}
-    for name, _ in model.named_modules():
-        if param.requires_grad:
-            module = name.split('.')[0] if '.' in name else name
-            if module not in module_counts:
-                module_counts[module] = 0
-    logger.info("Trainable parameters by module:")
-    for module, count in sorted(module_counts.items()):
-        logger.info(f"  {module}: {count:,}")
-    logger.info(f"Calculated total trainable by module: {total_trainable:,}")
-    
-    logger.info(f"PyTorch total trainable: {sum(p.numel() for p in model.parameters() if p.requires_grad):,}")
-    
     # Check if there are embedding parameters being trained
     embed_trainable = sum(p.numel() for p in model.get_input_embeddings().parameters() if p.requires_grad)
     output_embed_trainable = sum(p.numel() for p in model.get_output_embeddings().parameters() if p.requires_grad)
     logger.info(f"Input embeddings trainable: {embed_trainable:,}")
     logger.info(f"Output embeddings trainable: {output_embed_trainable:,}")
     
-    logger.info("mm_projector: %s", model.get_model().mm_projector)
     logger.info("trainable parameters: %s", sum(p.numel() for p in model.parameters() if p.requires_grad))
     logger.info("total parameters: %s", sum(p.numel() for p in model.parameters()))
     
@@ -249,7 +216,7 @@ if __name__ == "__main__":
     model_args = ModelArguments(
         model_name_or_path="microsoft/Phi-4-mini-instruct",
         version="phi4_instruct",
-        freeze_backbone=False,
+        freeze_backbone=True,
         tune_mm_mlp_adapter=False,
         vision_tower="mPLUG/TinyChart-3B-768-siglip",
         mm_vision_select_layer=-2,
