@@ -634,7 +634,7 @@ def check_dataloader():
     model_args = ModelArguments(
         model_name_or_path="microsoft/Phi-4-mini-instruct",
         version="phi4_instruct",
-        freeze_backbone=True,
+        freeze_backbone=False,
         tune_mm_mlp_adapter=False,
         vision_tower="mPLUG/TinyChart-3B-768-siglip",
         mm_vision_select_layer=-2,
