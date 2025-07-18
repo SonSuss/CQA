@@ -8,16 +8,17 @@ import torch.nn as nn
 # from models.components.vision_towers.vit.vit import build_vision_tower
 from models.components.constants import *
 from models.components.mm_projector import build_vision_projector
+from models.components.vision_towers.siglip_tome.siglip_tome import build_vision_tower
 from models.components.utils import rank0_print
 
-def build_vision_tower(config, delay_load=False):
-    if config.vision_tower == "mPLUG/TinyChart-3B-768-siglip":
-        module = importlib.import_module("models.components.vision_towers.siglip_tome.siglip_tome")
-    # elif config.vision_tower == "vit":
-    #     module = importlib.import_module("models.components.vision_towers.vit.vit")
-    else:
-        raise ValueError("Unknown vision tower")
-    return module.build_vision_tower(config, delay_load=delay_load)
+# def build_vision_tower(config, delay_load=False):
+#     if config.vision_tower == "mPLUG/TinyChart-3B-768-siglip" or config.mm_vision_tower == "mPLUG/TinyChart-3B-768-siglip":
+#         module = importlib.import_module("models.components.vision_towers.siglip_tome.siglip_tome")
+#     # elif config.vision_tower == "vit":
+#     #     module = importlib.import_module("models.components.vision_towers.vit.vit")
+#     else:
+#         raise ValueError("Unknown vision tower")
+#     return module.build_vision_tower(config, delay_load=delay_load)
 
 class LlavaMetaModel:
 
@@ -25,7 +26,7 @@ class LlavaMetaModel:
         super(LlavaMetaModel, self).__init__(config)
 
         if hasattr(config, "mm_vision_tower"):
-            rank0_print(f"Using vision tower: {config.mm_vision_tower}")
+            # rank0_print(f"Using vision tower: {config.mm_vision_tower}")
             self.vision_tower = build_vision_tower(config, delay_load=True)
             self.mm_projector = build_vision_projector(config)
 
