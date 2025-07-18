@@ -50,8 +50,11 @@ class Conversation:
                     if type(message) is tuple:
                         message, _, _ = message
                     ret += f"{role}\n{message}\n"
+                    if role == self.roles[1]:
+                        ret+= self.sep
                 else:
                     ret += f"{role}\n"
+                
             
         elif self.sep_style == SeparatorStyle.SINGLE:
             ret = self.system + self.sep
@@ -423,7 +426,7 @@ Then, only return the brief and direct answer, without explanation.""",
     messages=(),
     offset=0,
     sep_style=SeparatorStyle.PHI4,
-    sep="<|end|>\n",
+    sep="<|endoftext|>",
 )
 conv_chart_qa = Conversation(
     system="Answer the question about the chart briefly and directly.",

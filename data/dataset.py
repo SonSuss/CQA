@@ -57,10 +57,6 @@ class LazySupervisedDataset(Dataset):
         rank0_print(f"Sources: {sources}")
         if isinstance(i, int):
             sources = [sources]
-        assert len(sources) == 1, "Don't know why it is wrapped to a list"
-
-        rank0_print('image' in sources[0])
-        raise NotImplementedError("This method should be implemented in subclasses.")
         if 'image' in sources[0]:
             image_file = self.list_data_dict[i]['image']
             image_folder = self.data_args.image_folder

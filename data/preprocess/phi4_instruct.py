@@ -10,6 +10,7 @@ from models.components import conversation as conversation_lib
 from models.components.mm_utils import tokenizer_image_token
 from data.process import register_preprocess
 
+from models.components.utils import rank0_print
 
 IGNORE_INDEX = -100
 
@@ -23,8 +24,8 @@ def preprocess_phi_4_instruct(
     roles = {"human": conv_template.roles[0], "gpt": conv_template.roles[1]}
 
     conversations = []
-
-    for i, source in enumerate(sources):
+    # sources = list(comversations)
+    for i, source in enumerate(sources):   
         # Skip first if not from human
         if roles[source[0]["from"]] != conv_template.roles[0]:
             source = source[1:]
@@ -34,7 +35,11 @@ def preprocess_phi_4_instruct(
             role = roles[sentence["from"]]
             assert role == conv_template.roles[j % 2], f"Role mismatch at index {i}"
             conv_template.append_message(role, sentence["value"])
+        
+        rank0_print(f"Processed conversation {i}: {conv_template.get_prompt()}")
+        raise ValueError()
         conversations.append(conv_template.get_prompt())
+
 
     # Tokenize full prompts
     if has_image:
