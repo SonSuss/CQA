@@ -52,9 +52,9 @@ class LazySupervisedDataset(Dataset):
 
     def __getitem__(self, i) -> Dict[str, torch.Tensor]:
         
-        rank0_print(f"Fetching item {i}...")
+        # rank0_print(f"Fetching item {i}...")
         sources = self.list_data_dict[i]
-        rank0_print(f"Sources: {sources}")
+        # rank0_print(f"Sources: {sources}")
         if isinstance(i, int):
             sources = [sources]
         if 'image' in sources[0]:

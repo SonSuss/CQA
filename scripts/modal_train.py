@@ -73,7 +73,7 @@ TRAIN_GPU = gpu
 TRAIN_CPU_COUNT = (1.0,8.0)
 TRAIN_MEMORY_GB = (8 * 1024,32 * 1024)  # 8GB to 32GB
 TRAIN_TIME = 10 # hours
-CHECKPOINT = "/root/data/checkpoints-siglip-mlp2x_gelu-phi4"
+CHECKPOINT = "/root/data/checkpoints-siglip-resampler-phi4"
 
 @app.function(
     image=training_image,
@@ -459,8 +459,8 @@ def train_chartqa():
         save_strategy="steps",
         save_steps=1000, 
         save_total_limit=1,
-        mm_projector_lr=8e-5,
-        vision_tower_lr=2e-5,
+        mm_projector_lr=1e-4,
+        vision_tower_lr=5e-5,
         weight_decay=0.01,
         warmup_ratio=0.1,
         lr_scheduler_type="cosine",
