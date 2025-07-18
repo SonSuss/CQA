@@ -568,27 +568,17 @@ def remove_old_checkpoints():
 @app.function(
     image=training_image,
     volumes={"/root/data": volume},
-    gpu=TRAIN_GPU,
-    cpu=4.0,  # Fixed CPU value 
-    memory=16 * 1024,  # Fixed memory value (16GB)
+    cpu=1.0, 
+    memory=1024,
     timeout= 10 * MINUTES,
 )
-def test_add_token():
-    from transformers import AutoTokenizer
+def test_something():
+    from models.components.conversation import conv_templates
     
-    from models.components.constants import DEFAULT_IMAGE_TOKEN, DEFAULT_IMAGE_PATCH_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN, IMAGE_PLACEHOLDER
-
-    model_name= "microsoft/Phi-4-mini-instruct"
-    cache_dir = "/root/data/test_cache"
-    tokenizer = AutoTokenizer.from_pretrained(model_name,
-        cache_dir=cache_dir,
-        model_max_length=1024,
-        padding_side="right",
-        use_fast=True,
-        trust_remote_code=True
-        )
-
-    tokenizer.add_tokens([DEFAULT_IMAGE_TOKEN,DEFAULT_IMAGE_PATCH_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN, IMAGE_PLACEHOLDER], special_tokens=True)
-    print(tokenizer)
-    tokenizer.save_pretrained(cache_dir)
-    volume.commit()
+    qs= "hello mathafaka!"
+    
+    conv = conv_templates["phi4_instruct"].copy()
+    conv.append_message(conv.roles[0], qs)
+    conv.append_message(conv.roles[1], None)
+    prompt = conv.get_prompt()
+    print("Prompt:", prompt)

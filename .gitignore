@@ -4,5 +4,4 @@ checkpoints
 data/images
 data/train.json
 data/val.json
-test_modal
 scripts/__pycache__
