@@ -588,7 +588,7 @@ def test_something():
     gpu=TRAIN_GPU,
     cpu=4.0,  # Fixed CPU value 
     memory=16 * 1024,  # Fixed memory value (16GB)
-    timeout= TRAIN_TIME * 60 * MINUTES,
+    timeout= 30 * MINUTES,
 )
 def check_dataloader():
     pull_latest_code()
