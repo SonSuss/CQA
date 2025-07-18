@@ -56,6 +56,7 @@ class LazySupervisedDataset(Dataset):
         sources = self.list_data_dict[i]
         rank0_print(f"Sources: {sources}")
         
+        return 
         
         if isinstance(i, int):
             sources = [sources]

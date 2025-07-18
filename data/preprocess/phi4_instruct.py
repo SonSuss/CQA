@@ -53,7 +53,7 @@ def preprocess_phi_4_instruct(
         input_ids = tokenized.input_ids
 
     targets = input_ids.clone()
-    assert conv_template.sep_style == conversation_lib.SeparatorStyle.PHI
+    assert conv_template.sep_style == conversation_lib.SeparatorStyle.PHI4
 
     # For PHI style, we need to mask the user input and system tokens
     for conversation, target in zip(conversations, targets):
