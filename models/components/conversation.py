@@ -415,9 +415,9 @@ Answer the questions.""",
 )
 
 conv_phi4_instruct = Conversation(
-    system="""<|system|>\nAnswer the question about the chart. 
-    First, think step by step and reason carefully to reach the solution. 
-    Then, only return the brief and direct answer, without explanation.""",
+    system="""<|system|>\nAnswer the question about the chart.
+First, think step by step and reason carefully to reach the solution.
+Then, only return the brief and direct answer, without explanation.""",
     roles=("<|user|>", "<|assistant|>"),
     version="phi4_instruct",
     messages=(),

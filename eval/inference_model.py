@@ -10,11 +10,11 @@ from PIL import Image
 def inference_model(image_path ,input, model, tokenizer, image_processor, conv_mode, temperature=0,top_p=1.0, max_new_tokens=1024):
     qs = input
     image_token_se = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN
-    if IMAGE_PLACEHOLDER in qs:
+    if DEFAULT_IMAGE_TOKEN in qs:
         if model.config.mm_use_im_start_end:
-            qs = re.sub(IMAGE_PLACEHOLDER, image_token_se, qs)
+            qs = re.sub(DEFAULT_IMAGE_TOKEN, image_token_se, qs)
         else:
-            qs = re.sub(IMAGE_PLACEHOLDER, DEFAULT_IMAGE_TOKEN, qs)
+            pass
     else:
         if model.config.mm_use_im_start_end:
             qs = image_token_se + "\n" + qs
@@ -25,7 +25,7 @@ def inference_model(image_path ,input, model, tokenizer, image_processor, conv_m
     conv.append_message(conv.roles[0], qs)
     conv.append_message(conv.roles[1], None)
     prompt = conv.get_prompt()
-    
+
     print("Prompt:", prompt)
 
     image = Image.open(image_path).convert("RGB")

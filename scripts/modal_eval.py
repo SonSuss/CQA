@@ -1,6 +1,4 @@
 import modal
-import torch
-
 
 app = modal.App("TrainChartQA")
 
@@ -144,10 +142,10 @@ def model_inference():
     
     image_path = "/root/data/Chart_QA/ChartQA Dataset/train/png/34.png"
     texts= [
-        "Are the lines diverging?", #Yes
-        "What is the second least difference in the two voters' opinions?",] #29
-    
-    
+        "<|image|>\nAre the lines diverging?", #Yes
+        "<|image|>\nWhat is the second least difference in the two voters' opinions?",] #29
+
+
     print("🔄 Running vision inference...")
     for text in texts:
         response = inference_model(
