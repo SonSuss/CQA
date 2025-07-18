@@ -10,7 +10,6 @@ from models.components import conversation as conversation_lib
 from models.components.mm_utils import tokenizer_image_token
 from data.process import register_preprocess
 
-from models.components.utils import rank0_print
 
 IGNORE_INDEX = -100
 
@@ -35,9 +34,6 @@ def preprocess_phi_4_instruct(
             role = roles[sentence["from"]]
             assert role == conv_template.roles[j % 2], f"Role mismatch at index {i}"
             conv_template.append_message(role, sentence["value"])
-        
-        rank0_print(f"Processed conversation {i}: {conv_template.get_prompt()}")
-        raise ValueError()
         conversations.append(conv_template.get_prompt())
 
 
@@ -59,54 +55,41 @@ def preprocess_phi_4_instruct(
 
     targets = input_ids.clone()
     assert conv_template.sep_style == conversation_lib.SeparatorStyle.PHI4
-
-    # For PHI style, we need to mask the user input and system tokens
+    sep = "\n"+conv_template.roles[1]+ "\n"
     for conversation, target in zip(conversations, targets):
-        # Split by the separator to get individual rounds
+        total_len = int(target.ne(tokenizer.pad_token_id).sum()) + conversation.count(conv_template.sep)
         rounds = conversation.split(conv_template.sep)
         cur_len = 0
-
         for i, rou in enumerate(rounds):
             if rou.strip() == "":
                 break
-
-            # For PHI format, check if this is a user input section
-            if rou.startswith(conv_template.roles[0]):  # "<|user|>\n"
-                # This is user input - mask it
-                if has_image:
-                    round_len = len(tokenizer_image_token(rou + conv_template.sep, tokenizer))
-                else:
-                    round_len = len(tokenizer(rou + conv_template.sep).input_ids)
-                
-                # Mask the entire user input section
-                target[cur_len : cur_len + round_len] = IGNORE_INDEX
-                cur_len += round_len
-            
-            elif rou.startswith(conv_template.roles[1]):  # "<|assistant|>\n"
-                # This is assistant response - don't mask the actual response content
-                role_part = conv_template.roles[1]  # "<|assistant|>\n"
-                
-                if has_image:
-                    role_len = len(tokenizer_image_token(role_part, tokenizer))
-                    round_len = len(tokenizer_image_token(rou + conv_template.sep, tokenizer))
-                else:
-                    role_len = len(tokenizer(role_part).input_ids)
-                    round_len = len(tokenizer(rou + conv_template.sep).input_ids)
-                
-                # Mask only the role part, not the response content
-                target[cur_len : cur_len + role_len] = IGNORE_INDEX
-                cur_len += round_len
-            
+            parts = rou.split(sep)
+            if len(parts) != 2:
+                break
+            parts[0] += sep
+            if  has_image:
+                round_len = len(tokenizer_image_token(rou, tokenizer)) + 1
+                instruction_len = len(tokenizer_image_token(parts[0], tokenizer)) - 1
             else:
-                # Handle any other content
-                if has_image:
-                    round_len = len(tokenizer_image_token(rou + conv_template.sep, tokenizer))
-                else:
-                    round_len = len(tokenizer(rou + conv_template.sep).input_ids)
-                cur_len += round_len
-
-        # Mask any remaining tokens beyond the conversation
+                round_len = len(tokenizer(rou).input_ids) + 1
+                instruction_len = len(tokenizer(parts[0]).input_ids) - 1
+            
+            target[cur_len : cur_len + instruction_len] = IGNORE_INDEX
+            cur_len += round_len
         target[cur_len:] = IGNORE_INDEX
+        if cur_len < tokenizer.model_max_length:
+            if cur_len != total_len:
+                print(
+                    f"WARNING: tokenization mismatch: {cur_len} vs. {total_len}."
+                    f" (ignored)"
+                )
+                print("number of rounds: ", len(rounds) - 1)
+                print("rounds: ", rounds[:-1])
+                print("conversation: ", conversations)
+                print(target)
+                print(input_ids)
+                time.sleep(5)
+                target[:] = IGNORE_INDEX
 
     return dict(
         input_ids=input_ids,
