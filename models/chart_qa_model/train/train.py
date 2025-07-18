@@ -113,8 +113,9 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
         vision_tower.to(dtype=torch.bfloat16 if training_args.bf16 else torch.float16, device=training_args.device)
         
         if model_args.tune_vision_tower:
-            for p in model.get_vision_tower().parameters():
-                p.requires_grad = True
+            pass
+            # for p in model.get_vision_tower().parameters():
+                # p.requires_grad = True
             # unlock_vit(training_args, model_args, vision_tower)
             # logger.info(f"Vision tower frozen - trainable params: {sum(p.numel() for p in model.get_vision_tower().parameters() if p.requires_grad)}")
 
