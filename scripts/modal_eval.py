@@ -3,7 +3,7 @@ import modal
 app = modal.App("TrainChartQA")
 
 # Create or attach a persistent volume
-volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4", create_if_missing=True)
+volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_2", create_if_missing=True)
 
 
 cuda_version = "12.6.0"
@@ -73,7 +73,7 @@ VAL_GPU = gpu
 VAL_CPU_COUNT = (1.0,8.0)
 VAL_MEMORY_GB = (8 * 1024,32 * 1024)  # 8GB to 32GB
 VAL_TIME = 10 # hours
-MODEL_PATH = "/root/data/checkpoints"
+MODEL_PATH = "/root/data/checkpoints-siglip-resampler-phi4"
     
 @app.function(
     image=training_image,
@@ -86,6 +86,7 @@ MODEL_PATH = "/root/data/checkpoints"
 def simple_text_test():
     """Test model with text-only input first"""
     pull_latest_code()
+    import torch
     from models.chart_qa_model.builder import load_pretrained_llava_model
     
     tokenizer, model, image_processor, context_len = load_pretrained_llava_model(
@@ -121,6 +122,7 @@ def simple_text_test():
 )
 def model_inference():
     pull_latest_code()
+    import torch
     from eval.inference_model import inference_model
     from models.chart_qa_model.builder import load_pretrained_llava_model
     
