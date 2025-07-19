@@ -38,7 +38,7 @@ def inference_model(image_path ,input, model, tokenizer, image_processor, conv_m
     )
     attention_mask = torch.ones_like(input_ids).to(model.device)
 
-    stop_str = conv.sep if conv.sep_style != SeparatorStyle.TWO else conv.sep2
+    stop_str = conv.sep if conv.sep_style != SeparatorStyle.PHI4 else conv.sep
     keywords = [stop_str]
     stopping_criteria = KeywordsStoppingCriteria(keywords, tokenizer, input_ids)
 
