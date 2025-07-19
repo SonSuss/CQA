@@ -42,7 +42,7 @@ def inference_model(image_path ,input, model, tokenizer, image_processor, conv_m
     keywords = [stop_str]
     stopping_criteria = KeywordsStoppingCriteria(keywords, tokenizer, input_ids)
 
-    with torch.inference_mode():
+    with torch.no_grad():
         output_ids = model.generate(
             input_ids,
             attention_mask=attention_mask,
