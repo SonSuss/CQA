@@ -142,10 +142,10 @@ def model_inference():
     # image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/289.png"
     # text = "What's the leftmost value of bar in \"All adults\" category?"
     
-    image_path = "/root/data/Chart_QA/ChartQA Dataset/train/png/34.png"
+    image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/13153.png"
     texts= [
-        "<|image|>\nAre the lines diverging?", #Yes
-        "<|image|>\nWhat is the second least difference in the two voters' opinions?",] #29
+        "<|image|>\nHow many data points on the disapprove line are above 50?", # 53
+        ]
 
 
     print("🔄 Running vision inference...")
