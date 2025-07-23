@@ -34,7 +34,7 @@ class EvalDataset(Dataset):
         image = Image.open(os.path.join(self.image_folder, image_file)).convert('RGB')
         image_tensor= self.image_processor.preprocess(image,return_tensors='pt')['pixel_values']
 
-        input_ids = tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt')
+        input_ids = tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0)
         attention_mask = torch.ones_like(input_ids)
         
         return input_ids, image_tensor, attention_mask
