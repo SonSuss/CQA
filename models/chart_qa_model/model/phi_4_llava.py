@@ -38,7 +38,7 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
     def get_model(self):
         return self.model
 
-    @torch.inference_mode()
+    @torch.no_grad()
     def generate(
         self,
         inputs: Optional[torch.Tensor] = None,
