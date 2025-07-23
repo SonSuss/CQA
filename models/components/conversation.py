@@ -8,6 +8,8 @@ from PIL import Image
 
 class SeparatorStyle(Enum):
     PHI4 = auto()
+    TWO = auto()
+    SINGLE = auto()
 
 
 @dataclasses.dataclass
