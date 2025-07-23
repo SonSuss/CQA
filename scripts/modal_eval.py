@@ -73,7 +73,7 @@ VAL_GPU = gpu
 VAL_CPU_COUNT = (1.0,8.0)
 VAL_MEMORY_GB = (8 * 1024,32 * 1024)  # 8GB to 32GB
 VAL_TIME = 10 # hours
-MODEL_PATH = "/root/data/checkpoints-siglip-resampler-phi4"
+MODEL_PATH = "/root/data/checkpoints-siglip-linear-phi4"
     
 @app.function(
     image=training_image,
@@ -144,7 +144,7 @@ def model_inference():
     
     image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/13153.png"
     texts= [
-        "<|image|>\nHow many data points on the disapprove line are above 50?", # 53
+        "<|image|>\nHow many data points on the disapprove line are above 50?", # 2
         ]
 
 
@@ -163,3 +163,27 @@ def model_inference():
         print(f"✅ Vision response: '{response}'")
         
     # return {"response": response, "text_test_works": True}
+    
+@app.function(
+    image=training_image,
+    volumes={"/root/data": volume},
+    gpu=VAL_GPU,
+    timeout=60 * MINUTES, 
+    cpu=VAL_CPU_COUNT,
+    memory=VAL_MEMORY_GB,
+)
+def eval_model_chart_qa():
+    pull_latest_code()
+    
+    from eval.chart_qa.eval import get_eval
+    from models.chart_qa_model.builder import load_pretrained_llava_model
+    
+    get_eval(model_path=MODEL_PATH,
+             valset_path="/root/data/Chart_QA/processed/val.json",
+             output_path="/root/data/eval_results",
+             image_folder="",
+             temperature=0.0,
+             top_p=1.0,
+             max_new_tokens=1024,
+             min_new_tokens=1,
+             num_beams=1)
