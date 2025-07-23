@@ -14,13 +14,13 @@ from torch.utils.data import Dataset, DataLoader
 from PIL import Image
 
 class EvalDataset(Dataset):
-    def __init__(self, data_items, image_folder, tokenizer, image_processor, model_config, conv_mode):
+    def __init__(self, data_items, image_folder, tokenizer, image_processor, model_config):
         self.data_items = data_items
         self.image_folder = image_folder
         self.tokenizer = tokenizer
         self.image_processor = image_processor
         self.model_config = model_config
-        self.conv_mode = conv_mode
+        self.conv_mode = model_config.version
 
     def __getitem__(self, index):
         line = self.data_items[index]
