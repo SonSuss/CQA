@@ -26,11 +26,6 @@ class EvalDataset(Dataset):
         line = self.data_items[index]
         image_file = line["image"]
         qs = line["conversations"][0]["value"]
-        # if self.model_config.mm_use_im_start_end:
-        #     qs = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN + '\n' + qs
-        # else:
-        #     qs = DEFAULT_IMAGE_TOKEN + '\n' + qs
-
         conv = conv_templates[self.conv_mode].copy()
         conv.append_message(conv.roles[0], qs)
         conv.append_message(conv.roles[1], None)
@@ -94,7 +89,7 @@ def get_eval(model_path, valset_path, output_path, image_folder="", temperature=
     all_data = json.load(open(valset_path, "r"))
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     answers_file = os.path.join(output_path, "answers.json")
-    ans_file = open(answers_file, "w")
+    ans_file = []
     data_loader = create_data_loader(all_data, image_folder, tokenizer, image_processor, model.config)
     for (input_ids, image_tensor, image_sizes), line in tqdm(zip(data_loader, all_data), total=len(all_data)):
         idx = line["id"]
@@ -114,13 +109,16 @@ def get_eval(model_path, valset_path, output_path, image_folder="", temperature=
                 use_cache=True)
 
         outputs = tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
-        ans_file.write(json.dumps({"id": idx,
-                                   "question": cur_prompt,
-                                   "gt_answer": line["conversations"][1]["value"],
-                                   "model_answer": outputs}) + "\n")
-        ans_file.flush()
-    ans_file.close()
-    
+        ans_file.append({
+            "id": idx,
+            "question": cur_prompt,
+            "gt_answer": line["conversations"][1]["value"],
+            "final_model_answer": outputs
+        })
+
+    with open(answers_file, "w", encoding="utf-8") as f:
+        json.dump(ans_file, f)
+
 def eval_model(eval_path):
     eval_file = os.path.join(eval_path,"answers.json")
     if not os.path.exists(eval_file):

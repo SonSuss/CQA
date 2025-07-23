@@ -132,10 +132,6 @@ def model_inference():
         device="cuda"
     )
     
-    # 🛠️ FIX: Set pad token properly
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
-        tokenizer.pad_token_id = tokenizer.eos_token_id
     
     print("✅ Model loaded successfully")
     
@@ -176,10 +172,9 @@ def eval_model_chart_qa():
     pull_latest_code()
     
     from eval.chart_qa.eval import get_eval
-    from models.chart_qa_model.builder import load_pretrained_llava_model
     
     get_eval(model_path=MODEL_PATH,
-             valset_path="/root/data/Chart_QA/processed/val.json",
+             valset_path="/root/data/Chart_QA/processed_data/val.json",
              output_path="/root/data/eval_results",
              image_folder="",
              temperature=0.0,
