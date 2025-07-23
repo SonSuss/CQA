@@ -84,7 +84,7 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
     #         return_dict=return_dict
     #     )
 
-    @torch.no_grad()
+    @torch.inference_mode()
     def generate(
         self,
         inputs: Optional[torch.Tensor] = None,
@@ -121,7 +121,7 @@ class PhiLlavaForCausalLM(Phi3ForCausalLM, LlavaMetaForCausalLM):
             inputs_embeds=inputs_embeds,
             **kwargs
         )
-        
+    
     def forward(
     self,
     input_ids: torch.LongTensor = None,

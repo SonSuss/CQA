@@ -95,7 +95,7 @@ def get_eval(model_path, valset_path, output_path, image_folder="", temperature=
         idx = line["id"]
         cur_prompt = line["conversations"][0]["value"]
         input_ids = input_ids.to(device='cuda', non_blocking=True)
-        with torch.no_grad():
+        with torch.inference_mode():
             output_ids = model.generate(
                 input_ids,
                 images=image_tensor.to(dtype=torch.float16, device='cuda', non_blocking=True),
