@@ -84,13 +84,13 @@ def chartqa_evaluator(data, key='final_model_answer'):
 
 def get_eval(model_path, valset_path, output_path, image_folder="", conv_mode="phi4_instruct", temperature=0.0, top_p=1.0, max_new_tokens=1024, min_new_tokens=1, num_beams=1):
     disable_torch_init()
-    model, tokenizer, image_processor, model_config = load_pretrained_llava_model(model_path)
+    model, tokenizer, image_processor, context_len = load_pretrained_llava_model(model_path)
     
     all_data = json.load(open(valset_path, "r"))
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     answers_file = os.path.join(output_path, "answers.json")
     ans_file = []
-    data_loader = create_data_loader(all_data, image_folder, tokenizer, image_processor, conv_mode)
+    data_loader = create_data_loader(all_data, image_folder, tokenizer, image_processor, conv_mode, num_workers=0)
     for (input_ids, image_tensor, image_sizes), line in tqdm(zip(data_loader, all_data), total=len(all_data)):
         idx = line["id"]
         cur_prompt = line["conversations"][0]["value"]

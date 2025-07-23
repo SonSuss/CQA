@@ -67,13 +67,12 @@ def pull_latest_code():
         print(f"Git pull failed: {e.stderr}")
         print("Continuing with existing code...")
 
-# Training configuration constants
 MINUTES = 60
 VAL_GPU = gpu
 VAL_CPU_COUNT = (1.0,8.0)
 VAL_MEMORY_GB = (8 * 1024,32 * 1024)  # 8GB to 32GB
 VAL_TIME = 10 # hours
-MODEL_PATH = "/root/data/checkpoints-siglip-linear-phi4"
+MODEL_PATH = "/root/data/checkpoints-siglip-resampler-phi4"
     
 @app.function(
     image=training_image,
