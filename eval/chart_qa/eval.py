@@ -14,13 +14,13 @@ from torch.utils.data import Dataset, DataLoader
 from PIL import Image
 
 class EvalDataset(Dataset):
-    def __init__(self, data_items, image_folder, tokenizer, image_processor, model_config):
+    def __init__(self, data_items, image_folder, tokenizer, image_processor, conv_mode):
         self.data_items = data_items
         self.image_folder = image_folder
         self.tokenizer = tokenizer
         self.image_processor = image_processor
-        self.model_config = model_config
-        self.conv_mode = model_config.version
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.conv_mode = conv_mode
 
     def __getitem__(self, index):
         line = self.data_items[index]
@@ -32,7 +32,7 @@ class EvalDataset(Dataset):
         prompt = conv.get_prompt()
 
         image = Image.open(os.path.join(self.image_folder, image_file)).convert('RGB')
-        image_tensor = process_images([image], self.image_processor, self.model_config)[0]
+        image_tensor= self.image_processor.preprocess(image,return_tensors='pt')['pixel_values'].to(self.device, dtype=torch.float16 if "cuda" in str(self.device) else torch.float32)
 
         input_ids = tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt')
 
@@ -67,9 +67,9 @@ def collate_fn(batch):
     image_tensors = torch.stack(image_tensors, dim=0)
     return input_ids, image_tensors, image_sizes
 
-def create_data_loader(questions, image_folder, tokenizer, image_processor, model_config, batch_size=1, num_workers=4):
+def create_data_loader(questions, image_folder, tokenizer, image_processor, conv_mode, batch_size=1, num_workers=4):
     assert batch_size == 1, "batch_size must be 1"
-    dataset = EvalDataset(questions, image_folder, tokenizer, image_processor, model_config)
+    dataset = EvalDataset(questions, image_folder, tokenizer, image_processor, conv_mode)
     data_loader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers, shuffle=False, collate_fn=collate_fn)
     return data_loader
 
@@ -82,7 +82,7 @@ def chartqa_evaluator(data, key='final_model_answer'):
     accuracy = acc/len(data)
     return data, accuracy
 
-def get_eval(model_path, valset_path, output_path, image_folder="", temperature=0.0, top_p=1.0, max_new_tokens=1024, min_new_tokens=1, num_beams=1):
+def get_eval(model_path, valset_path, output_path, image_folder="", conv_mode="phi4_instruct", temperature=0.0, top_p=1.0, max_new_tokens=1024, min_new_tokens=1, num_beams=1):
     disable_torch_init()
     model, tokenizer, image_processor, model_config = load_pretrained_llava_model(model_path)
     
@@ -90,7 +90,7 @@ def get_eval(model_path, valset_path, output_path, image_folder="", temperature=
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     answers_file = os.path.join(output_path, "answers.json")
     ans_file = []
-    data_loader = create_data_loader(all_data, image_folder, tokenizer, image_processor, model.config)
+    data_loader = create_data_loader(all_data, image_folder, tokenizer, image_processor, conv_mode)
     for (input_ids, image_tensor, image_sizes), line in tqdm(zip(data_loader, all_data), total=len(all_data)):
         idx = line["id"]
         cur_prompt = line["conversations"][0]["value"]
