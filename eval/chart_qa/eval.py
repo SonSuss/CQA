@@ -32,7 +32,7 @@ class EvalDataset(Dataset):
         prompt = conv.get_prompt()
 
         image = Image.open(os.path.join(self.image_folder, image_file)).convert('RGB')
-        image_tensor= self.image_processor.preprocess(image,return_tensors='pt')['pixel_values'].to(self.device, dtype=torch.float16 if "cuda" in str(self.device) else torch.float32)
+        image_tensor= self.image_processor.preprocess(image,return_tensors='pt')['pixel_values']
 
         input_ids = tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt')
 
@@ -90,7 +90,7 @@ def get_eval(model_path, valset_path, output_path, image_folder="", conv_mode="p
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     answers_file = os.path.join(output_path, "answers.json")
     ans_file = []
-    data_loader = create_data_loader(all_data, image_folder, tokenizer, image_processor, conv_mode, num_workers=0)
+    data_loader = create_data_loader(all_data, image_folder, tokenizer, image_processor, conv_mode, num_workers=4)
     for (input_ids, image_tensor, image_sizes), line in tqdm(zip(data_loader, all_data), total=len(all_data)):
         idx = line["id"]
         cur_prompt = line["conversations"][0]["value"]
