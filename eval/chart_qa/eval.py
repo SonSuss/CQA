@@ -94,12 +94,12 @@ def get_eval(model_path, valset_path, output_path, image_folder="", conv_mode="p
     conv = conv_templates[conv_mode].copy()
     stop_str = conv.sep if conv.sep_style != SeparatorStyle.PHI4 else conv.sep
     keywords = [stop_str]
-    stopping_criteria = KeywordsStoppingCriteria(keywords, tokenizer, input_ids)
     data_loader = create_data_loader(all_data, image_folder, tokenizer, image_processor, conv, num_workers=4)
     for (input_ids, image_tensor, attention_mask), line in tqdm(zip(data_loader, all_data), total=len(all_data)):
         idx = line["id"]
         cur_prompt = line["conversations"][0]["value"]
         input_ids = input_ids.to(device='cuda', non_blocking=True)
+        stopping_criteria = KeywordsStoppingCriteria(keywords, tokenizer, input_ids)
         attention_mask = attention_mask.to(device='cuda', non_blocking=True)
         with torch.inference_mode():
             output_ids = model.generate(
