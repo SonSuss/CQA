@@ -100,18 +100,23 @@ def get_eval(model_path, valset_path, output_path, image_folder="", conv_mode="p
     with open(answers_file, "w", encoding="utf-8") as f:
         json.dump(ans_file, f)
 def eval_model(eval_path, output_path):
-    answers_files = glob.glob(os.path.join(eval_path, "*.json"))
-    eval_file = os.path.join(output_path, f"eval.json")
-    eval_results = []
-    for answers_file in answers_files:
-        eval_config=answers_file.split("answers")[-1]
-        with open(answers_file, "r", encoding="utf-8") as f:
-            answers = json.load(f)
-        standard_accuracy, relaxed_accuracy = chartqa_evaluator(answers)
-        eval_results.append({
-            "eval_config": eval_config,
-            "standard_accuracy": standard_accuracy,
-            "relaxed_accuracy": relaxed_accuracy
-        })
-    with open(eval_file, "w", encoding="utf-8") as f:
-        json.dump(eval_results, f)
+    model_file = [
+        name for name in os.listdir(eval_path)
+        if os.path.isdir(os.path.join(eval_path, name))
+    ]
+    for model_path in model_file:
+        answers_files = glob.glob(os.path.join(model_path, "*.json"))
+        eval_file = os.path.join(output_path, f"eval.json")
+        eval_results = []
+        for answers_file in answers_files:
+            eval_config=answers_file.split("answers")[-1]
+            with open(answers_file, "r", encoding="utf-8") as f:
+                answers = json.load(f)
+            standard_accuracy, relaxed_accuracy = chartqa_evaluator(answers)
+            eval_results.append({
+                "eval_config": eval_config,
+                "standard_accuracy": standard_accuracy,
+                "relaxed_accuracy": relaxed_accuracy
+            })
+        with open(eval_file, "w", encoding="utf-8") as f:
+            json.dump(eval_results, f)
