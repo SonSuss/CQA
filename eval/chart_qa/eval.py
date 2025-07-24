@@ -110,9 +110,7 @@ def get_eval(model_path, valset_path, output_path, image_folder="", conv_mode="p
                 temperature=temperature if temperature > 0 else None,
                 top_p=top_p if temperature > 0 else None,
                 pad_token_id=tokenizer.pad_token_id,
-                num_beams=num_beams,
                 max_new_tokens=max_new_tokens,
-                min_new_tokens=min_new_tokens,
                 use_cache=True,
                 stopping_criteria=[stopping_criteria],
             )
