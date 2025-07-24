@@ -86,7 +86,7 @@ def chartqa_evaluator(data, key='final_model_answer'):
 
 def get_eval(model_path, valset_path, output_path, image_folder="", conv_mode="phi4_instruct", temperature=0.0, top_p=1.0, max_new_tokens=1024, min_new_tokens=1, num_beams=1):
     disable_torch_init()
-    model, tokenizer, image_processor, context_len = load_pretrained_llava_model(model_path)
+    tokenizer, model, image_processor, context_len = load_pretrained_llava_model(model_path)
     all_data = json.load(open(valset_path, "r"))
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     answers_file = os.path.join(output_path, "answers.json")
