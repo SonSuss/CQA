@@ -174,7 +174,7 @@ def eval_model_chart_qa():
     
     get_eval(model_path=MODEL_PATH,
              valset_path="/root/data/Chart_QA/processed_data/val.json",
-             output_path="/root/data/eval_results",
+             output_path="/root/data/eval_results/siglip-resampler-phi4",
              image_folder="",
              temperature=0.0,
              top_p=1.0,

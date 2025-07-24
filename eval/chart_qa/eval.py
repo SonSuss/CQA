@@ -88,19 +88,19 @@ def get_eval(model_path, valset_path, output_path, image_folder="", conv_mode="p
     disable_torch_init()
     tokenizer, model, image_processor, context_len = load_pretrained_llava_model(model_path)
     all_data = json.load(open(valset_path, "r"))
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    os.makedirs(output_path, exist_ok=True)
     answers_file = os.path.join(output_path, "answers.json")
     ans_file = []
     conv = conv_templates[conv_mode].copy()
     stop_str = conv.sep if conv.sep_style != SeparatorStyle.PHI4 else conv.sep
     keywords = [stop_str]
     data_loader = create_data_loader(all_data, image_folder, tokenizer, image_processor, conv, num_workers=4)
-    for (input_ids, image_tensor, attention_mask), line in tqdm(zip(data_loader, all_data), total=len(all_data)):
-        idx = line["id"]
-        cur_prompt = line["conversations"][0]["value"]
-        input_ids = input_ids.to(device='cuda', non_blocking=True)
-        stopping_criteria = KeywordsStoppingCriteria(keywords, tokenizer, input_ids)
-        with torch.inference_mode():
+    with torch.inference_mode():
+        for (input_ids, image_tensor, attention_mask), line in tqdm(zip(data_loader, all_data), total=len(all_data)):
+            idx = line["id"]
+            cur_prompt = line["conversations"][0]["value"]
+            input_ids = input_ids.to(device='cuda', non_blocking=True)
+            stopping_criteria = KeywordsStoppingCriteria(keywords, tokenizer, input_ids)
             output_ids = model.generate(
                 input_ids,
                 attention_mask=attention_mask.to(device='cuda', non_blocking=True),
@@ -114,13 +114,13 @@ def get_eval(model_path, valset_path, output_path, image_folder="", conv_mode="p
                 stopping_criteria=[stopping_criteria],
             )
 
-        outputs = tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
-        ans_file.append({
-            "id": idx,
-            "question": cur_prompt,
-            "gt_answer": line["conversations"][1]["value"],
-            "final_model_answer": outputs
-        })
+            outputs = tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
+            ans_file.append({
+                "id": idx,
+                "question": cur_prompt,
+                "gt_answer": line["conversations"][1]["value"],
+                "final_model_answer": outputs
+            })
 
     with open(answers_file, "w", encoding="utf-8") as f:
         json.dump(ans_file, f)
