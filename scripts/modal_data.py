@@ -5,7 +5,6 @@ app = modal.App("LoadChartQA")
 # Create or attach a persistent volume
 volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_2", create_if_missing=True)
 
-# Define image with dependencies
 image = (
     modal.Image.debian_slim()
     .pip_install("requests", "datasets", "tqdm", "pillow", "gitpython")

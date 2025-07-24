@@ -1,11 +1,13 @@
 import json
 import os
+import glob
 
 from models.components.utils import disable_torch_init
 from models.chart_qa_model.builder import load_pretrained_llava_model
 from models.components.constants import IMAGE_TOKEN_INDEX
 from models.components.mm_utils import tokenizer_image_token, KeywordsStoppingCriteria
 from models.components.conversation import conv_templates, SeparatorStyle
+from eval.chart_qa.metric import chartqa_evaluator
 
 import torch
 
@@ -42,25 +44,6 @@ class EvalDataset(Dataset):
     def __len__(self):
         return len(self.data_items)
 
-def RelaxedAccuracy(pred, gt):
-    try:
-        gt = float(gt)
-        pred = float(pred)
-        if gt == 0.0:
-            if pred == gt:
-                return 1.0
-            else:
-                return 0.0
-        else:
-            if abs(pred-gt) / gt <= 0.05:
-                return 1.0
-            else:
-                return 0.0
-    except:
-        if str(gt) == str(pred):
-            return 1.0
-        else:
-            return 0.0
 
 def collate_fn(batch):
     input_ids, image_tensors, attention_masks = zip(*batch)
@@ -75,15 +58,6 @@ def create_data_loader(questions, image_folder, tokenizer, image_processor, conv
     dataset = EvalDataset(questions, image_folder, tokenizer, image_processor, conv)
     data_loader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers, shuffle=False, collate_fn=collate_fn, pin_memory=True)
     return data_loader
-
-def chartqa_evaluator(data, key='final_model_answer'):
-    acc = 0
-    for item in data:
-        item['relaxed_acc'] = RelaxedAccuracy(item[key], item['gt_answer'].split('<pot_note>')[0])
-        if item['relaxed_acc'] == 1.0:
-            acc += 1
-    accuracy = acc/len(data)
-    return data, accuracy
 
 def get_eval(model_path, valset_path, output_path, image_folder="", conv_mode="phi4_instruct", temperature=0.0, top_p=1.0, max_new_tokens=1024, min_new_tokens=1, num_beams=1):
     disable_torch_init()
@@ -125,14 +99,19 @@ def get_eval(model_path, valset_path, output_path, image_folder="", conv_mode="p
 
     with open(answers_file, "w", encoding="utf-8") as f:
         json.dump(ans_file, f)
-
-def eval_model(eval_path):
-    eval_file = os.path.join(eval_path,"answers.json")
-    if not os.path.exists(eval_file):
-        raise FileNotFoundError(f"Evaluation file {eval_file} does not exist.")
-    with open(eval_file, "r") as f:
-        data = json.load(f)
-        
-
-    
-    
+def eval_model(eval_path, output_path):
+    answers_files = glob.glob(os.path.join(eval_path, "*.json"))
+    eval_file = os.path.join(output_path, f"eval.json")
+    eval_results = []
+    for answers_file in answers_files:
+        eval_config=answers_file.split("answers")[-1]
+        with open(answers_file, "r", encoding="utf-8") as f:
+            answers = json.load(f)
+        standard_accuracy, relaxed_accuracy = chartqa_evaluator(answers)
+        eval_results.append({
+            "eval_config": eval_config,
+            "standard_accuracy": standard_accuracy,
+            "relaxed_accuracy": relaxed_accuracy
+        })
+    with open(eval_file, "w", encoding="utf-8") as f:
+        json.dump(eval_results, f)
