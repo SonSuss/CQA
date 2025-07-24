@@ -45,9 +45,10 @@ class Conversation:
                 if message:
                     if type(message) is tuple:
                         message, _, _ = message
-                    ret += f"{role}\n{message}\n"
-                    if role == self.roles[1]:
-                        ret+= self.sep
+                    if role == self.roles[0]:
+                        ret += f"{role}\nImage:\nQuestion:\n{message}\n"
+                    else:
+                        ret += f"{role}\n{message}\n"+ self.sep
                 else:
                     ret += f"{role}\n"
         else:
@@ -214,9 +215,7 @@ conv_vicuna_v1 = Conversation(
 )
 
 conv_phi4_instruct = Conversation(
-    system="""<|system|>\nAnswer the question about the chart.
-First, think step by step and reason carefully to reach the solution.
-Then, only return the brief and direct answer, without explanation.""",
+    system="""<|system|>\nYou are a helpful assistant that answers questions about charts and plots. The user will provide a chart image and a related question. Use only the information visible in the image (axes, legends, bars, lines, text, etc.) to answer the question. Do not rely on outside knowledge.""",
     roles=("<|user|>", "<|assistant|>"),
     version="phi4_instruct",
     messages=(),

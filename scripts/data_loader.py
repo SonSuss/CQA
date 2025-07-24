@@ -50,6 +50,8 @@ from PIL import Image
 #         save_dataset(split_set, json_filename, images_folder)
 
 
+
+
 def data_preprocess_for_chart_QA(data_path,output_path):
     input_path = os.path.join(data_path, "ChartQA Dataset")
     output_folder = os.path.join(data_path, output_path)

@@ -3,7 +3,7 @@ import modal
 app = modal.App("TrainChartQA")
 
 # Create or attach a persistent volume
-volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_2", create_if_missing=True)
+volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_3", create_if_missing=True)
 
 
 cuda_version = "12.6.0"
@@ -73,7 +73,7 @@ TRAIN_GPU = gpu
 TRAIN_CPU_COUNT = (1.0,8.0)
 TRAIN_MEMORY_GB = (8 * 1024,32 * 1024)  # 8GB to 32GB
 TRAIN_TIME = 10 # hours
-CHECKPOINT = "/root/data/checkpoints-siglip-mlp2x_gelu-phi4"
+CHECKPOINT = "/root/data/checkpoints-siglip-resampler-phi4"
 
 @app.function(
     image=training_image,
@@ -392,7 +392,7 @@ def train_chartqa():
         vision_tower="mPLUG/TinyChart-3B-768-siglip",
         mm_vision_select_layer=-2,
         pretrain_mm_mlp_adapter=None,
-        mm_projector_type="mlp2x_gelu",
+        mm_projector_type="resampler",
         mm_use_im_start_end=False,
         mm_use_im_patch_token=False,
         mm_patch_merge_type="flat",
@@ -411,24 +411,23 @@ def train_chartqa():
         eval_data_path=eval_data_path,
         lazy_preprocess=True,
         is_multimodal=True,
-        image_folder="",  # Adjusted for volume
+        image_folder="",
         image_aspect_ratio="square",
     )
 
-    # Test configuration with smaller values for quick validation
     training_args = TrainingArguments(
         output_dir=output_dir,
         num_train_epochs=3, 
-        per_device_train_batch_size=7,
+        per_device_train_batch_size=8,
         per_device_eval_batch_size=4,
         gradient_accumulation_steps=1,
         evaluation_strategy="no",
         save_strategy="steps",
         save_steps=1000, 
         save_total_limit=1,
-        mm_projector_lr=5e-5,
-        vision_tower_lr=2e-5,
-        weight_decay=0.01,
+        mm_projector_lr=2e-5,
+        vision_tower_lr=2e-4,
+        weight_decay=0.02,
         warmup_ratio=0.1,
         lr_scheduler_type="cosine",
         logging_steps=25,
@@ -445,7 +444,7 @@ def train_chartqa():
         group_by_modality_length=True,
         warmup_steps=150,
         max_grad_norm=0.5,
-        local_rank=-1,  # For single GPU
+        local_rank=-1
     )
     train(model_args, data_args, training_args, log_rewrite=True)
     

@@ -104,11 +104,11 @@ def eval_model(eval_path, output_path):
         name for name in os.listdir(eval_path)
         if os.path.isdir(os.path.join(eval_path, name))
     ]
+    eval_results = []
     for model_path in model_file:
         full_model_path = os.path.join(eval_path, model_path)
         answers_files = glob.glob(os.path.join(full_model_path, "*.json"))
         eval_file = os.path.join(output_path, f"eval.json")
-        eval_results = []
         for answers_file in answers_files:
             eval_config=answers_file.split("answers")[-1]
             with open(answers_file, "r", encoding="utf-8") as f:
@@ -119,5 +119,5 @@ def eval_model(eval_path, output_path):
                 "standard_accuracy": standard_accuracy,
                 "relaxed_accuracy": relaxed_accuracy
             })
-        with open(eval_file, "w", encoding="utf-8") as f:
-            json.dump(eval_results, f)
+    with open(eval_file, "w", encoding="utf-8") as f:
+        json.dump(eval_results, f)
