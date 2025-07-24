@@ -110,7 +110,7 @@ def data_preprocess_for_chart_QA(data_path,output_path):
                         "conversations": [
                             {
                                 "from": "human",
-                                "value": "<|image|>\n" + item['query']
+                                "value": "<|image|>\n" + "Question:\n" + item['query']
                             },
                             {
                                 "from": "gpt",
@@ -129,7 +129,7 @@ def data_preprocess_for_chart_QA(data_path,output_path):
                         "conversations": [
                             {
                                 "from": "human",
-                                "value": "<|image|>\n" + item['query']
+                                "value": "<|image|>\n" + "Question:\n" + item['query']
                             },
                             {
                                 "from": "gpt",
