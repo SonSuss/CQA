@@ -34,7 +34,7 @@ class EvalDataset(Dataset):
         image = Image.open(os.path.join(self.image_folder, image_file)).convert('RGB')
         image_tensor= self.image_processor.preprocess(image,return_tensors='pt')['pixel_values']
 
-        input_ids = tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0)
+        input_ids = tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt')
         attention_mask = torch.ones_like(input_ids)
         
         return input_ids, image_tensor, attention_mask
@@ -100,11 +100,10 @@ def get_eval(model_path, valset_path, output_path, image_folder="", conv_mode="p
         cur_prompt = line["conversations"][0]["value"]
         input_ids = input_ids.to(device='cuda', non_blocking=True)
         stopping_criteria = KeywordsStoppingCriteria(keywords, tokenizer, input_ids)
-        attention_mask = attention_mask.to(device='cuda', non_blocking=True)
         with torch.inference_mode():
             output_ids = model.generate(
                 input_ids,
-                attention_mask=attention_mask,
+                attention_mask=attention_mask.to(device='cuda', non_blocking=True),
                 images=image_tensor.to(dtype=torch.float16, device='cuda', non_blocking=True),
                 do_sample=True if temperature > 0 else False,
                 temperature=temperature if temperature > 0 else None,
