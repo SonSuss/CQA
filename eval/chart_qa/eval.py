@@ -64,15 +64,16 @@ def RelaxedAccuracy(pred, gt):
 
 def collate_fn(batch):
     input_ids, image_tensors, attention_masks = zip(*batch)
-    input_ids = torch.stack(input_ids, dim=0)
-    image_tensors = torch.stack(image_tensors, dim=0)
-    attention_masks = torch.stack(attention_masks, dim=0)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    input_ids = torch.stack(input_ids, dim=0).to(device)
+    image_tensors = torch.stack(image_tensors, dim=0).to(device, dtype=torch.float16)
+    attention_masks = torch.stack(attention_masks, dim=0).to(device)
     return input_ids, image_tensors, attention_masks
 
 def create_data_loader(questions, image_folder, tokenizer, image_processor, conv, batch_size=1, num_workers=4):
     assert batch_size == 1, "batch_size must be 1"
     dataset = EvalDataset(questions, image_folder, tokenizer, image_processor, conv)
-    data_loader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers, shuffle=False, collate_fn=collate_fn)
+    data_loader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers, shuffle=False, collate_fn=collate_fn, pin_memory=True)
     return data_loader
 
 def chartqa_evaluator(data, key='final_model_answer'):
@@ -99,19 +100,18 @@ def get_eval(model_path, valset_path, output_path, image_folder="", conv_mode="p
         for (input_ids, image_tensor, attention_mask), line in tqdm(zip(data_loader, all_data), total=len(all_data)):
             idx = line["id"]
             cur_prompt = line["conversations"][0]["value"]
-            input_ids = input_ids.to(device='cuda', non_blocking=True)
-            stopping_criteria = KeywordsStoppingCriteria(keywords, tokenizer, input_ids)
+            # stopping_criteria = KeywordsStoppingCriteria(keywords, tokenizer, input_ids)
             output_ids = model.generate(
                 input_ids,
-                attention_mask=attention_mask.to(device='cuda', non_blocking=True),
-                images=image_tensor.to(dtype=torch.float16, device='cuda', non_blocking=True),
+                attention_mask=attention_mask,
+                images=image_tensor,
                 do_sample=True if temperature > 0 else False,
                 temperature=temperature if temperature > 0 else None,
                 top_p=top_p if temperature > 0 else None,
                 pad_token_id=tokenizer.pad_token_id,
                 max_new_tokens=max_new_tokens,
                 use_cache=True,
-                stopping_criteria=[stopping_criteria],
+                # stopping_criteria=[stopping_criteria],
             )
 
             outputs = tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
