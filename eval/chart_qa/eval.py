@@ -90,7 +90,7 @@ def get_eval(model_path, valset_path, output_path, image_folder="", conv_mode="p
     tokenizer, model, image_processor, context_len = load_pretrained_llava_model(model_path)
     all_data = json.load(open(valset_path, "r"))
     os.makedirs(output_path, exist_ok=True)
-    answers_file = os.path.join(output_path, "answers.json")
+    answers_file = os.path.join(output_path, f"answers_{temperature}_{top_p}.json")
     ans_file = []
     conv = conv_templates[conv_mode].copy()
     stop_str = conv.sep if conv.sep_style != SeparatorStyle.PHI4 else conv.sep
