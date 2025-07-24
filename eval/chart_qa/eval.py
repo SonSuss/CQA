@@ -104,6 +104,7 @@ def get_eval(model_path, valset_path, output_path, image_folder="", conv_mode="p
         with torch.inference_mode():
             output_ids = model.generate(
                 input_ids,
+                attention_mask=attention_mask,
                 images=image_tensor.to(dtype=torch.float16, device='cuda', non_blocking=True),
                 do_sample=True if temperature > 0 else False,
                 temperature=temperature if temperature > 0 else None,
