@@ -104,9 +104,9 @@ def eval_model(eval_path, output_path):
         name for name in os.listdir(eval_path)
         if os.path.isdir(os.path.join(eval_path, name))
     ]
-    print(model_file)
     for model_path in model_file:
         answers_files = glob.glob(os.path.join(model_path, "*.json"))
+        print(answers_files)
         eval_file = os.path.join(output_path, f"eval.json")
         eval_results = []
         for answers_file in answers_files:
