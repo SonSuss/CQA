@@ -3,7 +3,7 @@ import modal
 app = modal.App("TrainChartQA")
 
 # Create or attach a persistent volume
-volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_3", create_if_missing=True)
+volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_4", create_if_missing=True)
 
 
 cuda_version = "12.6.0"
@@ -18,7 +18,6 @@ training_image = (
     .pip_install(
         [
             "torch", "torchvision", "torchaudio",
-            "transformers==4.48.3",
             "accelerate==1.7.0", 
             "bitsandbytes==0.46.0",
             "safetensors==0.4.5",
@@ -33,7 +32,9 @@ training_image = (
             "psutil", 
         ],
     )
-    .pip_install( 
+    # using newest huggingface transformers
+    .pip_install("git+https://github.com/huggingface/transformers")
+    .pip_install(
         "flash-attn==2.8.1", extra_options="--no-build-isolation"
     )
     .run_commands([
@@ -392,7 +393,7 @@ def train_chartqa():
         vision_tower="google/siglip2-so400m-patch16-512",
         mm_vision_select_layer=-2,
         pretrain_mm_mlp_adapter=None,
-        mm_projector_type="resampler",
+        mm_projector_type="linear",
         mm_use_im_start_end=False,
         mm_use_im_patch_token=False,
         mm_patch_merge_type="flat",
