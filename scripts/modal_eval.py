@@ -170,7 +170,7 @@ def model_inference():
 def eval_model_chart_qa():
     pull_latest_code()
     import os
-    from eval.chart_qa.eval import get_eval
+    from eval.chart_qa.eval import get_eval, eval_model
     
     suffix = MODEL_PATH.split("/root/data/checkpoints-")[-1]
     output_path = os.path.join("/root/data/eval_results/", suffix)
@@ -185,6 +185,7 @@ def eval_model_chart_qa():
              min_new_tokens=1,
              num_beams=1)
     
+
 @app.function(
     image=training_image,
     volumes={"/root/data": volume},
@@ -194,6 +195,12 @@ def eval_model_chart_qa():
 )
 def run_eval_model_chart_qa():
     pull_latest_code()
+    import os
     from eval.chart_qa.eval import eval_model
     eval_path = "/root/data/eval_results/"
-    eval_model(eval_path=eval_path, output_path=eval_path)
+    model_file_list = [
+        name for name in os.listdir(eval_path)
+        if os.path.isdir(os.path.join(eval_path, name))
+    ]
+    for answers_path in model_file_list:
+        eval_model(answers_path=answers_path, output_path=answers_path)
