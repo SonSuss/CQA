@@ -296,6 +296,7 @@ def check_gpu_info():
     timeout=60 * MINUTES,
 )
 def preload_models():
+    pull_latest_code()
     import os
     import torch
     from models.chart_qa_model.model.modeling_phi3 import Phi3ForCausalLM
