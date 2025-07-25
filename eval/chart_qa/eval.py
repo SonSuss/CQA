@@ -114,5 +114,5 @@ def eval_model(answers_path, output_path):
             "relaxed_accuracy": relaxed_accuracy
         })
     with open(eval_file, "w", encoding="utf-8") as f:
-        json.dump(eval_results, f)
+        json.dump(eval_results, f, indent=2)
     

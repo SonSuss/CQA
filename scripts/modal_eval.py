@@ -3,7 +3,7 @@ import modal
 app = modal.App("TrainChartQA")
 
 # Create or attach a persistent volume
-volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_2", create_if_missing=True)
+volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_3", create_if_missing=True)
 
 
 cuda_version = "12.6.0"
@@ -72,7 +72,7 @@ VAL_GPU = gpu
 VAL_CPU_COUNT = (1.0,8.0)
 VAL_MEMORY_GB = (8 * 1024,32 * 1024)  # 8GB to 32GB
 VAL_TIME = 10 # hours
-MODEL_PATH = "/root/data/checkpoints-siglip-linear-phi4"
+MODEL_PATH = "/root/data/checkpoints-siglip-resampler-phi4"
     
 @app.function(
     image=training_image,
@@ -175,15 +175,27 @@ def eval_model_chart_qa():
     suffix = MODEL_PATH.split("/root/data/checkpoints-")[-1]
     output_path = os.path.join("/root/data/eval_results/", suffix)
     
+    # get_eval(model_path=MODEL_PATH,
+    #          valset_path="/root/data/Chart_QA/processed_data/val.json",
+    #          output_path=output_path,
+    #          image_folder="",
+    #          temperature=0.0,
+    #          top_p=1.0,
+    #          max_new_tokens=1024,
+    #          min_new_tokens=1,
+    #          num_beams=1)
+    
     get_eval(model_path=MODEL_PATH,
              valset_path="/root/data/Chart_QA/processed_data/val.json",
              output_path=output_path,
              image_folder="",
-             temperature=0.0,
-             top_p=1.0,
+             temperature=0.2,
+             top_p=0.5,
              max_new_tokens=1024,
              min_new_tokens=1,
              num_beams=1)
+    
+    volume.commit()
     
 
 @app.function(
@@ -204,3 +216,5 @@ def run_eval_model_chart_qa():
     ]
     for answers_path in model_file_list:
         eval_model(answers_path=answers_path, output_path=answers_path)
+        
+    volume.commit()
