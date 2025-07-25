@@ -112,6 +112,14 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
         vision_tower = model.get_vision_tower()
         vision_tower.to(dtype=torch.bfloat16 if training_args.bf16 else torch.float16, device=training_args.device)
         
+        # check vision tower embedding size
+        dummy_image = torch.zeros(1, 3, 512, 512).to(next(vision_tower.parameters()).device)
+        with torch.no_grad():
+            vision_out = vision_tower(dummy_image)
+            projected_out = model.get_model().mm_projector(vision_out)
+        logger.info("Vision tower output shape: ", vision_out.shape)
+        logger.info("Projected output shape: ", projected_out.shape)
+
         if model_args.tune_vision_tower:
             unlock_vit(training_args, model_args, vision_tower)
             logger.info(f"Vision tower frozen - trainable params: {sum(p.numel() for p in model.get_vision_tower().parameters() if p.requires_grad)}")
@@ -218,7 +226,7 @@ if __name__ == "__main__":
         version="phi4_instruct",
         freeze_backbone=True,
         tune_mm_mlp_adapter=False,
-        vision_tower="mPLUG/TinyChart-3B-768-siglip",
+        vision_tower="google/siglip2-so400m-patch16-512",
         mm_vision_select_layer=-2,
         pretrain_mm_mlp_adapter=None,
         mm_projector_type="resampler",

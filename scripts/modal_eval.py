@@ -215,6 +215,7 @@ def run_eval_model_chart_qa():
         if os.path.isdir(os.path.join(eval_path, name))
     ]
     for answers_path in model_file_list:
-        eval_model(answers_path=answers_path, output_path=answers_path)
+        full_answers_path = os.path.join(eval_path, answers_path)
+        eval_model(answers_path=full_answers_path, output_path=full_answers_path)
         
     volume.commit()
