@@ -33,7 +33,6 @@ training_image = (
         ],
     )
     # using newest huggingface transformers
-    .pip_install("git+https://github.com/huggingface/transformers")
     .pip_install(
         "flash-attn==2.8.1", extra_options="--no-build-isolation"
     )
@@ -41,6 +40,7 @@ training_image = (
         "apt-get update && apt-get install -y git build-essential",
         "git clone https://github.com/SonSuss/CQA.git /root/CQA",
     ])
+    .pip_install("git+https://github.com/huggingface/transformers")
     .workdir("/root/CQA")
     .env({"PYTHONPATH": "/root/CQA"})
 )
