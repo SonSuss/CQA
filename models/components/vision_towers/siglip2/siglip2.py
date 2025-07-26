@@ -16,7 +16,7 @@ class SigLip2VisionTower(nn.Module):
             self.config = Siglip2VisionConfig.from_pretrained(vision_tower)
         else:
             self.config = Siglip2VisionConfig()
-
+        self.config.image_mean = [0.4815, 0.4578, 0.4082]  # for CLIP-like norms
         self.vision_tower_name = vision_tower
 
         self.image_processor = Siglip2ImageProcessor(size=(self.config.image_size, self.config.image_size), image_mean=self.config.image_mean)
