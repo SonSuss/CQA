@@ -120,8 +120,6 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
             projected_out = model.get_model().mm_projector(vision_out)
         logger.info("Vision tower output shape: %s", vision_out.shape)
         logger.info("Projected output shape: %s", projected_out.shape)
-        
-        return
 
         if model_args.tune_vision_tower:
             unlock_vit(training_args, model_args, vision_tower)
