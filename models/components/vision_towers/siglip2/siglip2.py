@@ -9,28 +9,23 @@ from transformers import Siglip2VisionModel, Siglip2VisionConfig, Siglip2ImagePr
 class SigLip2VisionTower(nn.Module):
     def __init__(self, vision_tower, vision_tower_cfg, delay_load=False):
         super().__init__()
-
         self.is_loaded = False
-
-        if vision_tower is not None:
-            self.config = Siglip2VisionConfig.from_pretrained(vision_tower)
-        else:
-            self.config = Siglip2VisionConfig()
-        self.config.image_mean = [0.4815, 0.4578, 0.4082]  # for CLIP-like norms
         self.vision_tower_name = vision_tower
-
-        self.image_processor = Siglip2ImageProcessor(size=(self.config.image_size, self.config.image_size), image_mean=self.config.image_mean)
 
         if not delay_load:
             self.load_model()
         else:
-            self.cfg_only = self.config
+            # Lazy load case: just pull processor and config
+            self.image_processor = Siglip2ImageProcessor.from_pretrained(self.vision_tower_name)
+            self.cfg_only = self.image_processor
 
     def load_model(self):
         if self.is_loaded:
             return
 
         self.vision_tower = Siglip2VisionModel.from_pretrained(self.vision_tower_name)
+        self.config = self.vision_tower.config
+        self.image_processor = Siglip2ImageProcessor.from_pretrained(self.vision_tower_name)
 
         self.vision_tower.requires_grad_(False)
         self.vision_tower.eval()
