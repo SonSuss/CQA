@@ -118,8 +118,9 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
             vision_out = vision_tower(dummy_image)
             model.get_model().mm_projector.to(vision_out.device)
             projected_out = model.get_model().mm_projector(vision_out)
-        logger.info("Vision tower output shape: ", vision_out.shape)
-        logger.info("Projected output shape: ", projected_out.shape)
+        logger.info("Vision tower output shape: %s", vision_out.shape)
+        logger.info("Projected output shape: %s", projected_out.shape)
+        
         return
 
         if model_args.tune_vision_tower:
