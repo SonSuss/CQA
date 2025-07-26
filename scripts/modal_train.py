@@ -18,6 +18,7 @@ training_image = (
     .pip_install(
         [
             "torch", "torchvision", "torchaudio",
+            "transformers==4.49.0",
             "accelerate==1.7.0", 
             "bitsandbytes==0.46.0",
             "safetensors==0.4.5",
@@ -40,7 +41,6 @@ training_image = (
         "apt-get update && apt-get install -y git build-essential",
         "git clone https://github.com/SonSuss/CQA.git /root/CQA",
     ])
-    .pip_install("git+https://github.com/huggingface/transformers")
     .workdir("/root/CQA")
     .env({"PYTHONPATH": "/root/CQA"})
 )
