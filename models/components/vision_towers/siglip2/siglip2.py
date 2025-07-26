@@ -4,7 +4,7 @@ from typing import Union
 import torch
 
 from torch import nn
-from transformers import Siglip2VisionModel, Siglip2VisionConfig, Siglip2ImageProcessor
+from transformers import SiglipVisionModel, SiglipImageProcessor
 
 class SigLip2VisionTower(nn.Module):
     def __init__(self, vision_tower, vision_tower_cfg, delay_load=False):
@@ -16,16 +16,17 @@ class SigLip2VisionTower(nn.Module):
             self.load_model()
         else:
             # Lazy load case: just pull processor and config
-            self.image_processor = Siglip2ImageProcessor.from_pretrained(self.vision_tower_name)
+            print(f"Lazy loading vision tower: {self.vision_tower_name}")
+            self.image_processor = SiglipImageProcessor.from_pretrained(self.vision_tower_name)
             self.cfg_only = self.image_processor
 
     def load_model(self):
         if self.is_loaded:
             return
 
-        self.vision_tower = Siglip2VisionModel.from_pretrained(self.vision_tower_name)
+        self.vision_tower = SiglipVisionModel.from_pretrained(self.vision_tower_name)
         self.config = self.vision_tower.config
-        self.image_processor = Siglip2ImageProcessor.from_pretrained(self.vision_tower_name)
+        self.image_processor = SiglipImageProcessor.from_pretrained(self.vision_tower_name)
 
         self.vision_tower.requires_grad_(False)
         self.vision_tower.eval()
