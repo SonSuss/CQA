@@ -17,7 +17,7 @@ class SigLip2VisionTower(nn.Module):
             self.config = SiglipVisionConfig()
 
         self.vision_tower_name = vision_tower
-
+        self.config.image_mean = [0.5, 0.5, 0.5]
         self.image_processor = SiglipImageProcessor(size=(self.config.image_size, self.config.image_size), image_mean=self.config.image_mean)
 
         if not delay_load:
