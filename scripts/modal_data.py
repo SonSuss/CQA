@@ -60,7 +60,8 @@ def download_preprocess_datasets():
     data_preprocess_for_chart_QA(extract_path, "processed_data")
     print("Data preprocessing completed.")
     chartqa_chart_to_table_addition(extract_path)
-
+    print("Chart to table addition completed.")
+    
     volume.commit()
 
 @app.function(

@@ -79,8 +79,6 @@ def data_preprocess_for_chart_QA(data_path,output_path):
     
     print(f"Images processed: {total_copied} copied, {total_skipped} skipped")
 
-    print(f"Images processed: {total_copied} copied, {total_skipped} skipped")
-
     print("Processing JSON data...")
     for name in src_data:
         name_path = os.path.join(input_path, name)
@@ -157,6 +155,7 @@ def data_preprocess_for_chart_QA(data_path,output_path):
     print(f"Val_set len: {len(val_set)}")
 
 def chartqa_chart_to_table_addition(data_path):
+    chartqa_path= os.path.join(data_path, "ChartQA Dataset")
     preprocessed_folder = os.path.join(data_path, "processed_data")
     non_table_train_path = os.path.join(preprocessed_folder, "train.json")
     non_table_val_path = os.path.join(preprocessed_folder, "val.json")
@@ -164,19 +163,21 @@ def chartqa_chart_to_table_addition(data_path):
         train_set = json.load(f)
     with open(non_table_val_path, "r", encoding="utf-8") as f:
         val_set = json.load(f)
-        
-    imgset = set()
-    for item in train_set[:]:
-        image = item['image']
-        img_id = item['id']
-        csv_path = image.replace('/png/', '/tables/').replace('.png', '.csv')
-        if os.path.exists(csv_path) and img_id not in imgset:
-            imgset.add(img_id)
-            with open(csv_path, 'r', encoding='utf-8') as csv_file:
-                csv_data = csv_file.read()
-            entry = {
+    src_data = ["train", "test", "val"]
+    for src in src_data:
+        src_folder = os.path.join(chartqa_path, src)
+        img_folder = os.path.join(src_folder, "png")
+        table_folder = os.path.join(src_folder, "tables")
+        for img_file in os.listdir(img_folder):
+            if img_file.endswith('.png'):
+                img_id = os.path.splitext(img_file)[0]
+                csv_path = os.path.join(table_folder, f"{img_id}.csv")
+                if os.path.exists(csv_path):
+                    with open(csv_path, 'r', encoding='utf-8') as csv_file:
+                        csv_data = csv_file.read()
+                    entry = {
                         "id": img_id,
-                        "image": image,
+                        "image": os.path.join(img_folder, img_file),
                         "conversations": [
                             {
                                 "from": "human",
@@ -188,37 +189,12 @@ def chartqa_chart_to_table_addition(data_path):
                             }
                         ]
                     }
-            train_set.append(entry)
-        else:
-            print(f"CSV file not found for in train {img_id}, skipping...")
-            
-    imgset = set()
-    for item in val_set[:]:    
-        image = item['image']
-        img_id = item['id']
-        csv_path = image.replace('/png/', '/tables/').replace('.png', '.csv')
-        if os.path.exists(csv_path) and img_id not in imgset:
-            imgset.add(img_id)
-            with open(csv_path, 'r', encoding='utf-8') as csv_file:
-                csv_data = csv_file.read()
-            entry = {
-                        "id": img_id,
-                        "image": image,
-                        "conversations": [
-                            {
-                                "from": "human",
-                                "value": "<|image|>\n" + "Question:\n" + "Generate the table data in CSV format based on the chart in the image."
-                            },
-                            {
-                                "from": "gpt",
-                                "value": csv_data
-                            }
-                        ]
-                    }
-            val_set.append(entry)
-        else:
-            print(f"CSV file not found for in val {img_id}, skipping...")
-    
+                    if src == 'val':
+                        val_set.append(entry)
+                    else:
+                        train_set.append(entry)
+                else:
+                    print(f"CSV file not found for {img_id}, skipping...")
     output_folder = os.path.join(data_path, "preprocessed_data_with_tables")
     os.makedirs(output_folder, exist_ok=True)
     train_path = os.path.join(output_folder, "train.json")

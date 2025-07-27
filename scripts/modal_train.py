@@ -391,7 +391,7 @@ def train_chartqa():
         version="phi4_instruct",
         freeze_backbone=True,
         tune_mm_mlp_adapter=False,
-        vision_tower="google/siglip2-so400m-patch16-512",
+        vision_tower="mPLUG/TinyChart-3B-768-siglip",
         mm_vision_select_layer=-2,
         pretrain_mm_mlp_adapter=None,
         mm_projector_type="mlp2x_gelu",
