@@ -172,12 +172,13 @@ def chartqa_chart_to_table_addition(data_path):
             if img_file.endswith('.png'):
                 img_id = os.path.splitext(img_file)[0]
                 csv_path = os.path.join(table_folder, f"{img_id}.csv")
-                if os.path.exists(csv_path):
+                img_path = os.path.join(img_folder, img_file)
+                if os.path.exists(csv_path) and os.path.exists(img_path):
                     with open(csv_path, 'r', encoding='utf-8') as csv_file:
                         csv_data = csv_file.read()
                     entry = {
                         "id": img_id,
-                        "image": os.path.join(img_folder, img_file),
+                        "image": img_path,
                         "conversations": [
                             {
                                 "from": "human",
