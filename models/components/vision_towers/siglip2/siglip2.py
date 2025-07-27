@@ -4,35 +4,37 @@ from typing import Union
 import torch
 
 from torch import nn
-from transformers import SiglipVisionModel, SiglipImageProcessor
+from transformers import SiglipVisionModel, SiglipImageProcessor, SiglipVisionConfig
 
 class SigLip2VisionTower(nn.Module):
     def __init__(self, vision_tower, vision_tower_cfg, delay_load=False):
         super().__init__()
         self.is_loaded = False
+
+        if vision_tower is not None:
+            self.config = SiglipVisionConfig.from_pretrained(vision_tower)
+        else:
+            self.config = SiglipVisionConfig()
+
         self.vision_tower_name = vision_tower
+
+        self.image_processor = SiglipImageProcessor(size=(self.config.image_size, self.config.image_size), image_mean=self.config.image_mean)
 
         if not delay_load:
             self.load_model()
         else:
-            # Lazy load case: just pull processor and config
-            print(f"Lazy loading vision tower: {self.vision_tower_name}")
-            self.image_processor = SiglipImageProcessor.from_pretrained(self.vision_tower_name)
-            self.cfg_only = self.image_processor
+            self.cfg_only = self.config
 
     def load_model(self):
         if self.is_loaded:
             return
 
         self.vision_tower = SiglipVisionModel.from_pretrained(self.vision_tower_name)
-        self.config = self.vision_tower.config
-        self.image_processor = SiglipImageProcessor.from_pretrained(self.vision_tower_name)
 
         self.vision_tower.requires_grad_(False)
         self.vision_tower.eval()
 
         self.is_loaded = True
-
     # @torch.no_grad()
     def forward(self, images):
         if type(images) is list:

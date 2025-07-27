@@ -215,7 +215,9 @@ conv_vicuna_v1 = Conversation(
 )
 
 conv_phi4_instruct = Conversation(
-    system="""<|system|>\nYou are a helpful assistant that answers questions about charts and plots. The user will provide a chart image and a related question. Use only the information visible in the image (axes, legends, bars, lines, text, etc.) to answer the question. Do not rely on outside knowledge.""",
+    system="""<|system|>\nYou are a helpful assistant that answers questions about data charts.
+First, reason step by step based on the chart image and the question.
+Then, give a short and direct answer.""",
     roles=("<|user|>", "<|assistant|>"),
     version="phi4_instruct",
     messages=(),
