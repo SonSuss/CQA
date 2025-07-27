@@ -168,7 +168,7 @@ def chartqa_chart_to_table_addition(data_path):
         src_folder = os.path.join(chartqa_path, src)
         img_folder = os.path.join(src_folder, "png")
         table_folder = os.path.join(src_folder, "tables")
-        for img_file in os.listdir(img_folder):
+        for img_file in tqdm(os.listdir(img_folder), desc=f"Processing {src} images"):
             if img_file.endswith('.png'):
                 img_id = os.path.splitext(img_file)[0]
                 csv_path = os.path.join(table_folder, f"{img_id}.csv")
@@ -195,7 +195,7 @@ def chartqa_chart_to_table_addition(data_path):
                     else:
                         train_set.append(entry)
                 else:
-                    print(f"CSV file not found for {img_id}, skipping...")
+                    print(f"CSV file not found for {img_path}, skipping...")
     output_folder = os.path.join(data_path, "preprocessed_data_with_tables")
     os.makedirs(output_folder, exist_ok=True)
     train_path = os.path.join(output_folder, "train.json")
