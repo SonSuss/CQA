@@ -3,6 +3,7 @@ import os
 import requests
 import zipfile
 import shutil
+from concurrent.futures import ThreadPoolExecutor
 
 from datasets import load_dataset
 from tqdm import tqdm
@@ -154,7 +155,7 @@ def data_preprocess_for_chart_QA(data_path,output_path):
     print(f"Train_set len: {len(train_set)}")
     print(f"Val_set len: {len(val_set)}")
 
-def chartqa_chart_to_table_addition(data_path):
+def chartqa_chart_to_table_addition(data_path, max_workers=8):
     chartqa_path= os.path.join(data_path, "ChartQA Dataset")
     preprocessed_folder = os.path.join(data_path, "processed_data")
     non_table_train_path = os.path.join(preprocessed_folder, "train.json")
@@ -168,31 +169,44 @@ def chartqa_chart_to_table_addition(data_path):
         src_folder = os.path.join(chartqa_path, src)
         img_folder = os.path.join(src_folder, "png")
         table_folder = os.path.join(src_folder, "tables")
-        for img_file in tqdm(os.listdir(img_folder), desc=f"Processing {src} images"):
+        img_files = [f for f in os.listdir(img_folder) if f.endswith('.png')]
+
+        def process_img(img_file):
             img_id = os.path.splitext(img_file)[0]
             csv_path = os.path.join(table_folder, f"{img_id}.csv")
             img_path = os.path.join(img_folder, img_file)
-            
-            with open(csv_path, 'r', encoding='utf-8') as csv_file:
-                csv_data = csv_file.read()
-            entry = {
-                "id": img_id,
-                "image": img_path,
-                "conversations": [
-                    {
-                        "from": "human",
-                        "value": "<|image|>\n" + "Question:\n" + "Generate the table data in CSV format based on the chart in the image."
-                    },
-                    {
-                        "from": "gpt",
-                        "value": csv_data
-                    }
-                ]
-            }
-            if src == 'val':
-                val_set.append(entry)
-            else:
-                train_set.append(entry)
+            if not os.path.exists(csv_path):
+                return None
+            try:
+                with open(csv_path, 'r', encoding='utf-8') as csv_file:
+                    csv_data = csv_file.read()
+                entry = {
+                    "id": img_id,
+                    "image": img_path,
+                    "conversations": [
+                        {
+                            "from": "human",
+                            "value": "<|image|>\nQuestion:\nGenerate the table data in CSV format based on the chart in the image."
+                        },
+                        {
+                            "from": "gpt",
+                            "value": csv_data
+                        }
+                    ]
+                }
+                return entry
+            except Exception as e:
+                print(f"Error reading {csv_path}: {e}")
+                return None
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            entries = list(tqdm(executor.map(process_img, img_files), total=len(img_files), desc=f"Processing {src} images"))
+            entries = [e for e in entries if e is not None]
+
+        if src == 'val':
+            val_set.extend(entries)
+        else:
+            train_set.extend(entries)
     output_folder = os.path.join(data_path, "preprocessed_data_with_tables")
     os.makedirs(output_folder, exist_ok=True)
     train_path = os.path.join(output_folder, "train.json")
