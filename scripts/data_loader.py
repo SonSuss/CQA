@@ -156,6 +156,80 @@ def data_preprocess_for_chart_QA(data_path,output_path):
     print(f"Train_set len: {len(train_set)}")
     print(f"Val_set len: {len(val_set)}")
 
+def chartqa_chart_to_table_addition(data_path):
+    preprocessed_folder = os.path.join(data_path, "processed_data")
+    non_table_train_path = os.path.join(preprocessed_folder, "train.json")
+    non_table_val_path = os.path.join(preprocessed_folder, "val.json")
+    with open(non_table_train_path, "r", encoding="utf-8") as f:
+        train_set = json.load(f)
+    with open(non_table_val_path, "r", encoding="utf-8") as f:
+        val_set = json.load(f)
+        
+    imgset = set()
+    for item in train_set[:]:
+        image = item['image']
+        img_id = item['id']
+        csv_path = image.replace('/png/', '/tables/').replace('.png', '.csv')
+        if os.path.exists(csv_path) and img_id not in imgset:
+            imgset.add(img_id)
+            with open(csv_path, 'r', encoding='utf-8') as csv_file:
+                csv_data = csv_file.read()
+            entry = {
+                        "id": img_id,
+                        "image": image,
+                        "conversations": [
+                            {
+                                "from": "human",
+                                "value": "<|image|>\n" + "Question:\n" + "Generate the table data in CSV format based on the chart in the image."
+                            },
+                            {
+                                "from": "gpt",
+                                "value": csv_data
+                            }
+                        ]
+                    }
+            train_set.append(entry)
+        else:
+            print(f"CSV file not found for in train {img_id}, skipping...")
+            
+    imgset = set()
+    for item in val_set[:]:    
+        image = item['image']
+        img_id = item['id']
+        csv_path = image.replace('/png/', '/tables/').replace('.png', '.csv')
+        if os.path.exists(csv_path) and img_id not in imgset:
+            imgset.add(img_id)
+            with open(csv_path, 'r', encoding='utf-8') as csv_file:
+                csv_data = csv_file.read()
+            entry = {
+                        "id": img_id,
+                        "image": image,
+                        "conversations": [
+                            {
+                                "from": "human",
+                                "value": "<|image|>\n" + "Question:\n" + "Generate the table data in CSV format based on the chart in the image."
+                            },
+                            {
+                                "from": "gpt",
+                                "value": csv_data
+                            }
+                        ]
+                    }
+            val_set.append(entry)
+        else:
+            print(f"CSV file not found for in val {img_id}, skipping...")
+    
+    output_folder = os.path.join(data_path, "preprocessed_data_with_tables")
+    os.makedirs(output_folder, exist_ok=True)
+    train_path = os.path.join(output_folder, "train.json")
+    val_path = os.path.join(output_folder, "val.json")
+    with open(train_path, "w", encoding="utf-8") as f:
+        json.dump(train_set, f, ensure_ascii=False, indent=2)
+    with open(val_path, "w", encoding="utf-8") as f:
+        json.dump(val_set, f, indent=2)
+    print(f"Train_set len: {len(train_set)}")
+    print(f"Val_set len: {len(val_set)}")
+    
 def download_and_extract(url, extract_path="data/"):
     try:
         # Download

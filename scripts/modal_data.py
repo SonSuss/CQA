@@ -3,7 +3,7 @@ import modal
 app = modal.App("LoadChartQA")
 
 # Create or attach a persistent volume
-volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_4", create_if_missing=True)
+volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_5", create_if_missing=True)
 
 image = (
     modal.Image.debian_slim()
@@ -49,7 +49,7 @@ def pull_latest_code():
 )
 def download_preprocess_datasets():
     pull_latest_code()
-    from scripts.data_loader import download_and_extract, data_preprocess_for_chart_QA
+    from scripts.data_loader import download_and_extract, data_preprocess_for_chart_QA, chartqa_chart_to_table_addition
     import time
     url = "https://huggingface.co/datasets/ahmed-masry/ChartQA/resolve/main/ChartQA%20Dataset.zip"
     extract_path = "/root/data/Chart_QA"
@@ -58,6 +58,8 @@ def download_preprocess_datasets():
 
     print("Starting data preprocessing...")
     data_preprocess_for_chart_QA(extract_path, "processed_data")
+    print("Data preprocessing completed.")
+    chartqa_chart_to_table_addition(extract_path)
 
     volume.commit()
 
