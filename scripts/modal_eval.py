@@ -3,7 +3,7 @@ import modal
 app = modal.App("TrainChartQA")
 
 # Create or attach a persistent volume
-volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_3", create_if_missing=True)
+volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_4", create_if_missing=True)
 
 
 cuda_version = "12.6.0"
@@ -72,7 +72,7 @@ VAL_GPU = gpu
 VAL_CPU_COUNT = (1.0,8.0)
 VAL_MEMORY_GB = (8 * 1024,32 * 1024)  # 8GB to 32GB
 VAL_TIME = 10 # hours
-MODEL_PATH = "/root/data/checkpoints-siglip-resampler-phi4"
+
     
 @app.function(
     image=training_image,
@@ -158,7 +158,9 @@ def model_inference():
         print(f"✅ Vision response: '{response}'")
         
     # return {"response": response, "text_test_works": True}
-    
+
+
+MODEL_PATH = "/root/data/checkpoints-siglip-resampler_num_queries_1024-phi4"
 @app.function(
     image=training_image,
     volumes={"/root/data": volume},

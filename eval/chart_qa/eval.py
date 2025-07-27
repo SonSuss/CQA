@@ -101,7 +101,12 @@ def get_eval(model_path, valset_path, output_path, image_folder="", conv_mode="p
         json.dump(ans_file, f)
 def eval_model(answers_path, output_path):
     eval_results = []
-    answers_files = glob.glob(os.path.join(answers_path, "*.json"))
+    answers_files = [
+        f for f in glob.glob(os.path.join(answers_path, "*.json"))
+        if os.path.basename(f) != "eval.json"
+    ]
+    if not answers_files:
+        return
     eval_file = os.path.join(output_path, f"eval.json")
     for answers_file in answers_files:
         eval_config=answers_file.split("answers")[-1]
