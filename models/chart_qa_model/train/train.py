@@ -110,12 +110,12 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
 
         vision_tower = model.get_vision_tower()
         vision_tower.to(dtype=torch.bfloat16 if training_args.bf16 else torch.float16, device=training_args.device)
-        if model_args.mm_projector_type == 'resampler':
-            logger.info("Using resampler with hidden size %d, num queries %d, num layers %d",
-                        model_args.resampler_hidden_size, model_args.num_queries, model_args.num_resampler_layers)
-            model.config.resampler_hidden_size = model_args.resampler_hidden_size
-            model.config.num_queries = model_args.num_queries
-            model.config.num_resampler_layers = model_args.num_resampler_layers
+        # if model_args.mm_projector_type == 'resampler':
+        #     logger.info("Using resampler with hidden size %d, num queries %d, num layers %d",
+        #                 model_args.resampler_hidden_size, model_args.num_queries, model_args.num_resampler_layers)
+        #     model.config.resampler_hidden_size = model_args.resampler_hidden_size
+        #     model.config.num_queries = model_args.num_queries
+        #     model.config.num_resampler_layers = model_args.num_resampler_layers
         dummy_image = torch.zeros(1, 3, 512, 512).to(next(vision_tower.parameters()).device)
         with torch.no_grad():
             vision_out = vision_tower(dummy_image)
