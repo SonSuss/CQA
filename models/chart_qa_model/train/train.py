@@ -73,7 +73,6 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
         use_fast=True,
         trust_remote_code=True
         )
-    #this is model finetuning for phi4 example in model itself
     tokenizer.pad_token = tokenizer.unk_token
     tokenizer.pad_token_id = tokenizer.convert_tokens_to_ids(tokenizer.pad_token)
     tokenizer.padding_side = 'right'
@@ -111,8 +110,12 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
 
         vision_tower = model.get_vision_tower()
         vision_tower.to(dtype=torch.bfloat16 if training_args.bf16 else torch.float16, device=training_args.device)
-        
-        # check vision tower embedding size
+        if model_args.mm_projector_type == 'resampler':
+            logger.info("Using resampler with hidden size %d, num queries %d, num layers %d",
+                        model_args.resampler_hidden_size, model_args.num_queries, model_args.num_resampler_layers)
+            model.config.resampler_hidden_size = model_args.resampler_hidden_size
+            model.config.num_queries = model_args.num_queries
+            model.config.num_resampler_layers = model_args.num_resampler_layers
         dummy_image = torch.zeros(1, 3, 512, 512).to(next(vision_tower.parameters()).device)
         with torch.no_grad():
             vision_out = vision_tower(dummy_image)
@@ -236,7 +239,7 @@ if __name__ == "__main__":
         mm_patch_merge_type="flat",
         mm_vision_select_feature="patch",
         resampler_hidden_size=768,
-        num_queries=128,
+        num_queries=256,
         num_resampler_layers=3,
         tune_vision_tower=True,
         tune_entire_model=False,
