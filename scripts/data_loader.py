@@ -164,7 +164,7 @@ def chartqa_chart_to_table_addition(data_path, max_workers=8):
         train_set = json.load(f)
     with open(non_table_val_path, "r", encoding="utf-8") as f:
         val_set = json.load(f)
-    src_data = ["val"]
+    src_data = ["train", "test", "val"]
     for src in src_data:
         src_folder = os.path.join(chartqa_path, src)
         img_folder = os.path.join(src_folder, "png")

@@ -67,9 +67,9 @@ def download_preprocess_datasets():
 @app.function(
     image=image,
     volumes={"/root/data": volume},
-    timeout=1800,  # 30 minutes
-    cpu=1,         # Default CPU - no waste
-    memory=1024    # Default memory - minimal cost
+    timeout=1800, 
+    cpu=(1.0,4.0), 
+    memory=(1024, 8192)
 )
 def table_to_chart_addition():
     pull_latest_code()
