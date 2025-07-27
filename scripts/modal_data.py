@@ -63,7 +63,31 @@ def download_preprocess_datasets():
     print("Chart to table addition completed.")
     
     volume.commit()
-
+    
+@app.function(
+    image=image,
+    volumes={"/root/data": volume},
+    timeout=1800,  # 30 minutes
+    cpu=1,         # Default CPU - no waste
+    memory=1024    # Default memory - minimal cost
+)
+def table_to_chart_addition():
+    pull_latest_code()
+    from scripts.data_loader import chartqa_chart_to_table_addition
+    import time
+    
+    extract_path = "/root/data/Chart_QA"
+    
+    print("Starting table to chart addition...")
+    start_time = time.time()
+    
+    chartqa_chart_to_table_addition(extract_path)
+    
+    process_time = time.time() - start_time
+    print(f"Table to chart addition completed in {process_time:.2f} seconds")
+    
+    volume.commit()
+    
 @app.function(
     image=image,
     timeout=300
