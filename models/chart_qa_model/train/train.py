@@ -110,7 +110,7 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
 
         vision_tower = model.get_vision_tower()
         vision_tower.to(dtype=torch.bfloat16 if training_args.bf16 else torch.float16, device=training_args.device)
-        dummy_image = torch.zeros(1, 3, 512, 512).to(next(vision_tower.parameters()).device)
+        dummy_image = torch.zeros(1, 3, 768, 768).to(next(vision_tower.parameters()).device)
         with torch.no_grad():
             vision_out = vision_tower(dummy_image)
             model.get_model().mm_projector.to(vision_out.device)
