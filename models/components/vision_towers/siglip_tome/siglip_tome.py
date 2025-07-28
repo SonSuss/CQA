@@ -7,7 +7,7 @@ from torch import nn
 import torch
 
 from transformers.modeling_utils import PreTrainedModel
-from transformers.models.siglip.modeling_siglip import SiglipEncoderLayer
+# from transformers.models.siglip.modeling_siglip import SigLipEncoderLayer
 from transformers.models.siglip.processing_siglip import *
 from transformers.modeling_outputs import BaseModelOutput, BaseModelOutputWithPooling
 from transformers.image_utils import (ChannelDimension, PILImageResampling, to_numpy_array, )
@@ -369,7 +369,7 @@ class SigLipEncoder(nn.Module):
     def __init__(self, config: SigLipVisionConfig):
         super().__init__()
         self.config = config
-        self.layers = nn.ModuleList([SiglipEncoderLayer(config) for _ in range(config.num_hidden_layers)])
+        self.layers = nn.ModuleList([SigLipEncoderLayer(config) for _ in range(config.num_hidden_layers)])
         self.gradient_checkpointing = False
 
     # Ignore copy
@@ -693,7 +693,7 @@ class SigLipVisionTower(nn.Module):
         self.vision_tower_name = vision_tower
 
         self.image_processor = SigLipImageProcessor(size=(self.config.image_size, self.config.image_size), image_mean=self.config.image_mean)
-        self.layer_idx = getattr(vision_tower_cfg, "mm_vision_select_layer", -1)
+
         if not delay_load:
             self.load_model()
         else:

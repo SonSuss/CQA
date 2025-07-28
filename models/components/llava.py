@@ -8,8 +8,8 @@ import torch.nn as nn
 # from models.components.vision_towers.vit.vit import build_vision_tower
 from models.components.constants import *
 from models.components.mm_projector import build_vision_projector
-# from models.components.vision_towers.siglip_tome.siglip_tome import build_vision_tower
-from models.components.vision_towers.siglip2.siglip2 import build_vision_tower
+from models.components.vision_towers.siglip_tome.siglip_tome import build_vision_tower
+# from models.components.vision_towers.siglip2.siglip2 import build_vision_tower
 from models.components.utils import rank0_print
 
 # def build_vision_tower(config, delay_load=False):
