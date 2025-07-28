@@ -45,9 +45,10 @@ class Conversation:
                 if message:
                     if type(message) is tuple:
                         message, _, _ = message
-                    ret += f"{role}\n{message}\n"
-                    if role == self.roles[1]:
-                        ret+= self.sep
+                    if role == self.roles[0]:
+                        ret += f"{role}\nImage:\n{message}\n"
+                    else:
+                        ret += f"{role}\n{message}\n"+ self.sep
                 else:
                     ret += f"{role}\n"
         else:
