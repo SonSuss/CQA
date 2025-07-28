@@ -74,7 +74,7 @@ TRAIN_GPU = gpu
 TRAIN_CPU_COUNT = (1.0,8.0)
 TRAIN_MEMORY_GB = (8 * 1024,32 * 1024)  # 8GB to 32GB
 TRAIN_TIME = 10 # hours
-CHECKPOINT = "/root/data/checkpoints-siglip2_-1-mlp2x_gelu-phi4"
+CHECKPOINT = "/root/data/checkpoints-siglip_-1-mlp2x_gelu-phi4"
 
 @app.function(
     image=training_image,
@@ -391,7 +391,7 @@ def train_chartqa():
         version="phi4_instruct",
         freeze_backbone=True,
         tune_mm_mlp_adapter=False,
-        vision_tower="google/siglip2-so400m-patch16-512",
+        vision_tower="mPLUG/TinyChart-3B-768-siglip",
         mm_vision_select_layer=-1,
         pretrain_mm_mlp_adapter=None,
         mm_projector_type="mlp2x_gelu",
@@ -420,17 +420,17 @@ def train_chartqa():
     training_args = TrainingArguments(
         output_dir=output_dir,
         num_train_epochs=3, 
-        per_device_train_batch_size=8,
+        per_device_train_batch_size=7,
         per_device_eval_batch_size=4,
         gradient_accumulation_steps=1,
         evaluation_strategy="no",
         save_strategy="steps",
         save_steps=1000, 
         save_total_limit=1,
-        mm_projector_lr=2e-5,
-        vision_tower_lr=2e-4,
-        weight_decay=0.02,
-        warmup_ratio=0.1,
+        mm_projector_lr=1e-4,
+        vision_tower_lr=2e-5,
+        weight_decay=0.01,
+        warmup_ratio=0.03,
         lr_scheduler_type="cosine",
         logging_steps=25,
         fp16=False,

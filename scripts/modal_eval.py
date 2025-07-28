@@ -214,7 +214,7 @@ def run_eval_model_chart_qa():
     pull_latest_code()
     import os
     from eval.chart_qa.eval import eval_model
-    eval_path = "/root/data/eval_results/"
+    eval_path = "/root/data/eval_results_recheck/"
     model_file_list = [
         name for name in os.listdir(eval_path)
         if os.path.isdir(os.path.join(eval_path, name))
