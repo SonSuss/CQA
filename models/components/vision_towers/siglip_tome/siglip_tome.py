@@ -693,7 +693,7 @@ class SigLipVisionTower(nn.Module):
         self.vision_tower_name = vision_tower
 
         self.image_processor = SigLipImageProcessor(size=(self.config.image_size, self.config.image_size), image_mean=self.config.image_mean)
-
+        self.layer_idx = getattr(vision_tower_cfg, "mm_vision_select_layer", -1)
         if not delay_load:
             self.load_model()
         else:
