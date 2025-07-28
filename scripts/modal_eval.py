@@ -3,7 +3,7 @@ import modal
 app = modal.App("TrainChartQA")
 
 # Create or attach a persistent volume
-volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_5", create_if_missing=True)
+volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_2", create_if_missing=True)
 
 
 cuda_version = "12.6.0"
@@ -178,7 +178,7 @@ def eval_model_chart_qa():
     from eval.chart_qa.eval import get_eval
     
     suffix = MODEL_PATH.split("/root/data/checkpoints-")[-1]
-    output_path = os.path.join("/root/data/eval_results/", suffix)
+    output_path = os.path.join("/root/data/eval_results_recheck/", suffix)
     
     get_eval(model_path=MODEL_PATH,
              valset_path="/root/data/Chart_QA/processed_data/val.json",
