@@ -5,7 +5,7 @@ from typing import Optional, Tuple, Union, Dict
 import torch
 
 from torch import nn
-from transformers import SiglipVisionModel, SiglipImageProcessor, SiglipVisionConfig, SiglipPreTrainedModel
+from transformers import SiglipImageProcessor, SiglipVisionConfig, SiglipPreTrainedModel
 from transformers.models.siglip.modeling_siglip import SiglipVisionTransformer
 from transformers.modeling_outputs import BaseModelOutputWithPooling
 
