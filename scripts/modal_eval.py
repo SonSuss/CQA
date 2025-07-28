@@ -140,7 +140,7 @@ def model_inference():
     
     image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/13153.png"
     texts= [
-        "<|image|>\nQuestion:\nHow many data points on the disapprove line are above 50?", # 2
+        "<|image|>\nHow many data points on the disapprove line are above 50?", # 2
         ]
 
     s_time = time.time()
