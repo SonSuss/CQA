@@ -717,13 +717,13 @@ class SigLipVisionTower(nn.Module):
             for image in images:
                 image_forward_out = self.vision_tower(image.to(device=self.device, dtype=self.dtype).unsqueeze(0),
                                                       output_hidden_states=True)
-                image_feature = image_forward_out.hidden_states[self.layer_idx].to(image.dtype)
+                image_feature = image_forward_out.hidden_states[-1].to(image.dtype)
 
                 image_features.append(image_feature)
         else:
             image_forward_outs = self.vision_tower(images.to(device=self.device, dtype=self.dtype),
                                                    output_hidden_states=True)
-            image_features = image_forward_outs.hidden_states[self.layer_idx].to(images.dtype)
+            image_features = image_forward_outs.hidden_states[-1].to(images.dtype)
 
         return image_features
 

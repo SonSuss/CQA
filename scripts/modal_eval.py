@@ -3,7 +3,7 @@ import modal
 app = modal.App("TrainChartQA")
 
 # Create or attach a persistent volume
-volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_4", create_if_missing=True)
+volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_5", create_if_missing=True)
 
 
 cuda_version = "12.6.0"
@@ -172,30 +172,30 @@ MODEL_PATH = "/root/data/checkpoints-siglip-mlp2x_gelu-phi4"
 def eval_model_chart_qa():
     pull_latest_code()
     import os
-    from eval.chart_qa.eval import get_eval, eval_model
+    from eval.chart_qa.eval import get_eval
     
     suffix = MODEL_PATH.split("/root/data/checkpoints-")[-1]
     output_path = os.path.join("/root/data/eval_results/", suffix)
-    
-    # get_eval(model_path=MODEL_PATH,
-    #          valset_path="/root/data/Chart_QA/processed_data/val.json",
-    #          output_path=output_path,
-    #          image_folder="",
-    #          temperature=0.0,
-    #          top_p=1.0,
-    #          max_new_tokens=1024,
-    #          min_new_tokens=1,
-    #          num_beams=1)
     
     get_eval(model_path=MODEL_PATH,
              valset_path="/root/data/Chart_QA/processed_data/val.json",
              output_path=output_path,
              image_folder="",
-             temperature=0.2,
-             top_p=0.5,
+             temperature=0.0,
+             top_p=1.0,
              max_new_tokens=1024,
              min_new_tokens=1,
              num_beams=1)
+    
+    # get_eval(model_path=MODEL_PATH,
+    #          valset_path="/root/data/Chart_QA/processed_data/val.json",
+    #          output_path=output_path,
+    #          image_folder="",
+    #          temperature=0.2,
+    #          top_p=0.5,
+    #          max_new_tokens=1024,
+    #          min_new_tokens=1,
+    #          num_beams=1)
     
     volume.commit()
     
