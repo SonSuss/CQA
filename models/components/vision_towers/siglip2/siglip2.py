@@ -1,11 +1,44 @@
 import os
 from typing import Union
+from typing import Optional, Tuple, Union, Dict
 
 import torch
 
 from torch import nn
-from transformers import SiglipVisionModel, SiglipImageProcessor, SiglipVisionConfig
+from transformers import SiglipVisionModel, SiglipImageProcessor, SiglipVisionConfig, SiglipPreTrainedModel, SiglipVisionTransformer
+from transformers.modeling_outputs import BaseModelOutputWithPooling
 
+class SiglipVisionModel(SiglipPreTrainedModel):
+    config_class = SiglipVisionConfig
+    main_input_name = "pixel_values"
+
+    def __init__(self, config: SiglipVisionConfig):
+        super().__init__(config)
+
+        self.vision_model = SiglipVisionTransformer(config)
+        del self.vision_model.encoder.layers[-1:]
+        self.vision_model.head = nn.Identity()
+        # Initialize weights and apply final processing
+        self.post_init()
+
+    def get_input_embeddings(self) -> nn.Module:
+        return self.vision_model.embeddings.patch_embedding
+
+    def forward(
+            self,
+            pixel_values,
+            output_attentions: Optional[bool] = None,
+            output_hidden_states: Optional[bool] = None,
+            return_dict: Optional[bool] = None,
+    ) -> Union[Tuple, BaseModelOutputWithPooling]:
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+
+        return self.vision_model(
+            pixel_values=pixel_values,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+            return_dict=return_dict,
+        )
 
 class SigLip2VisionTower(nn.Module):
     def __init__(self, vision_tower, vision_tower_cfg, delay_load=False):
@@ -19,8 +52,10 @@ class SigLip2VisionTower(nn.Module):
 
         self.vision_tower_name = vision_tower
         self.config.image_mean = [0.5, 0.5, 0.5]
+        
         self.image_processor = SiglipImageProcessor(size=(self.config.image_size, self.config.image_size), image_mean=self.config.image_mean)
-        self.layer_idx = getattr(self.vision_tower_cfg, "mm_vision_select_layer", -1)
+        
+        self.layer_idx = getattr(vision_tower_cfg, "mm_vision_select_layer", -1)
         if not delay_load:
             self.load_model()
         else:
