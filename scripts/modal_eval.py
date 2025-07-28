@@ -18,7 +18,7 @@ training_image = (
     .pip_install(
         [
             "torch", "torchvision", "torchaudio",
-            "transformers==4.48.3",
+            "transformers==4.49.0",
             "accelerate==1.7.0", 
             "bitsandbytes==0.46.0",
             "safetensors==0.4.5",
@@ -33,7 +33,8 @@ training_image = (
             "psutil", 
         ],
     )
-    .pip_install( 
+    # using newest huggingface transformers
+    .pip_install(
         "flash-attn==2.8.1", extra_options="--no-build-isolation"
     )
     .run_commands([
@@ -124,7 +125,7 @@ def model_inference():
     import torch
     from eval.inference_model import inference_model
     from models.chart_qa_model.builder import load_pretrained_llava_model
-    
+    import time
     print("🔄 Loading model...")
     tokenizer, model, image_processor, context_len = load_pretrained_llava_model(
         MODEL_PATH, 
@@ -139,10 +140,10 @@ def model_inference():
     
     image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/13153.png"
     texts= [
-        "<|image|>\nHow many data points on the disapprove line are above 50?", # 2
+        "<|image|>\nQuestion:\nHow many data points on the disapprove line are above 50?", # 2
         ]
 
-
+    s_time = time.time()
     print("🔄 Running vision inference...")
     for text in texts:
         response = inference_model(
@@ -156,6 +157,8 @@ def model_inference():
             top_p=1.0,        
         )
         print(f"✅ Vision response: '{response}'")
+    e_time = time.time()
+    print(f"⏱️ Inference time: {e_time - s_time:.2f} seconds")
         
     # return {"response": response, "text_test_works": True}
 
