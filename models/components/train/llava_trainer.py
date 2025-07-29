@@ -200,21 +200,23 @@ class LLaVATrainer(Trainer):
             projector_parameters = []
             vision_tower_parameters = []
             if self.args.mm_projector_lr is not None:
+                self.custom_logger.info(f"Using mm_projector_lr: {self.args.mm_projector_lr} and vision_tower_lr: {self.args.vision_tower_lr} for optimizer with weight decay: {self.args.weight_decay}.")
                 projector_parameters = [name for name, _ in opt_model.named_parameters() if "mm_projector" in name]
+                vision_tower_parameters = [name for name, _ in opt_model.named_parameters() if "vision_tower" in name]
                 optimizer_grouped_parameters = [
                     {
                         "params": [
-                            p for n, p in opt_model.named_parameters() if (n in decay_parameters and n not in projector_parameters and p.requires_grad)
+                            p for n, p in opt_model.named_parameters() if (n in decay_parameters and n not in projector_parameters and n not in vision_tower_parameters and p.requires_grad)
                         ],
                         "weight_decay": self.args.weight_decay,
-                        "name": "decay_no_proj_parameters"
+                        "name": "decay_no_proj_vit_parameters"
                     },
                     {
                         "params": [
-                            p for n, p in opt_model.named_parameters() if (n not in decay_parameters and n not in projector_parameters and p.requires_grad)
+                            p for n, p in opt_model.named_parameters() if (n not in decay_parameters and n not in projector_parameters and n not in vision_tower_parameters and p.requires_grad)
                         ],
                         "weight_decay": 0.0,
-                        "name": "no_decay_no_proj_parameters"
+                        "name": "no_decay_no_proj_vitparameters"
                     },
                     {
                         "params": [
@@ -231,6 +233,24 @@ class LLaVATrainer(Trainer):
                         "weight_decay": 0.0,
                         "lr": self.args.mm_projector_lr,
                         "name": "no_decay_proj_parameters"
+                    },
+                    {
+                        "params": [
+                            p for n, p in opt_model.named_parameters()
+                            if (n in decay_parameters and n in vision_tower_parameters and p.requires_grad)
+                        ],
+                        "weight_decay": self.args.weight_decay,
+                        "lr": self.args.vision_tower_lr,
+                        "name": "decay_vit_parameters"
+                    },
+                    {
+                        "params": [
+                            p for n, p in opt_model.named_parameters()
+                            if (n not in decay_parameters and n in vision_tower_parameters and p.requires_grad)
+                        ],
+                        "weight_decay": 0.0,
+                        "lr": self.args.vision_tower_lr,
+                        "name": "no_decay_vit_parameters"
                     },
                 ]
             else:
