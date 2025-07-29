@@ -163,7 +163,7 @@ def model_inference():
     # return {"response": response, "text_test_works": True}
 
 
-MODEL_PATH = "/root/data/checkpoints-siglip2_-1-mlp2x_gelu-phi4"
+MODEL_PATH = "/root/data/checkpoints-siglip_-1-mlp4x_gelu-phi4"
 @app.function(
     image=training_image,
     volumes={"/root/data": volume},
@@ -196,7 +196,7 @@ def eval_model_chart_qa():
     #          image_folder="",
     #          temperature=0.2,
     #          top_p=0.5,
-    #          max_new_tokens=1024,
+    #          max_new_tokens=32,
     #          min_new_tokens=1,
     #          num_beams=1)
     
@@ -214,7 +214,7 @@ def run_eval_model_chart_qa():
     pull_latest_code()
     import os
     from eval.chart_qa.eval import eval_model
-    eval_path = "/root/data/eval_results_recheck/"
+    eval_path = "/root/data/eval_results/"
     model_file_list = [
         name for name in os.listdir(eval_path)
         if os.path.isdir(os.path.join(eval_path, name))

@@ -110,13 +110,14 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
 
         vision_tower = model.get_vision_tower()
         vision_tower.to(dtype=torch.bfloat16 if training_args.bf16 else torch.float16, device=training_args.device)
-        dummy_image = torch.zeros(1, 3, 512, 512).to(next(vision_tower.parameters()).device)
-        with torch.no_grad():
-            vision_out = vision_tower(dummy_image)
-            model.get_model().mm_projector.to(vision_out.device)
-            projected_out = model.get_model().mm_projector(vision_out)
-        logger.info("Vision tower output shape: %s", vision_out.shape)
-        logger.info("Projected output shape: %s", projected_out.shape)
+        
+        # dummy_image = torch.zeros(1, 3, 512, 512).to(next(vision_tower.parameters()).device)
+        # with torch.no_grad():
+        #     vision_out = vision_tower(dummy_image)
+        #     model.get_model().mm_projector.to(vision_out.device)
+        #     projected_out = model.get_model().mm_projector(vision_out)
+        # logger.info("Vision tower output shape: %s", vision_out.shape)
+        # logger.info("Projected output shape: %s", projected_out.shape)
 
         if model_args.tune_vision_tower:
             unlock_vit(training_args, model_args, vision_tower)
@@ -176,7 +177,11 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
         lora_kbit_setting(model, training_args)
     
     data_module = make_supervised_data_module_with_eval(tokenizer=tokenizer, data_args=data_args, logger=logger)
-    
+    logger.info("Trainable parameter names:")
+    for name, p in model.named_parameters():
+        if p.requires_grad:
+            logger.info(f"  {name}")
+    return
     vision_tower_params = sum(p.numel() for p in model.get_model().vision_tower.parameters())
     vision_tower_trainable = sum(p.numel() for p in model.get_model().vision_tower.parameters() if p.requires_grad)
     mm_projector_params = sum(p.numel() for p in model.get_model().mm_projector.parameters() if p.requires_grad)

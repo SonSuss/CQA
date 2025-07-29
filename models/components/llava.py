@@ -48,6 +48,7 @@ class LlavaMetaModel:
             if fsdp is not None and len(fsdp) > 0:
                 self.vision_tower = [vision_tower]
             else:
+                print(f"Not using FSDP, vision tower initialized from: {vision_tower}")
                 self.vision_tower = vision_tower
 
         elif self.get_vision_tower().vision_tower_name != vision_tower:

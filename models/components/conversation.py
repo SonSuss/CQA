@@ -215,9 +215,9 @@ conv_vicuna_v1 = Conversation(
 )
 
 conv_phi4_instruct = Conversation(
-    system="""<|system|>\nYou are a helpful assistant that answers questions about data charts.
-First, reason step by step based on the chart image and the question.
-Then, give a short and direct answer.""",
+    system="""<|system|>\nYou are a helpful assistant for answering chart-based questions. 
+Think step by step to understand the chart and the question. 
+Then give a short and correct answer.""",
     roles=("<|user|>", "<|assistant|>"),
     version="phi4_instruct",
     messages=(),
