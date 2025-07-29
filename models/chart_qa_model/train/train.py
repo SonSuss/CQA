@@ -5,7 +5,7 @@ import subprocess
 from models.chart_qa_model.model.phi_4_llava import PhiLlava_config, PhiLlavaForCausalLM
 from models.components.train.llava_trainer import LLaVATrainer
 from models.components.config import ModelArguments, DataArguments, TrainingArguments
-from models.components.utils import get_bnb_model_args, lora_setting, smart_tokenizer_and_embedding_resize, unlock_vit, lora_kbit_setting, get_log_writer
+from models.components.utils import get_bnb_model_args, lora_setting, smart_tokenizer_and_embedding_resize, lora_kbit_setting, get_log_writer
 from models.components.train.llava_trainer import LLaVATrainer
 from models.components.train.train_utils import *
 from models.components import conversation as conversation_lib
@@ -177,11 +177,10 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
         lora_kbit_setting(model, training_args)
     
     data_module = make_supervised_data_module_with_eval(tokenizer=tokenizer, data_args=data_args, logger=logger)
-    logger.info("Trainable parameter names:")
-    for name, p in model.named_parameters():
-        if p.requires_grad:
-            logger.info(f"  {name}")
-    return
+    # logger.info("Trainable parameter names:")
+    # for name, p in model.named_parameters():
+    #     if p.requires_grad:
+    #         logger.info(f"  {name}")
     vision_tower_params = sum(p.numel() for p in model.get_model().vision_tower.parameters())
     vision_tower_trainable = sum(p.numel() for p in model.get_model().vision_tower.parameters() if p.requires_grad)
     mm_projector_params = sum(p.numel() for p in model.get_model().mm_projector.parameters() if p.requires_grad)

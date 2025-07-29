@@ -88,28 +88,6 @@ def smart_tokenizer_and_embedding_resize(
         input_embeddings[-num_new_tokens:] = input_embeddings_avg
         output_embeddings[-num_new_tokens:] = output_embeddings_avg
 
-
-def unlock_vit(training_args, model_args, vision_tower):
-    lr_of_vit = training_args.vision_tower_lr if training_args.vision_tower_lr is not None and training_args.vision_tower_lr != 0 else training_args.learning_rate
-    for n, p in vision_tower.named_parameters():
-        if getattr(training_args, 'tune_vit_posemb_only', False):
-            if 'position_embedding' in n:
-                p.requires_grad = True
-            else:
-                p.requires_grad = False
-        elif model_args.tune_vit_from_layer != -1:
-            if 'vision_tower.vision_model.encoder.layers.' in n:
-                layer_id = int(
-                    n.split('vision_tower.vision_model.encoder.layers.')[-1].split('.')[0])
-                if layer_id >= model_args.tune_vit_from_layer:
-                    p.requires_grad = True
-                else:
-                    p.requires_grad = False
-            else:
-                p.requires_grad = False
-        else:
-            p.requires_grad = True
-
 def disable_torch_init():
     """
     Disable the redundant torch default initialization to accelerate model creation.
