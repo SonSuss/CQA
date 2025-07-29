@@ -3,7 +3,7 @@ import modal
 app = modal.App("TrainChartQA")
 
 # Create or attach a persistent volume
-volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_2", create_if_missing=True)
+volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_5", create_if_missing=True)
 
 
 cuda_version = "12.6.0"
@@ -163,7 +163,7 @@ def model_inference():
     # return {"response": response, "text_test_works": True}
 
 
-MODEL_PATH = "/root/data/checkpoints-siglip-mlp2x_gelu-phi4"
+MODEL_PATH = "/root/data/checkpoints-siglip2_-1-mlp2x_gelu-phi4"
 @app.function(
     image=training_image,
     volumes={"/root/data": volume},
@@ -178,7 +178,7 @@ def eval_model_chart_qa():
     from eval.chart_qa.eval import get_eval
     
     suffix = MODEL_PATH.split("/root/data/checkpoints-")[-1]
-    output_path = os.path.join("/root/data/eval_results_recheck/", suffix)
+    output_path = os.path.join("/root/data/eval_results/", suffix)
     
     get_eval(model_path=MODEL_PATH,
              valset_path="/root/data/Chart_QA/processed_data/val.json",
@@ -186,7 +186,7 @@ def eval_model_chart_qa():
              image_folder="",
              temperature=0.0,
              top_p=1.0,
-             max_new_tokens=1024,
+             max_new_tokens=32,
              min_new_tokens=1,
              num_beams=1)
     
