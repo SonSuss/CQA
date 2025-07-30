@@ -55,7 +55,7 @@ def preprocess_phi_4_instruct(
 
     targets = input_ids.clone()
     assert conv_template.sep_style == conversation_lib.SeparatorStyle.PHI4
-    sep = "\n"+conv_template.roles[1]+ "\n"
+    sep = conv_template.roles[1]+ "\n"
     for conversation, target in zip(conversations, targets):
         total_len = int(target.ne(tokenizer.pad_token_id).sum()) + conversation.count(conv_template.sep)
         rounds = conversation.split(conv_template.sep)
