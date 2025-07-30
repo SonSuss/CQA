@@ -36,46 +36,43 @@ class ResamplerBlock(nn.Module):
 
         self.to_out = nn.Linear(hidden_size, hidden_size, bias=False)
 
-        self.feed_forward = nn.Sequential(
-            *[
-                nn.LayerNorm(hidden_size),
-                nn.Linear(hidden_size, intermediate_size, bias=False),
-                nn.GELU(),
-                nn.Linear(intermediate_size, hidden_size, bias=False),
-            ]
+        self.ffn_norm = nn.LayerNorm(hidden_size)
+        self.ffn = nn.Sequential(
+            nn.Linear(hidden_size, intermediate_size, bias=False),
+            nn.GELU(),
+            nn.Linear(intermediate_size, hidden_size, bias=False),
         )
         # prenorm for image features
         self.norm_image = nn.LayerNorm(image_hidden_size)
         self.norm_hidden = nn.LayerNorm(hidden_size)
 
     def forward(self, hidden_states: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
-        # prenorm
         x = self.norm_image(x)
         residual_hidden_states = hidden_states
         hidden_states = self.norm_hidden(hidden_states)
-        # compute Q, K, V
-        queries = self.to_q(hidden_states)
-        keys = self.to_k(x)
-        values = self.to_v(x)
-        # rearrange them into multi-head format
-        queries = rearrange(queries, "b n (h d) -> b h n d", h=self.num_heads)
-        keys = rearrange(keys, "b n (h d) -> b h n d", h=self.num_heads)
-        values = rearrange(values, "b n (h d) -> b h n d", h=self.num_heads)
-        # rescale
-        queries = self.scale * queries
-        # compute QK^T
-        scores = torch.einsum("... i d, ... j d -> ... i j", queries, keys)
-        # for stability
+
+        # Attention
+        q = self.to_q(hidden_states)
+        k = self.to_k(x)
+        v = self.to_v(x)
+
+        q = rearrange(q, "b n (h d) -> b h n d", h=self.num_heads)
+        k = rearrange(k, "b n (h d) -> b h n d", h=self.num_heads)
+        v = rearrange(v, "b n (h d) -> b h n d", h=self.num_heads)
+
+        scores = torch.einsum("... i d, ... j d -> ... i j", q * self.scale, k)
         scores = scores - scores.amax(dim=-1, keepdim=True).detach()
-        # softmax
-        attention_scores = scores.softmax(dim=-1)   # b h i j (i: number of queries, j: number of keys)
-        # dot product with V
-        out = torch.einsum("... i j, ... j d -> ... i d", attention_scores, values)
+        attn = self.attn_dropout(scores.softmax(dim=-1))
+
+        out = torch.einsum("... i j, ... j d -> ... i d", attn, v)
         out = rearrange(out, "b h n d -> b n (h d)", h=self.num_heads)
         out = self.to_out(out) + residual_hidden_states
-        residual_out = out
-        out = self.feed_forward(out)
-        return out + residual_out
+
+        # FFN
+        residual = out
+        out = self.ffn(out)
+        out = out + self.ffn_norm(residual)
+        return out
 
 
 class Resampler(nn.Module):
