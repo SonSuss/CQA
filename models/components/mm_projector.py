@@ -76,8 +76,9 @@ class ResamplerBlock(nn.Module):
 
         # FFN
         residual = out
+        out = self.ffn_norm(out)
         out = self.ffn(out)
-        out = out + self.ffn_norm(residual)
+        out = residual + out
         return out
 
 
@@ -90,18 +91,23 @@ class Resampler(nn.Module):
         num_heads: int = 12,
         intermediate_size: int = None,
         num_queries: int = 128,
-        num_layers: int = 4,
-        initializer_range: float = 0.02
+        num_layers: int = 3,
+        initializer_range: float = 0.02,
+        attn_dropout: float = 0.1,
+        ffn_dropout: float = 0.1
     ):
         super().__init__()
+        self.initializer_range = initializer_range
         self.resampler_blocks = nn.ModuleList(
             [
                 ResamplerBlock(
-                    hidden_size, image_hidden_size, num_heads, intermediate_size
+                    hidden_size, image_hidden_size, num_heads, intermediate_size,
+                    attn_dropout=attn_dropout, ffn_dropout=ffn_dropout
                 ) for _ in range(num_layers)
             ]
         )
         self.queries = nn.Parameter(torch.randn(num_queries, hidden_size))
+        self.pos_embed = nn.Parameter(torch.zeros(num_queries, hidden_size))
         self.post_norm = nn.LayerNorm(hidden_size)
 
         self.final_proj = nn.Linear(hidden_size, final_hidden_size, bias=False)
@@ -114,8 +120,6 @@ class Resampler(nn.Module):
     def _init_weights(self, module: Union[nn.Linear, nn.Conv2d, nn.LayerNorm]) -> None:
         """Initialize the weights"""
         if isinstance(module, (nn.Linear, nn.Conv2d)):
-            # Upcast the input in `fp32` and cast it back to desired `dtype` to avoid
-            # `trunc_normal_cpu` not implemented in `half` issues
             module.weight.data = nn.init.trunc_normal_(
                 module.weight.data.to(torch.float32), mean=0.0, std=self.initializer_range
             ).to(module.weight.dtype)
@@ -128,6 +132,8 @@ class Resampler(nn.Module):
     def forward(self, image_hidden_states: torch.Tensor) -> torch.Tensor:
         b = image_hidden_states.size(0)
         queries = repeat(self.queries, 'n d -> b n d', b=b)
+        pos_embed = repeat(self.pos_embed, 'n d -> b n d', b=b)
+        queries = queries + pos_embed  # Add positional encoding
         for resampler_block in self.resampler_blocks:
             queries = resampler_block(queries, image_hidden_states)
 
