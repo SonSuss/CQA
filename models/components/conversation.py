@@ -40,15 +40,15 @@ class Conversation:
                 messages[0] = (init_role, "<image>\n" + init_msg)
                 
         if self.sep_style == SeparatorStyle.PHI4:
-            ret = self.system + "\n"
+            ret = self.system + "<|end|>\n"
             for role, message in messages:
                 if message:
                     if type(message) is tuple:
                         message, _, _ = message
                     if role == self.roles[0]:
-                        ret += f"{role}\nImage:\n{message}\n"
+                        ret += f"{role}\nImage:\n{message}\n<|end|>"
                     else:
-                        ret += f"{role}\n{message}\n"+ self.sep
+                        ret += f"{role}\n{message}\n<|end|>{self.sep}"
                 else:
                     ret += f"{role}\n"
         else:

@@ -394,7 +394,7 @@ def train_chartqa():
         vision_tower="mPLUG/TinyChart-3B-768-siglip",
         mm_vision_select_layer=-1,
         pretrain_mm_mlp_adapter=None,
-        mm_projector_type="mlp4x_gelu",
+        mm_projector_type="mlp2x_gelu",
         mm_use_im_start_end=False,
         mm_use_im_patch_token=False,
         mm_patch_merge_type="flat",

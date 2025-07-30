@@ -1,6 +1,7 @@
 import math
 import torch
 import re
+from typing import Union
 
 from torch import nn
 from einops import rearrange, repeat
@@ -22,7 +23,9 @@ class ResamplerBlock(nn.Module):
         hidden_size: int = 768,
         image_hidden_size: int = 1024,
         num_heads: int = 12,
-        intermediate_size: int = None
+        intermediate_size: int = None,
+        attn_dropout: float = 0.1,
+        ffn_dropout: float = 0.1
     ):
         super().__init__()
         assert hidden_size % num_heads == 0, "For MHSA, you must have number of heads divisible by initial hidden size"
@@ -30,17 +33,20 @@ class ResamplerBlock(nn.Module):
         # intermediate_size = hidden_size * 4
         self.scale = 1 / math.sqrt(hidden_size // num_heads)
         self.num_heads = num_heads
-        self.to_q = nn.Linear(hidden_size, hidden_size, bias=False)
-        self.to_k = nn.Linear(image_hidden_size, hidden_size, bias=False)
-        self.to_v = nn.Linear(image_hidden_size, hidden_size, bias=False)
+        self.to_q = nn.Linear(hidden_size, hidden_size, bias=True)
+        self.to_k = nn.Linear(image_hidden_size, hidden_size, bias=True)
+        self.to_v = nn.Linear(image_hidden_size, hidden_size, bias=True)
 
-        self.to_out = nn.Linear(hidden_size, hidden_size, bias=False)
+        self.to_out = nn.Linear(hidden_size, hidden_size, bias=True)
 
+        self.attn_dropout = nn.Dropout(attn_dropout)
         self.ffn_norm = nn.LayerNorm(hidden_size)
         self.ffn = nn.Sequential(
-            nn.Linear(hidden_size, intermediate_size, bias=False),
+            nn.Linear(hidden_size, intermediate_size, bias=True),
             nn.GELU(),
-            nn.Linear(intermediate_size, hidden_size, bias=False),
+            nn.Dropout(ffn_dropout),
+            nn.Linear(intermediate_size, hidden_size, bias=True),
+            nn.Dropout(ffn_dropout)
         )
         # prenorm for image features
         self.norm_image = nn.LayerNorm(image_hidden_size)
@@ -84,7 +90,7 @@ class Resampler(nn.Module):
         num_heads: int = 12,
         intermediate_size: int = None,
         num_queries: int = 128,
-        num_layers: int = 3,
+        num_layers: int = 4,
         initializer_range: float = 0.02
     ):
         super().__init__()
@@ -100,24 +106,24 @@ class Resampler(nn.Module):
 
         self.final_proj = nn.Linear(hidden_size, final_hidden_size, bias=False)
 
-    #     self.initializer_range = initializer_range
-    #     for module in self.modules():
-    #         if isinstance(module, (nn.Linear, nn.LayerNorm, nn.Conv2d)):
-    #             self._init_weights(module)
-    #
-    # def _init_weights(self, module: Union[nn.Linear, nn.Conv2d, nn.LayerNorm]) -> None:
-    #     """Initialize the weights"""
-    #     if isinstance(module, (nn.Linear, nn.Conv2d)):
-    #         # Upcast the input in `fp32` and cast it back to desired `dtype` to avoid
-    #         # `trunc_normal_cpu` not implemented in `half` issues
-    #         module.weight.data = nn.init.trunc_normal_(
-    #             module.weight.data.to(torch.float32), mean=0.0, std=self.initializer_range
-    #         ).to(module.weight.dtype)
-    #         if module.bias is not None:
-    #             module.bias.data.zero_()
-    #     elif isinstance(module, nn.LayerNorm):
-    #         module.bias.data.zero_()
-    #         module.weight.data.fill_(1.0)
+        self.initializer_range = initializer_range
+        for module in self.modules():
+            if isinstance(module, (nn.Linear, nn.LayerNorm, nn.Conv2d)):
+                self._init_weights(module)
+    
+    def _init_weights(self, module: Union[nn.Linear, nn.Conv2d, nn.LayerNorm]) -> None:
+        """Initialize the weights"""
+        if isinstance(module, (nn.Linear, nn.Conv2d)):
+            # Upcast the input in `fp32` and cast it back to desired `dtype` to avoid
+            # `trunc_normal_cpu` not implemented in `half` issues
+            module.weight.data = nn.init.trunc_normal_(
+                module.weight.data.to(torch.float32), mean=0.0, std=self.initializer_range
+            ).to(module.weight.dtype)
+            if module.bias is not None:
+                module.bias.data.zero_()
+        elif isinstance(module, nn.LayerNorm):
+            module.bias.data.zero_()
+            module.weight.data.fill_(1.0)
 
     def forward(self, image_hidden_states: torch.Tensor) -> torch.Tensor:
         b = image_hidden_states.size(0)
