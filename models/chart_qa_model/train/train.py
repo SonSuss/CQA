@@ -181,7 +181,6 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
     # for name, p in model.named_parameters():
     #     if p.requires_grad:
     #         logger.info(f"  {name}")
-    return 
     vision_tower_params = sum(p.numel() for p in model.get_model().vision_tower.parameters())
     vision_tower_trainable = sum(p.numel() for p in model.get_model().vision_tower.parameters() if p.requires_grad)
     mm_projector_params = sum(p.numel() for p in model.get_model().mm_projector.parameters() if p.requires_grad)
