@@ -1,3 +1,4 @@
+from pyexpat import model
 from transformers import AutoTokenizer, BitsAndBytesConfig
 from models.chart_qa_model.model.phi_4_llava import PhiLlavaForCausalLM, PhiLlava_config
 from models.components.constants import DEFAULT_IMAGE_PATCH_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
@@ -31,7 +32,15 @@ def load_pretrained_llava_model(model_path, load_8bit=False, load_4bit=False, de
     model = PhiLlavaForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
     mm_use_im_start_end = getattr(model.config, "mm_use_im_start_end", False)
     mm_use_im_patch_token = getattr(model.config, "mm_use_im_patch_token", True)
-    
+
+    print("Model architecture:", model)
+    for name, module in model.named_children():
+        print(f"{name}: {module}")
+
+    # To see all submodules recursively:
+    for name, module in model.named_modules():
+        print(name, ":", type(module))
+        
     tokens_to_add = []
     if mm_use_im_patch_token and DEFAULT_IMAGE_PATCH_TOKEN not in tokenizer.vocab:
         tokens_to_add.append(DEFAULT_IMAGE_PATCH_TOKEN)
