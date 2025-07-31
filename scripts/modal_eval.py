@@ -138,7 +138,7 @@ def model_inference():
     # image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/289.png"
     # text = "What's the leftmost value of bar in \"All adults\" category?"
     # "id": "multi_col_1238", "question": "<|image|>\nQuestion:\nWhat's the highest Distribution of employment by economic sector in 2010",
-    # "gt_answer": "Services", "final_model_answer": "24.5 <|end|>"
+    # "gt_answer": "Services", "final_model_answer": "24.5 <|end|>" '23.66 <|end|>'
     image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/multi_col_1238.png"
     texts= [
         "<|image|>\nQuestion:\nWhat's the highest Distribution of employment by economic sector in 2010",
