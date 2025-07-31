@@ -149,7 +149,7 @@ class Resampler(nn.Module):
         queries = self.post_norm(queries)
         return self.final_proj(queries)
 
-def build_vision_projector(config, delay_load=False, **kwargs):
+def build_vision_projector(config, delay_load=False):
     projector_type = getattr(config, 'mm_projector_type', 'linear')
     if projector_type == 'linear':
         return nn.Linear(config.mm_hidden_size, config.hidden_size)
