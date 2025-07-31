@@ -74,7 +74,7 @@ TRAIN_GPU = gpu
 TRAIN_CPU_COUNT = (1.0,8.0)
 TRAIN_MEMORY_GB = (8 * 1024,32 * 1024)  # 8GB to 32GB
 TRAIN_TIME = 10 # hours
-CHECKPOINT = "/root/data/checkpoints-siglip_-1-resampler_768_256_4-phi4"
+CHECKPOINT = "/root/data/checkpoints-siglip_-1-resampler_768_256_4-phi4_3"
 
 @app.function(
     image=training_image,
@@ -390,10 +390,10 @@ def train_chartqa():
         model_name_or_path="microsoft/Phi-4-mini-instruct",
         version="phi4_instruct",
         freeze_backbone=True,
-        tune_mm_mlp_adapter=False,
         vision_tower="mPLUG/TinyChart-3B-768-siglip",
         mm_vision_select_layer=-1,
         pretrain_mm_mlp_adapter=None,
+        tune_mm_mlp_adapter=True,
         mm_projector_type="resampler",
         mm_use_im_start_end=False,
         mm_use_im_patch_token=False,

@@ -191,6 +191,21 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
             if trainer.args.local_rank == 0 or trainer.args.local_rank == -1:
                 torch.save(weight_to_save, os.path.join(
                     output_dir, 'vision_tower/pytorch_model.bin'))
+                
+        # save the model (llm)
+        if trainer.deepspeed:
+            torch.cuda.synchronize()
+            trainer.save_model(output_dir)
+            return
+
+        state_dict = trainer.model.state_dict()
+        if trainer.args.should_save:
+            cpu_state_dict = {
+                key: value.cpu()
+                for key, value in state_dict.items()
+            }
+            del state_dict
+            trainer._save(output_dir, state_dict=cpu_state_dict)
         return
 
     if getattr(trainer.args, "tune_vision_tower", False) or getattr(trainer.args, "tune_entire_model", False):
