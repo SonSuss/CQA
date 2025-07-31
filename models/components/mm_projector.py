@@ -93,6 +93,7 @@ class Resampler(nn.Module):
         num_queries: int = 128,
         num_layers: int = 3,
         initializer_range: float = 0.02,
+        delay_load: bool = False,
         attn_dropout: float = 0.1,
         ffn_dropout: float = 0.1
     ):
@@ -112,22 +113,29 @@ class Resampler(nn.Module):
 
         self.final_proj = nn.Linear(hidden_size, final_hidden_size, bias=False)
 
-        self.initializer_range = initializer_range
-        for module in self.modules():
-            if isinstance(module, (nn.Linear, nn.LayerNorm, nn.Conv2d)):
-                self._init_weights(module)
+        if not delay_load:
+            self.initializer_range = initializer_range
+            for module in self.modules():
+                if isinstance(module, (nn.Linear, nn.LayerNorm, nn.Conv2d)):
+                    self._init_weights(module)
     
     def _init_weights(self, module: Union[nn.Linear, nn.Conv2d, nn.LayerNorm]) -> None:
         """Initialize the weights"""
         if isinstance(module, (nn.Linear, nn.Conv2d)):
-            module.weight.data = nn.init.trunc_normal_(
-                module.weight.data.to(torch.float32), mean=0.0, std=self.initializer_range
-            ).to(module.weight.dtype)
-            if module.bias is not None:
-                module.bias.data.zero_()
+                # Add safety check for None weights
+                if hasattr(module, 'weight') and module.weight is not None:
+                    module.weight.data = nn.init.trunc_normal_(
+                        module.weight.data.to(torch.float32), 
+                        mean=0.0, 
+                        std=self.initializer_range
+                    ).to(module.weight.dtype)
+                if hasattr(module, 'bias') and module.bias is not None:
+                    module.bias.data.zero_()
         elif isinstance(module, nn.LayerNorm):
-            module.bias.data.zero_()
-            module.weight.data.fill_(1.0)
+            if hasattr(module, 'bias') and module.bias is not None:
+                module.bias.data.zero_()
+            if hasattr(module, 'weight') and module.weight is not None:
+                module.weight.data.fill_(1.0)
 
     def forward(self, image_hidden_states: torch.Tensor) -> torch.Tensor:
         b = image_hidden_states.size(0)
@@ -168,7 +176,8 @@ def build_vision_projector(config, delay_load=False, **kwargs):
             final_hidden_size=final_hidden_size,
             num_layers=num_layers,
             num_heads=num_heads,
-            initializer_range=initializer_range
+            initializer_range=initializer_range,
+            delay_load=delay_load,
         )
 
     mlp_gelu_match = re.match(r'^mlp(\d+)x_gelu$', projector_type)
