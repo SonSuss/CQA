@@ -137,10 +137,11 @@ def model_inference():
     
     # image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/289.png"
     # text = "What's the leftmost value of bar in \"All adults\" category?"
-    
-    image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/13153.png"
+    # "id": "multi_col_1238", "question": "<|image|>\nQuestion:\nWhat's the highest Distribution of employment by economic sector in 2010",
+    # "gt_answer": "Services", "final_model_answer": "24.5 <|end|>"
+    image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/multi_col_1238.png"
     texts= [
-        "<|image|>\nQuestion:\nHow many data points on the disapprove line are above 50?", # 2 model tell 3
+        "<|image|>\nQuestion:\nWhat's the highest Distribution of employment by economic sector in 2010",
         ]
 
     s_time = time.time()
@@ -155,6 +156,7 @@ def model_inference():
             conv_mode="phi4_instruct", 
             temperature=0.0,   
             top_p=1.0,        
+            max_new_tokens=32
         )
         print(f"✅ Vision response: '{response}'")
     e_time = time.time()
