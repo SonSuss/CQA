@@ -42,7 +42,7 @@ def load_pretrained_llava_model(model_path, load_8bit=False, load_4bit=False, de
     vision_path = os.path.join(model_path, "vision_tower", "pytorch_model.bin")
     if os.path.exists(vision_path):
         finetuned_weights = torch.load(vision_path, map_location="cpu")
-        vision_tower.vision_tower.load_state_dict(finetuned_weights, strict=False)
+        vision_tower.vision_tower.load_state_dict(finetuned_weights, strict=False, assign=True)
     # print("Model architecture:", model)
     # for name, module in model.named_children():
     #     print(f"{name}: {module}")
