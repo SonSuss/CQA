@@ -161,7 +161,8 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
 
     if getattr(trainer.args, "tune_mm_mlp_adapter", False):
         # Only save Adapter
-        keys_to_match = ['mm_projector']
+        
+        keys_to_match = ['mm_projector', 'vision_resampler']
         if getattr(trainer.args, "use_im_start_end", False):
             keys_to_match.extend(['embed_tokens', 'embed_in'])
         if getattr(trainer.args, "tune_embed_tokens", False):

@@ -39,6 +39,7 @@ def load_pretrained_llava_model(model_path, load_8bit=False, load_4bit=False, de
         vision_tower.load_model()
         
     # manually load vision tower state_dict if needed
+    print("manually loading vision tower state_dict.")
     vision_path = os.path.join(model_path, "vision_tower", "pytorch_model.bin")
     if os.path.exists(vision_path):
         finetuned_weights = torch.load(vision_path, map_location="cpu")
@@ -48,8 +49,8 @@ def load_pretrained_llava_model(model_path, load_8bit=False, load_4bit=False, de
     #     print(f"{name}: {module}")
 
     # To see all submodules recursively:
-    for name, module in model.named_modules():
-        print(name, ":", type(module))
+    # for name, module in model.named_modules():
+    #     print(name, ":", type(module))
         
     tokens_to_add = []
     if mm_use_im_patch_token and DEFAULT_IMAGE_PATCH_TOKEN not in tokenizer.vocab:
