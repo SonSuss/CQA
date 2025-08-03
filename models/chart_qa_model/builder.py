@@ -77,7 +77,7 @@ def load_pretrained_llava_model(model_path, load_8bit=False, load_4bit=False, de
         context_len = model.config.max_sequence_length
     else:
         context_len = 2048
-
+    model.eval()
     return tokenizer, model, image_processor, context_len
     
     
