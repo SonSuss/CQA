@@ -182,25 +182,25 @@ def eval_model_chart_qa():
     suffix = MODEL_PATH.split("/root/data/checkpoints-")[-1]
     output_path = os.path.join("/root/data/eval_results_2/", suffix)
     
-    # get_eval(model_path=MODEL_PATH,
-    #          valset_path="/root/data/Chart_QA/processed_data/val.json",
-    #          output_path=output_path,
-    #          image_folder="",
-    #          temperature=0.0,
-    #          top_p=1.0,
-    #          max_new_tokens=32,
-    #          min_new_tokens=1,
-    #          num_beams=1)
-    
     get_eval(model_path=MODEL_PATH,
              valset_path="/root/data/Chart_QA/processed_data/val.json",
              output_path=output_path,
              image_folder="",
-             temperature=0.2,
-             top_p=0.5,
+             temperature=0.0,
+             top_p=1.0,
              max_new_tokens=32,
              min_new_tokens=1,
              num_beams=1)
+    
+    # get_eval(model_path=MODEL_PATH,
+    #          valset_path="/root/data/Chart_QA/processed_data/val.json",
+    #          output_path=output_path,
+    #          image_folder="",
+    #          temperature=0.2,
+    #          top_p=0.5,
+    #          max_new_tokens=32,
+    #          min_new_tokens=1,
+    #          num_beams=1)
     
     volume.commit()
     
