@@ -74,7 +74,7 @@ TRAIN_GPU = gpu
 TRAIN_CPU_COUNT = (1.0,8.0)
 TRAIN_MEMORY_GB = (8 * 1024,32 * 1024)  # 8GB to 32GB
 TRAIN_TIME = 10 # hours
-CHECKPOINT = "/root/data/checkpoints-siglip_-1-resampler_768_256_4-phi4_3"
+CHECKPOINT = "/root/data/checkpoint-siglip_-1-resampler_768_512_4-phi4"
 
 @app.function(
     image=training_image,
@@ -400,7 +400,7 @@ def train_chartqa():
         mm_patch_merge_type="flat",
         mm_vision_select_feature="patch",
         resampler_hidden_size=768,
-        num_queries=256,
+        num_queries=512,
         num_resampler_layers=4,
         tune_vision_tower=True,
         tune_entire_model=False,

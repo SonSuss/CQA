@@ -197,7 +197,9 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
     
     logger.info("trainable parameters: %s", sum(p.numel() for p in model.parameters() if p.requires_grad))
     logger.info("total parameters: %s", sum(p.numel() for p in model.parameters()))
-
+    
+    logger.info("Model device: %s", training_args.device)
+    model.to(device=training_args.device)
     trainer = LLaVATrainer(model=model,
                            tokenizer=tokenizer,
                            args=training_args,
