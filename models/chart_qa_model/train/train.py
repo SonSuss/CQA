@@ -144,7 +144,6 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
         model.config.tune_mm_mlp_adapter = training_args.tune_mm_mlp_adapter = model_args.tune_mm_mlp_adapter
         
         if model_args.tune_mm_mlp_adapter:
-            model.requires_grad_(False)
             for p in model.get_model().mm_projector.parameters():
                 p.requires_grad = True
 
