@@ -166,10 +166,10 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
         if getattr(trainer.args, "tune_embed_tokens", False):
             keys_to_match.extend(['embed_tokens', 'embed_in'])
         # Debug: Print all parameter names
-        print("🔍 All model parameters:")
-        for name, param in trainer.model.named_parameters():
-            if any(key in name for key in ['mm_projector', 'vision_resampler', 'embed']):
-                print(f"  {name}: {param.shape}")
+        # print("🔍 All model parameters:")
+        # for name, param in trainer.model.named_parameters():
+        #     if any(key in name for key in ['mm_projector', 'vision_resampler', 'embed']):
+        #         print(f"  {name}: {param.shape}")
                 
         weight_to_save = get_mm_adapter_state_maybe_zero_3(trainer.model.named_parameters(), keys_to_match)
 
@@ -177,6 +177,7 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
         parent_folder = os.path.dirname(output_dir)
         # if trainer.args.local_rank == 0 or trainer.args.local_rank == -1:
         mm_projector_folder = os.path.join(parent_folder, "mm_projector")
+        print(f"🔍 MM Projector folder: {mm_projector_folder}")
         os.makedirs(mm_projector_folder, exist_ok=True)
         torch.save(weight_to_save, os.path.join(mm_projector_folder, "mm_projector.bin"))
         # if getattr(trainer.args, "tune_vision_tower", False):
