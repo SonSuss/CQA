@@ -165,7 +165,12 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
             keys_to_match.extend(['embed_tokens', 'embed_in'])
         if getattr(trainer.args, "tune_embed_tokens", False):
             keys_to_match.extend(['embed_tokens', 'embed_in'])
-
+        # Debug: Print all parameter names
+        print("🔍 All model parameters:")
+        for name, param in trainer.model.named_parameters():
+            if any(key in name for key in ['mm_projector', 'vision_resampler', 'embed']):
+                print(f"  {name}: {param.shape}")
+                
         weight_to_save = get_mm_adapter_state_maybe_zero_3(trainer.model.named_parameters(), keys_to_match)
 
         # current_folder = output_dir.split('/')[-1]
@@ -187,7 +192,7 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
         #         torch.save(weight_to_save, os.path.join(
         #             output_dir, 'vision_tower/pytorch_model.bin'))
 
-    if getattr(trainer.args, "tune_vision_tower", False) or getattr(trainer.args, "tune_entire_model", False):
+    if getattr(trainer.args, "tune_vision_tower", False):
         # if trainer.deepspeed:
         #     torch.cuda.synchronize()
         # if getattr(trainer.model.get_vision_tower().image_processor, 'save_pretrained', False):
@@ -216,7 +221,7 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
     if trainer.deepspeed:
         torch.cuda.synchronize()
         trainer.save_model(output_dir)
-    
+
     state_dict = trainer.model.state_dict()
     if trainer.args.should_save:
         cpu_state_dict = {

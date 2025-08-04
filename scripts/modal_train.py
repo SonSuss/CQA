@@ -74,7 +74,7 @@ TRAIN_GPU = gpu
 TRAIN_CPU_COUNT = (1.0,8.0)
 TRAIN_MEMORY_GB = (8 * 1024,32 * 1024)  # 8GB to 32GB
 TRAIN_TIME = 10 # hours
-CHECKPOINT = "/root/data/checkpoint-siglip_-1-resampler_768_512_4-phi4"
+CHECKPOINT = "/root/data/checkpoint-siglip_-1-resampler_768_512_4-phi4_2"
 
 @app.function(
     image=training_image,
