@@ -178,7 +178,7 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
         # if trainer.args.local_rank == 0 or trainer.args.local_rank == -1:
         mm_projector_folder = os.path.join(parent_folder, "mm_projector")
         os.makedirs(mm_projector_folder, exist_ok=True)
-        torch.save(weight_to_save, os.path.join(mm_projector_folder, f'mm_projector.bin'))
+        torch.save(weight_to_save, os.path.join(mm_projector_folder, "mm_projector.bin"))
         # if getattr(trainer.args, "tune_vision_tower", False):
         #     if trainer.deepspeed:
         #         torch.cuda.synchronize()
@@ -214,22 +214,18 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
         os.makedirs(vision_tower_folder, exist_ok=True)
         # if trainer.args.local_rank == 0 or trainer.args.local_rank == -1:
         trainer.model.get_vision_tower().vision_tower.vision_model.config.save_pretrained(os.path.join(vision_tower_folder))
-        torch.save(weight_to_save, os.path.join(vision_tower_folder, f'vision_tower.bin'))
+        torch.save(weight_to_save, os.path.join(vision_tower_folder, "vision_tower.bin"))
 
     trainer.model.config.save_pretrained(output_dir)
     
-    if trainer.deepspeed:
-        torch.cuda.synchronize()
+    if not trainer.deepspeed:
+        state_dict = trainer.model.state_dict()
+        if trainer.args.should_save:
+            cpu_state_dict = {key: value.cpu() for key, value in state_dict.items()}
+            del state_dict
+            trainer._save(output_dir, state_dict=cpu_state_dict)
+    else:
         trainer.save_model(output_dir)
-
-    state_dict = trainer.model.state_dict()
-    if trainer.args.should_save:
-        cpu_state_dict = {
-            key: value.cpu()
-            for key, value in state_dict.items()
-        }
-        del state_dict
-        trainer._save(output_dir, state_dict=cpu_state_dict)  # noqa
 
 def unlock_vit(training_args, model_args, vision_tower):
     lr_of_vit = training_args.vision_tower_lr if training_args.vision_tower_lr is not None and training_args.vision_tower_lr != 0 else training_args.learning_rate
