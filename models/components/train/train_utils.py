@@ -216,8 +216,7 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
     if trainer.deepspeed:
         torch.cuda.synchronize()
         trainer.save_model(output_dir)
-        return
-
+    
     state_dict = trainer.model.state_dict()
     if trainer.args.should_save:
         cpu_state_dict = {
