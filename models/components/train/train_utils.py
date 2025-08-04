@@ -201,13 +201,13 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
         # if trainer.args.local_rank == 0 or trainer.args.local_rank == -1:
         #     torch.save(weight_to_save, os.path.join(
         #         output_dir, 'vision_tower/pytorch_model.bin'))
-        os.makedirs(vision_tower_folder, exist_ok=True)
         trainer.model.get_vision_tower().vision_tower.vision_model.config.save_pretrained(os.path.join(vision_tower_folder))
         keys_to_match = ['vision_model']
         weight_to_save = get_mm_adapter_state_maybe_zero_3(trainer.model.named_parameters(), keys_to_match)
         # current_folder = output_dir.split('/')[-1]
         parent_folder = os.path.dirname(output_dir)
         vision_tower_folder = os.path.join(parent_folder, "vision_tower")
+        os.makedirs(vision_tower_folder, exist_ok=True)
         # if trainer.args.local_rank == 0 or trainer.args.local_rank == -1:
         torch.save(weight_to_save, os.path.join(vision_tower_folder, f'vision_tower.bin'))
 
