@@ -168,15 +168,12 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
 
         weight_to_save = get_mm_adapter_state_maybe_zero_3(trainer.model.named_parameters(), keys_to_match)
 
-        current_folder = output_dir.split('/')[-1]
+        # current_folder = output_dir.split('/')[-1]
         parent_folder = os.path.dirname(output_dir)
-        if trainer.args.local_rank == 0 or trainer.args.local_rank == -1:
-            if current_folder.startswith('checkpoint-'):
-                mm_projector_folder = os.path.join(parent_folder, "mm_projector")
-                os.makedirs(mm_projector_folder, exist_ok=True)
-                torch.save(weight_to_save, os.path.join(mm_projector_folder, f'mm_projector.bin'))
-            else:
-                torch.save(weight_to_save, os.path.join(output_dir, f'mm_projector.bin'))
+        # if trainer.args.local_rank == 0 or trainer.args.local_rank == -1:
+        mm_projector_folder = os.path.join(parent_folder, "mm_projector")
+        os.makedirs(mm_projector_folder, exist_ok=True)
+        torch.save(weight_to_save, os.path.join(mm_projector_folder, f'mm_projector.bin'))
         # if getattr(trainer.args, "tune_vision_tower", False):
         #     if trainer.deepspeed:
         #         torch.cuda.synchronize()
@@ -204,18 +201,18 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
         # if trainer.args.local_rank == 0 or trainer.args.local_rank == -1:
         #     torch.save(weight_to_save, os.path.join(
         #         output_dir, 'vision_tower/pytorch_model.bin'))
-        vision_tower_folder = os.path.join(parent_folder, "vision_tower")
         os.makedirs(vision_tower_folder, exist_ok=True)
-        trainer.model.get_vision_tower().image_processor.save_pretrained(os.path.join(vision_tower_folder))
         trainer.model.get_vision_tower().vision_tower.vision_model.config.save_pretrained(os.path.join(vision_tower_folder))
         keys_to_match = ['vision_model']
         weight_to_save = get_mm_adapter_state_maybe_zero_3(trainer.model.named_parameters(), keys_to_match)
-        current_folder = output_dir.split('/')[-1]
+        # current_folder = output_dir.split('/')[-1]
         parent_folder = os.path.dirname(output_dir)
-        if trainer.args.local_rank == 0 or trainer.args.local_rank == -1:
-                torch.save(weight_to_save, os.path.join(vision_tower_folder, f'vision_tower.bin'))
+        vision_tower_folder = os.path.join(parent_folder, "vision_tower")
+        # if trainer.args.local_rank == 0 or trainer.args.local_rank == -1:
+        torch.save(weight_to_save, os.path.join(vision_tower_folder, f'vision_tower.bin'))
 
     trainer.model.config.save_pretrained(output_dir)
+    
     if trainer.deepspeed:
         torch.cuda.synchronize()
         trainer.save_model(output_dir)
