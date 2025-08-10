@@ -337,7 +337,7 @@ def preload_models():
     volume.commit()
 
 
-CHECKPOINT = "/root/data/checkpoint-siglip_-1-resampler_768_256_3-phi4_init"
+CHECKPOINT = "/root/data/checkpoint-siglip_-1-resampler_768_256_3-phi4_init_testsave"
 @app.function(
     image=training_image,
     volumes={"/root/data": volume},
@@ -455,83 +455,4 @@ def init_train():
     train(model_args, data_args, training_args, log_rewrite=True)
     
     volume.commit()
-    
-@app.function(
-    image=training_image,
-    volumes={"/root/data": volume},
-    timeout=15 * MINUTES,
-)
-def remove_old_checkpoints():
-    import os
-    import shutil
-    import glob
-    
-    checkpoint_base = CHECKPOINT
-    if not os.path.exists(checkpoint_base):
-        print(f"📁 No checkpoint directory found at: {checkpoint_base}")
-        return {"status": "no_checkpoints", "removed": 0, "space_saved_gb": 0}
-    checkpoint_pattern = os.path.join(checkpoint_base, "checkpoint-*")
-    checkpoint_dirs = glob.glob(checkpoint_pattern)
-    if not checkpoint_dirs:
-        print("Checkpoint directory exists but no checkpoint-* folders found")
-        return {"status": "empty_dir", "removed": 0, "space_saved_gb": 0}
-    # Sort by step number (checkpoint-1000, checkpoint-2000, etc.)
-    def get_step_number(path):
-        try:
-            basename = os.path.basename(path)
-            step_str = basename.split("-")[1]
-            return int(step_str)
-        except (IndexError, ValueError):
-            return 0
-    
-    checkpoint_dirs.sort(key=get_step_number)
-    
-    print(f"Found {len(checkpoint_dirs)} checkpoint directories:")
-    for cp_dir in checkpoint_dirs:
-        basename = os.path.basename(cp_dir)
-        step = get_step_number(cp_dir)
-        print(f"{basename} (step {step})")
-        
-    if len(checkpoint_dirs) <= 1:
-        print("Only one checkpoint found, keeping it")
-        return {"status": "single_checkpoint", "removed": 0, "space_saved_gb": 0}
-    
-    latest_checkpoint = checkpoint_dirs[-1]  # Last one after sorting
-    to_remove = checkpoint_dirs[:-1]  # All except the last one
-    
-    print(f"\nKeeping latest: {os.path.basename(latest_checkpoint)}")
-    print(f"Removing {len(to_remove)} old checkpoints:")
-    total_space_saved = 0
-    removed_count = 0
-    for cp_dir in to_remove:
-        basename = os.path.basename(cp_dir)
-        
-        try:
-            # Quick size estimation (count files)
-            file_count = sum(len(files) for _, _, files in os.walk(cp_dir))
-            estimated_size_gb = file_count * 0.1  # Rough estimate: 100MB per file average
-
-            print(f"Removing {basename} (~{estimated_size_gb:.1f} GB estimated)")
-
-            # Remove the directory
-            shutil.rmtree(cp_dir)
-            
-            total_space_saved += estimated_size_gb
-            removed_count += 1
-            
-            print(f"Successfully removed")
-            
-        except Exception as e:
-            print(f"Failed to remove {basename}: {e}")
-        print(f"\nCleanup Summary:")
-    print(f"Checkpoints removed: {removed_count}")
-    print(f"Estimated space saved: ~{total_space_saved:.1f} GB")
-    print(f"Remaining checkpoint: {os.path.basename(latest_checkpoint)}")
-    volume.commit()
-    return {
-        "status": "cleanup_complete",
-        "removed": removed_count,
-        "space_saved_gb": total_space_saved,
-        "kept_checkpoint": os.path.basename(latest_checkpoint)
-    }
     
