@@ -27,16 +27,7 @@ def remove_folder():
     import os
     import shutil
     root = "/root/data"
-    remove_lst = ["checkpoint-siglip_-1-resampler_768_512_4-phi4",
-                  "checkpoint-siglip_-1-resampler_768_512_4-phi4_2",
-                  "checkpoints-siglip_-1-mlp2x_gelu-phi4",
-                  "checkpoints-siglip_-1-resampler_768_256_4-phi4",
-                  "checkpoints-siglip_-1-resampler_768_256_4-phi4_2",
-                  "checkpoints-siglip_-1-resampler_768_256_4-phi4_3",
-                  "eval_results",
-                  "eval_results_2",
-                  "mm_projector",
-                  "vision_tower"]
+    remove_lst = ["checkpoint-siglip_-1-resampler_768_256_3-phi4_init"]
     
     for folder in remove_lst:
         folder_path = os.path.join(root, folder)

@@ -426,7 +426,7 @@ def init_train():
         evaluation_strategy="no",
         # eval_steps=20,
         save_strategy="steps",
-        save_steps=20, 
+        save_steps=1000, 
         save_total_limit=3,
         mm_projector_lr=5e-4,
         vision_tower_lr=0,

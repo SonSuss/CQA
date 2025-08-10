@@ -175,10 +175,6 @@ class LLaVATrainer(Trainer):
             epoch = logs.get('epoch', 0)
 
             self.custom_logger.info(f"loss: {loss:.4f} | grad_norm: {grad_norm:.2f} | learning_rate: {learning_rate:.1e} | epoch: {epoch:.2f}")
-            eval_loss = logs.get('eval_loss', None)
-            eval_runtime = logs.get('eval_runtime', None)
-            if eval_loss is not None:
-                self.custom_logger.info(f"eval_loss: {eval_loss:.4f} | eval_runtime: {eval_runtime:.2f}")
         else:
             super().log(logs, *args, **kwargs)
             
