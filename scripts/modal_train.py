@@ -74,7 +74,6 @@ TRAIN_GPU = gpu
 TRAIN_CPU_COUNT = (1.0,8.0)
 TRAIN_MEMORY_GB = (8 * 1024,32 * 1024)  # 8GB to 32GB
 TRAIN_TIME = 10 # hours
-CHECKPOINT = "/root/data/checkpoint-siglip_-1-resampler_768_512_4-phi4_2"
 
 @app.function(
     image=training_image,
@@ -337,6 +336,8 @@ def preload_models():
     
     volume.commit()
 
+
+CHECKPOINT = "/root/data/checkpoint-siglip_-1-resampler_768_256_3-phi4_init"
 @app.function(
     image=training_image,
     volumes={"/root/data": volume},
@@ -345,7 +346,7 @@ def preload_models():
     memory=16 * 1024,  # Fixed memory value (16GB)
     timeout= TRAIN_TIME * 60 * MINUTES,
 )
-def train_chartqa():
+def init_train():
     pull_latest_code()
     import os
     from models.chart_qa_model.train.train import train
@@ -400,9 +401,9 @@ def train_chartqa():
         mm_patch_merge_type="flat",
         mm_vision_select_feature="patch",
         resampler_hidden_size=768,
-        num_queries=512,
-        num_resampler_layers=4,
-        tune_vision_tower=True,
+        num_queries=256,
+        num_resampler_layers=3,
+        tune_vision_tower=False,
         tune_entire_model=False,
         tune_vit_from_layer=-1,
         tune_embed_tokens=False,
@@ -416,21 +417,24 @@ def train_chartqa():
         image_folder="",
         image_aspect_ratio="square",
     )
-
     training_args = TrainingArguments(
         output_dir=output_dir,
-        num_train_epochs=3, 
+        num_train_epochs=2, 
         per_device_train_batch_size=8,
-        per_device_eval_batch_size=4,
+        per_device_eval_batch_size=2,
         gradient_accumulation_steps=1,
-        evaluation_strategy="no",
+        evaluation_strategy="steps",
+        eval_steps=400,
         save_strategy="steps",
-        save_steps=1000, 
-        save_total_limit=1,
-        mm_projector_lr=7e-5,
-        vision_tower_lr=2e-5,
-        weight_decay=0.01,
-        warmup_ratio=0.05,
+        save_steps=400, 
+        save_total_limit=3,
+        metric_for_best_model="eval_loss",
+        greater_is_better=False,
+        load_best_model_at_end=True,
+        mm_projector_lr=5e-4,
+        vision_tower_lr=0,
+        weight_decay=0.005,
+        warmup_ratio=0.3,
         lr_scheduler_type="cosine",
         logging_steps=25,
         fp16=False,
@@ -445,7 +449,7 @@ def train_chartqa():
         bits=16,
         group_by_modality_length=True,
         warmup_steps=150,
-        max_grad_norm=0.5,
+        max_grad_norm=0.3,
         local_rank=-1
     )
     train(model_args, data_args, training_args, log_rewrite=True)

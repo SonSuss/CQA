@@ -15,10 +15,10 @@ import transformers
 import torch
 
 from peft import prepare_model_for_kbit_training
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, EarlyStoppingCallback
 
 
-def train(model_args:ModelArguments, data_args: DataArguments, training_args: TrainingArguments, log_rewrite: bool):
+def train(model_args:ModelArguments, data_args: DataArguments, training_args: TrainingArguments, log_rewrite: bool, callbacks=None):
     global local_rank
     logger = get_log_writer(log_dir=training_args.output_dir,
                             log_name="train.log",
@@ -198,17 +198,28 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
     logger.info("total parameters: %s", sum(p.numel() for p in model.parameters()))
     
     logger.info("Model device: %s", training_args.device)
+    if callbacks is None:
+        callbacks = []
+    if training_args.eval_strategy != "no":
+        early_stopping_callback = EarlyStoppingCallback(
+            early_stopping_patience=5,
+            early_stopping_threshold=0.001
+        )
+        callbacks.append(early_stopping_callback)
+        logger.info("🛡️ Early stopping enabled: patience=5, threshold=0.001")
+    
     model.to(device=training_args.device)
     trainer = LLaVATrainer(model=model,
                            tokenizer=tokenizer,
                            args=training_args,
                            custom_logger=logger,
+                           callbacks=callbacks,
                            **data_module)
     
-    # if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
-    #     trainer.train(resume_from_checkpoint=True)
-    # else:
-    #     trainer.train()
+    if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
+        trainer.train(resume_from_checkpoint=True)
+    else:
+        trainer.train()
 
     trainer.save_state()
     
