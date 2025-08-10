@@ -207,7 +207,8 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
         )
         callbacks.append(early_stopping_callback)
         logger.info("Early stopping enabled: patience=5, threshold=0.001")
-    
+        
+    tokenizer.save_pretrained(training_args.output_dir)
     model.to(device=training_args.device)
     trainer = LLaVATrainer(model=model,
                            tokenizer=tokenizer,
@@ -230,8 +231,6 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
     else:
         safe_save_model_for_hf_trainer(trainer=trainer,
                                        output_dir=training_args.output_dir)
-        
-    tokenizer.save_pretrained(training_args.output_dir)
 
 
 if __name__ == "__main__":
