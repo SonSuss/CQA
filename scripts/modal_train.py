@@ -311,7 +311,7 @@ def preload_models():
         model_name,
         cache_dir=cache_dir,
         model_max_length=1024,  # Same as training
-        padding_side="right",
+        padding_side="left",  # Required for Flash Attention with Phi3
         use_fast=False,
         trust_remote_code=True
     )
@@ -419,14 +419,14 @@ def init_train():
     )
     training_args = TrainingArguments(
         output_dir=output_dir,
-        num_train_epochs=2, 
+        num_train_epochs=1, 
         per_device_train_batch_size=8,
         per_device_eval_batch_size=2,
         gradient_accumulation_steps=1,
-        evaluation_strategy="steps",
-        eval_steps=30,
+        evaluation_strategy="no",
+        eval_steps=20,
         save_strategy="steps",
-        save_steps=30, 
+        save_steps=20, 
         save_total_limit=3,
         metric_for_best_model="eval_loss",
         greater_is_better=False,
