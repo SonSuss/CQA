@@ -165,48 +165,12 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
             keys_to_match.extend(['embed_tokens', 'embed_in'])
         if getattr(trainer.args, "tune_embed_tokens", False):
             keys_to_match.extend(['embed_tokens', 'embed_in'])
-        # Debug: Print all parameter names
-        # print("🔍 All model parameters:")
-        # for name, param in trainer.model.named_parameters():
-        #     if any(key in name for key in ['mm_projector', 'vision_resampler', 'embed']):
-        #         print(f"  {name}: {param.shape}")
                 
         weight_to_save = get_mm_adapter_state_maybe_zero_3(trainer.model.named_parameters(), keys_to_match)
-
-        # current_folder = output_dir.split('/')[-1]
-        # parent_folder = os.path.dirname(output_dir)
-        # if trainer.args.local_rank == 0 or trainer.args.local_rank == -1:
         mm_projector_folder = os.path.join(output_dir, "mm_projector")
-        print(f"🔍 MM Projector folder: {mm_projector_folder}")
         os.makedirs(mm_projector_folder, exist_ok=True)
         torch.save(weight_to_save, os.path.join(mm_projector_folder, "mm_projector.bin"))
-        # if getattr(trainer.args, "tune_vision_tower", False):
-        #     if trainer.deepspeed:
-        #         torch.cuda.synchronize()
-        #     trainer.model.get_vision_tower().image_processor.save_pretrained(
-        #         os.path.join(output_dir, 'vision_tower'))
-        #     trainer.model.get_vision_tower().vision_tower.vision_model.config.save_pretrained(
-        #         os.path.join(output_dir, 'vision_tower'))
-        #     weight_to_save = get_vision_tower_state_maybe_zero_3(
-        #         trainer.model.get_vision_tower().vision_tower.named_parameters())
-        #     if trainer.args.local_rank == 0 or trainer.args.local_rank == -1:
-        #         torch.save(weight_to_save, os.path.join(
-        #             output_dir, 'vision_tower/pytorch_model.bin'))
-
     if getattr(trainer.args, "tune_vision_tower", False):
-        # if trainer.deepspeed:
-        #     torch.cuda.synchronize()
-        # if getattr(trainer.model.get_vision_tower().image_processor, 'save_pretrained', False):
-        #     # FIXME: Hack for SigLip
-        #     trainer.model.get_vision_tower().image_processor.save_pretrained(
-        #         os.path.join(output_dir, 'vision_tower'))
-        # trainer.model.get_vision_tower().vision_tower.vision_model.config.save_pretrained(
-        #     os.path.join(output_dir, 'vision_tower'))
-        # weight_to_save = get_vision_tower_state_maybe_zero_3(
-        #     trainer.model.get_vision_tower().vision_tower.named_parameters())
-        # if trainer.args.local_rank == 0 or trainer.args.local_rank == -1:
-        #     torch.save(weight_to_save, os.path.join(
-        #         output_dir, 'vision_tower/pytorch_model.bin'))
         keys_to_match = ['vision_model']
         weight_to_save = get_mm_adapter_state_maybe_zero_3(trainer.model.named_parameters(), keys_to_match)
         # current_folder = output_dir.split('/')[-1]

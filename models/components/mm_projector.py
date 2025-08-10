@@ -92,13 +92,12 @@ class Resampler(nn.Module):
         intermediate_size: int = None,
         num_queries: int = 128,
         num_layers: int = 3,
-        initializer_range: float = 0.02,
+        # initializer_range: float = 0.02,
         delay_load: bool = False,
-        attn_dropout: float = 0.1,
-        ffn_dropout: float = 0.1
+        attn_dropout: float = 0.05,
+        ffn_dropout: float = 0.05
     ):
         super().__init__()
-        self.initializer_range = initializer_range
         self.resampler_blocks = nn.ModuleList(
             [
                 ResamplerBlock(
@@ -107,28 +106,23 @@ class Resampler(nn.Module):
                 ) for _ in range(num_layers)
             ]
         )
-        self.queries = nn.Parameter(torch.randn(num_queries, hidden_size))
+        self.queries = nn.Parameter(torch.zeros(num_queries, hidden_size))
         self.pos_embed = nn.Parameter(torch.zeros(num_queries, hidden_size))
+        self.query_scale = nn.Parameter(torch.ones(1) * 0.1)
         self.post_norm = nn.LayerNorm(hidden_size)
-
         self.final_proj = nn.Linear(hidden_size, final_hidden_size, bias=False)
 
         if not delay_load:
-            self.initializer_range = initializer_range
+            # self.initializer_range = initializer_range
             for module in self.modules():
                 if isinstance(module, (nn.Linear, nn.LayerNorm, nn.Conv2d)):
                     self._init_weights(module)
     
     def _init_weights(self, module: Union[nn.Linear, nn.Conv2d, nn.LayerNorm]) -> None:
-        """Initialize the weights"""
+        """Improved weight initialization"""
         if isinstance(module, (nn.Linear, nn.Conv2d)):
-                # Add safety check for None weights
-                if hasattr(module, 'weight') and module.weight is not None:
-                    module.weight.data = nn.init.trunc_normal_(
-                        module.weight.data.to(torch.float32), 
-                        mean=0.0, 
-                        std=self.initializer_range
-                    ).to(module.weight.dtype)
+            if hasattr(module, 'weight') and module.weight is not None:
+                nn.init.xavier_uniform_(module.weight.data)
                 if hasattr(module, 'bias') and module.bias is not None:
                     module.bias.data.zero_()
         elif isinstance(module, nn.LayerNorm):
@@ -139,13 +133,13 @@ class Resampler(nn.Module):
 
     def forward(self, image_hidden_states: torch.Tensor) -> torch.Tensor:
         b = image_hidden_states.size(0)
-        queries = repeat(self.queries, 'n d -> b n d', b=b)
+        queries = repeat(self.queries * self.query_scale, 'n d -> b n d', b=b)
         pos_embed = repeat(self.pos_embed, 'n d -> b n d', b=b)
-        queries = queries + pos_embed  # Add positional encoding
+        queries = queries + pos_embed
+        
         for resampler_block in self.resampler_blocks:
             queries = resampler_block(queries, image_hidden_states)
 
-        # post norm
         queries = self.post_norm(queries)
         return self.final_proj(queries)
 
@@ -176,7 +170,6 @@ def build_vision_projector(config, delay_load=False):
             final_hidden_size=final_hidden_size,
             num_layers=num_layers,
             num_heads=num_heads,
-            initializer_range=initializer_range,
             delay_load=delay_load,
         )
 
