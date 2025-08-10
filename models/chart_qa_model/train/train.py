@@ -75,7 +75,7 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
         )
     tokenizer.pad_token = tokenizer.unk_token
     tokenizer.pad_token_id = tokenizer.convert_tokens_to_ids(tokenizer.pad_token)
-    tokenizer.padding_side = 'left'
+    tokenizer.padding_side = 'right'
     tokenizer.model_max_length = training_args.model_max_length
     
     
