@@ -337,7 +337,7 @@ def preload_models():
     volume.commit()
 
 
-CHECKPOINT = "/root/data/checkpoint-siglip_-1-resampler_768_256_3-phi4_init_testsave"
+CHECKPOINT = "/root/data/checkpoint-siglip_-1-resampler_768_256_3-phi4_init"
 @app.function(
     image=training_image,
     volumes={"/root/data": volume},
