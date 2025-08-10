@@ -206,7 +206,7 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
             early_stopping_threshold=0.001
         )
         callbacks.append(early_stopping_callback)
-        logger.info("🛡️ Early stopping enabled: patience=5, threshold=0.001")
+        logger.info("Early stopping enabled: patience=5, threshold=0.001")
     
     model.to(device=training_args.device)
     trainer = LLaVATrainer(model=model,

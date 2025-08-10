@@ -165,18 +165,20 @@ class LLaVATrainer(Trainer):
                 # Fall back to parameterless call for older transformers versions
                 return super()._get_train_sampler()
             
-    #override the log method to use custom logger instead of printing to console
     def log(self, logs, *args, **kwargs):
         if self.custom_logger is not None:
-            # Direct formatting for known keys
             logs = logs.copy()
             logs['epoch'] = self.state.epoch
             loss = logs.get('loss', 0)
             grad_norm = logs.get('grad_norm', 0)
             learning_rate = logs.get('learning_rate', 0)
             epoch = logs.get('epoch', 0)
-            
+
             self.custom_logger.info(f"loss: {loss:.4f} | grad_norm: {grad_norm:.2f} | learning_rate: {learning_rate:.1e} | epoch: {epoch:.2f}")
+            eval_loss = logs.get('eval_loss', None)
+            eval_runtime = logs.get('eval_runtime', None)
+            if eval_loss is not None:
+                self.custom_logger.info(f"eval_loss: {eval_loss:.4f} | eval_runtime: {eval_runtime:.2f}")
         else:
             super().log(logs, *args, **kwargs)
             

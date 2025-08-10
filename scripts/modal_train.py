@@ -424,7 +424,7 @@ def init_train():
         per_device_eval_batch_size=2,
         gradient_accumulation_steps=1,
         evaluation_strategy="steps",
-        eval_steps=400,
+        eval_steps=20,
         save_strategy="steps",
         save_steps=400, 
         save_total_limit=3,
