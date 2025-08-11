@@ -45,12 +45,13 @@ def finetune(model_path: str, model_args: ModelArguments, data_args: DataArgumen
     # print("Model architecture:", model)
     # for name, module in model.named_children():
     #     print(f"{name}: {module}")
-    print(cfg_pretrained.tune_mm_mlp_adapter, cfg_pretrained.tune_vision_tower)
+    # print(cfg_pretrained.tune_mm_mlp_adapter, cfg_pretrained.tune_vision_tower)
+    
+    vision_tower = model.get_vision_tower()
+    if not vision_tower.is_loaded:
+        vision_tower.load_model()
+    vision_tower.to(dtype=torch.bfloat16 if training_args.bf16 else torch.float16, device=training_args.device)
     if cfg_pretrained.tune_vision_tower:
-        vision_tower = model.get_vision_tower()
-        vision_tower.to(dtype=torch.bfloat16 if training_args.bf16 else torch.float16, device=training_args.device)
-        if not vision_tower.is_loaded:
-            vision_tower.load_model()
         vision_path = os.path.join(model_path, "vision_tower", "pytorch_model.bin")
         if os.path.exists(vision_path):
             finetuned_weights = torch.load(vision_path, map_location="cpu")
@@ -58,29 +59,18 @@ def finetune(model_path: str, model_args: ModelArguments, data_args: DataArgumen
         else:
             logger.warning("Vision tower weights not found at: %s", vision_path)
             return
-        if cfg_pretrained.tune_mm_mlp_adapter:
-            projector = model.mm_projector
-            
-        else:
-            logger.warning("MM MLP adapter should be train at anystep!")
-            return
-    else:
-        vision_tower = model.get_vision_tower()
-        if not vision_tower.is_loaded:
-            vision_tower.load_model()
-        vision_tower.to(dtype=torch.bfloat16 if training_args.bf16 else torch.float16, device=training_args.device)
-        if cfg_pretrained.tune_mm_mlp_adapter:
-            projector_path = os.path.join(model_path, "mm_projector", "mm_projector.bin")
-            if os.path.exists(projector_path):
-                finetuned_weights = torch.load(projector_path, map_location="cpu")
-                missing_keys, unexpected_keys = model.load_state_dict(finetuned_weights, strict=False, assign=True)
-                if unexpected_keys:
-                    print("Unexpected keys:", unexpected_keys)
-                    print("YOU COOKED!")
-                    return
-            else:
-                logger.warning("MM projector weights not found at: %s", projector_path)
+    if cfg_pretrained.tune_mm_mlp_adapter:
+        projector_path = os.path.join(model_path, "mm_projector", "mm_projector.bin")
+        if os.path.exists(projector_path):
+            finetuned_weights = torch.load(projector_path, map_location="cpu")
+            _, unexpected_keys = model.load_state_dict(finetuned_weights, strict=False, assign=True)
+            if unexpected_keys:
+                print("Unexpected keys:", unexpected_keys)
+                print("I AM COOKED!")
                 return
         else:
-            logger.warning("MM MLP adapter should be train at anystep!")
+            logger.warning("MM projector weights not found at: %s", projector_path)
             return
+    else:
+        logger.warning("MM MLP adapter should be train at anystep!")
+        return
