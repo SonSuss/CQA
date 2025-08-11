@@ -150,6 +150,7 @@ def finetune(model_path: str, model_args: ModelArguments, data_args: DataArgumen
     model.config.image_aspect_ratio = data_args.image_aspect_ratio
     model.config.tokenizer_padding_side = tokenizer.padding_side
     model.config.tokenizer_model_max_length = tokenizer.model_max_length
+    
     model.config.tune_mm_mlp_adapter = training_args.tune_mm_mlp_adapter = model_args.tune_mm_mlp_adapter
     #this should always be set to True
     if model_args.tune_mm_mlp_adapter:
@@ -162,18 +163,19 @@ def finetune(model_path: str, model_args: ModelArguments, data_args: DataArgumen
             p.requires_grad = False
     
     if model_args.tune_entire_model:
-            # lr_of_mlp = training_args.mm_projector_lr if training_args.mm_projector_lr is not None else training_args.learning_rate
-            if training_args.lora_enable:
-                unlock_vit(training_args, model_args, vision_tower)
-            else:
-                model.requires_grad_(True)
-                unlock_vit(training_args, model_args, vision_tower)
+        # lr_of_mlp = training_args.mm_projector_lr if training_args.mm_projector_lr is not None else training_args.learning_rate
+        if training_args.lora_enable:
+            unlock_vit(training_args, model_args, vision_tower)
+        else:
+            model.requires_grad_(True)
+            unlock_vit(training_args, model_args, vision_tower)
     model.config.tune_entire_model = training_args.tune_entire_model = model_args.tune_entire_model
     model.config.mm_use_im_start_end = data_args.mm_use_im_start_end = model_args.mm_use_im_start_end
     model.config.mm_projector_lr = training_args.mm_projector_lr
     training_args.use_im_start_end = model_args.mm_use_im_start_end
     model.config.mm_use_im_patch_token = model_args.mm_use_im_patch_token
     model.initialize_vision_tokenizer(model_args, tokenizer=tokenizer)
+    model.config.tune_embed_tokens = training_args.tune_embed_tokens = model_args.tune_embed_tokens or cfg_pretrained.tune_embed_tokens
     
     if training_args.bits in [4, 8]:
         lora_kbit_setting(model, training_args)
@@ -206,10 +208,10 @@ def finetune(model_path: str, model_args: ModelArguments, data_args: DataArgumen
                            custom_logger=logger,
                            **data_module)
     
-    # if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
-    #     trainer.train(resume_from_checkpoint=True)
-    # else:
-    #     trainer.train()
+    if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
+        trainer.train(resume_from_checkpoint=True)
+    else:
+        trainer.train()
 
     trainer.save_state()
     

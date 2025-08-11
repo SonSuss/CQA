@@ -516,7 +516,7 @@ def fine_tune_model():
         tune_vision_tower=True,
         tune_entire_model=False,
         tune_vit_from_layer=-1,
-        tune_embed_tokens=True,
+        tune_embed_tokens=False,
     )
 
     data_args = DataArguments(
@@ -539,7 +539,8 @@ def fine_tune_model():
         save_strategy="steps",
         save_steps=500, 
         save_total_limit=4,
-        mm_projector_lr=2e-5,
+        # learning_rate=2e-5,
+        mm_projector_lr=1e-4,
         vision_tower_lr=2e-5,
         weight_decay=0.01,
         warmup_ratio=0.05,

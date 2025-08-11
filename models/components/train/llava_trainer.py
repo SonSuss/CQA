@@ -303,6 +303,9 @@ class LLaVATrainer(Trainer):
             keys_to_match = ['mm_projector', 'vision_resampler']
             if getattr(self.args, "use_im_start_end", False):
                 keys_to_match.extend(['embed_tokens', 'embed_in'])
+            
+            if getattr(self.args, "tune_embed_tokens", False):
+                keys_to_match.extend(['embed_tokens', 'embed_in'])
 
             weight_to_save = get_mm_adapter_state_maybe_zero_3(self.model.named_parameters(), keys_to_match)
 
