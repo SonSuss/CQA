@@ -70,12 +70,11 @@ def finetune(model_path: str, model_args: ModelArguments, data_args: DataArgumen
             vision_tower.load_model()
         vision_tower.to(dtype=torch.bfloat16 if training_args.bf16 else torch.float16, device=training_args.device)
         if cfg_pretrained.tune_mm_mlp_adapter:
-            projector = model.get_mm_projector()
             projector_path = os.path.join(model_path, "mm_projector", "mm_projector.bin")
             if os.path.exists(projector_path):
                 finetuned_weights = torch.load(projector_path, map_location="cpu")
                 print(finetuned_weights.keys())
-                missing_keys, unexpected_keys = projector.load_state_dict(finetuned_weights, strict=False, assign=True)
+                missing_keys, unexpected_keys = model.load_state_dict(finetuned_weights, strict=False, assign=True)
                 print("Missing keys:", missing_keys)
                 print("Unexpected keys:", unexpected_keys)
             else:
