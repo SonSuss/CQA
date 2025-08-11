@@ -50,7 +50,7 @@ def load_pretrained_llava_model(model_path, load_8bit=False, load_4bit=False, de
                 print("Unexpected keys:", unexpected_keys)
                 print("I AM COOKED!")
                 return
-    
+    print("manually loading projecor state_dict.")
     if cfg_pretrained.tune_mm_mlp_adapter:
         projector_path = os.path.join(model_path, "mm_projector", "mm_projector.bin")
         if os.path.exists(projector_path):
