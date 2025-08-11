@@ -338,17 +338,12 @@ class LlavaMetaForCausalLM(ABC):
 
                 input_embeddings_avg = input_embeddings[:-num_new_tokens].mean(
                     dim=0, keepdim=True)
-                output_embeddings_avg = output_embeddings[:-num_new_tokens].mean(
-                    dim=0, keepdim=True)
 
                 input_embeddings[-num_new_tokens:] = input_embeddings_avg
-                output_embeddings[-num_new_tokens:] = output_embeddings_avg
 
             if model_args.tune_mm_mlp_adapter:
                 for p in self.get_input_embeddings().parameters():
                     p.requires_grad = True
-                for p in self.get_output_embeddings().parameters():
-                    p.requires_grad = False
 
             if model_args.pretrain_mm_mlp_adapter:
                 mm_projector_weights = torch.load(model_args.pretrain_mm_mlp_adapter, map_location='cpu')
@@ -362,19 +357,13 @@ class LlavaMetaForCausalLM(ABC):
                     raise ValueError(f"Unexpected embed_tokens_weight shape. Pretrained: {embed_tokens_weight.shape}. Current: {input_embeddings.shape}. Numer of new tokens: {num_new_tokens}.")
         
         elif model_args.tune_embed_tokens:
-            print(f"Input embeddings: {self.get_model().get_input_embeddings()}")
-            print(f"Output embeddings: {self.get_model().get_output_embeddings()}")
-            for p in self.get_model().get_input_embeddings().parameters():
+            for p in self.get_input_embeddings().parameters():
                 p.requires_grad = True
-            for p in self.get_model().get_output_embeddings().parameters():
-                p.requires_grad = False
             print("Set input embeddings to trainable")
 
         elif model_args.mm_use_im_patch_token:
             if model_args.tune_mm_mlp_adapter:
                 for p in self.get_input_embeddings().parameters():
-                    p.requires_grad = False
-                for p in self.get_output_embeddings().parameters():
                     p.requires_grad = False
 
         if model_args.pretrain_mm_mlp_adapter:
