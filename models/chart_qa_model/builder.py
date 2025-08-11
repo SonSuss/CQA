@@ -30,6 +30,7 @@ def load_pretrained_llava_model(model_path, load_8bit=False, load_4bit=False, de
         
     #load Llava model
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False, padding_side="right")
+    cfg_pretrained = PhiLlava_config.from_pretrained(model_path)
     model = PhiLlavaForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
     mm_use_im_start_end = getattr(model.config, "mm_use_im_start_end", False)
     mm_use_im_patch_token = getattr(model.config, "mm_use_im_patch_token", True)
@@ -40,10 +41,26 @@ def load_pretrained_llava_model(model_path, load_8bit=False, load_4bit=False, de
         
     # manually load vision tower state_dict if needed
     print("manually loading vision tower state_dict.")
-    vision_path = os.path.join(model_path, "vision_tower", "pytorch_model.bin")
-    if os.path.exists(vision_path):
-        finetuned_weights = torch.load(vision_path, map_location="cpu")
-        vision_tower.vision_tower.load_state_dict(finetuned_weights, strict=False, assign=True)
+    if cfg_pretrained.tune_vision_tower:
+        vision_path = os.path.join(model_path, "vision_tower", "pytorch_model.bin")
+        if os.path.exists(vision_path):
+            finetuned_weights = torch.load(vision_path, map_location="cpu")
+            _, unexpected_keys = vision_tower.vision_tower.load_state_dict(finetuned_weights, strict=False, assign=True)
+            if unexpected_keys:
+                print("Unexpected keys:", unexpected_keys)
+                print("I AM COOKED!")
+                return
+    
+    if cfg_pretrained.tune_mm_mlp_adapter:
+        projector_path = os.path.join(model_path, "mm_projector", "mm_projector.bin")
+        if os.path.exists(projector_path):
+            finetuned_weights = torch.load(projector_path, map_location="cpu")
+            _, unexpected_keys = model.load_state_dict(finetuned_weights, strict=False, assign=True)
+            if unexpected_keys:
+                print("Unexpected keys:", unexpected_keys)
+                print("I AM COOKED!")
+                return
+            
     # print("Model architecture:", model)
     # for name, module in model.named_children():
     #     print(f"{name}: {module}")
@@ -77,6 +94,7 @@ def load_pretrained_llava_model(model_path, load_8bit=False, load_4bit=False, de
         context_len = model.config.max_sequence_length
     else:
         context_len = 2048
+        
     model.eval()
     return tokenizer, model, image_processor, context_len
     
