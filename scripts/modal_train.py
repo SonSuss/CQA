@@ -537,7 +537,7 @@ def fine_tune_model():
         evaluation_strategy="no",
         # eval_steps=20,
         save_strategy="steps",
-        save_steps=500, 
+        save_steps=500,
         save_total_limit=4,
         # learning_rate=2e-5,
         mm_projector_lr=1e-4,

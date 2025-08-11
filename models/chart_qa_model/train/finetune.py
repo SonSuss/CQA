@@ -175,7 +175,7 @@ def finetune(model_path: str, model_args: ModelArguments, data_args: DataArgumen
     training_args.use_im_start_end = model_args.mm_use_im_start_end
     model.config.mm_use_im_patch_token = model_args.mm_use_im_patch_token
     model.initialize_vision_tokenizer(model_args, tokenizer=tokenizer)
-    model.config.tune_embed_tokens = training_args.tune_embed_tokens = model_args.tune_embed_tokens or cfg_pretrained.tune_embed_tokens
+    model.config.tune_embed_tokens = training_args.tune_embed_tokens = model_args.tune_embed_tokens
     
     if training_args.bits in [4, 8]:
         lora_kbit_setting(model, training_args)
