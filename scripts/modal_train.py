@@ -337,7 +337,7 @@ def preload_models():
     volume.commit()
 
 
-CHECKPOINT = "/root/data/checkpoint-siglip_-1-resampler_768_256_3-phi4_init"
+CHECKPOINT = "/root/data/checkpoint-siglip_-1-resampler2_768_128_3-phi4_init"
 @app.function(
     image=training_image,
     volumes={"/root/data": volume},
@@ -398,7 +398,7 @@ def init_train():
         mm_patch_merge_type="flat",
         mm_vision_select_feature="patch",
         resampler_hidden_size=768,
-        num_queries=256,
+        num_queries=128,
         num_resampler_layers=3,
         tune_vision_tower=False,
         tune_entire_model=False,
