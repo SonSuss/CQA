@@ -229,7 +229,12 @@ class ResamplerBlock(nn.Module):
 
         # to_kv => (b, n_img, 2 * num_kv_heads * head_dim)
         kv = self.to_kv(image_proj)
-        kv = rearrange(kv, "b n (two (h d)) -> two b h n d", two=2, h=self.num_kv_heads, d=self.head_dim)
+        kv = rearrange(kv,
+                "b n (two h d) -> two b h n d",
+                two=2,
+                h=self.num_kv_heads,
+                d=self.head_dim
+            )
         k, v = kv[0], kv[1]  # each: (b, num_kv_heads, n_img, head_dim)
 
         # make queries per head: (b, num_heads, n_q, head_dim)
