@@ -31,7 +31,7 @@ def load_pretrained_llava_model(model_path, load_8bit=False, load_4bit=False, de
     #load Llava model
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False, padding_side="right")
     cfg_pretrained = PhiLlava_config.from_pretrained(model_path)
-    model = PhiLlavaForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
+    model = PhiLlavaForCausalLM.from_pretrained(cfg_pretrained._name_or_path, low_cpu_mem_usage=True, **kwargs)
     mm_use_im_start_end = getattr(model.config, "mm_use_im_start_end", False)
     mm_use_im_patch_token = getattr(model.config, "mm_use_im_patch_token", True)
 
