@@ -42,9 +42,9 @@ def finetune(model_path: str, model_args: ModelArguments, data_args: DataArgumen
             torch_dtype=compute_dtype,
             trust_remote_code=True
         )
-    print("Model architecture:", model)
-    for name, module in model.named_children():
-        print(f"{name}: {module}")
+    # print("Model architecture:", model)
+    # for name, module in model.named_children():
+    #     print(f"{name}: {module}")
     print(cfg_pretrained.tune_mm_mlp_adapter, cfg_pretrained.tune_vision_tower)
     if cfg_pretrained.tune_vision_tower:
         vision_tower = model.get_vision_tower()
@@ -74,8 +74,8 @@ def finetune(model_path: str, model_args: ModelArguments, data_args: DataArgumen
             projector_path = os.path.join(model_path, "mm_projector", "mm_projector.bin")
             if os.path.exists(projector_path):
                 finetuned_weights = torch.load(projector_path, map_location="cpu")
-                # print(finetuned_weights.keys())
-                missing_keys, unexpected_keys = model.model.load_state_dict(finetuned_weights, strict=False, assign=True)
+                print(finetuned_weights.keys())
+                missing_keys, unexpected_keys = projector.load_state_dict(finetuned_weights, strict=False, assign=True)
                 print("Missing keys:", missing_keys)
                 print("Unexpected keys:", unexpected_keys)
             else:
