@@ -362,9 +362,9 @@ class LlavaMetaForCausalLM(ABC):
                     raise ValueError(f"Unexpected embed_tokens_weight shape. Pretrained: {embed_tokens_weight.shape}. Current: {input_embeddings.shape}. Numer of new tokens: {num_new_tokens}.")
         
         elif model_args.tune_embed_tokens:
-            for p in self.get_input_embeddings().parameters():
+            for p in self.get_model().get_input_embeddings().parameters():
                 p.requires_grad = True
-            for p in self.get_output_embeddings().parameters():
+            for p in self.get_model().get_output_embeddings().parameters():
                 p.requires_grad = False
             print("Set input embeddings to trainable")
 
