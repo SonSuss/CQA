@@ -33,7 +33,7 @@ def finetune(model_path: str, model_args: ModelArguments, data_args: DataArgumen
     bnb_model_from_pretrained_args = get_bnb_model_args(training_args)
     cfg_pretrained = PhiLlava_config.from_pretrained(model_path)
     model = PhiLlavaForCausalLM.from_pretrained(
-            model_path,
+            model_args.model_name_or_path,
             config=cfg_pretrained,
             cache_dir=training_args.cache_dir,
             **bnb_model_from_pretrained_args,
