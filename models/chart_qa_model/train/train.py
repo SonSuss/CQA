@@ -171,6 +171,7 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
         training_args.use_im_start_end = model_args.mm_use_im_start_end
         model.config.mm_use_im_patch_token = model_args.mm_use_im_patch_token
         model.initialize_vision_tokenizer(model_args, tokenizer=tokenizer)
+    
 
     if training_args.bits in [4, 8]:
         lora_kbit_setting(model, training_args)

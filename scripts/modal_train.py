@@ -310,8 +310,8 @@ def preload_models():
     tokenizer = AutoTokenizer.from_pretrained(
         model_name,
         cache_dir=cache_dir,
-        model_max_length=1024,  # Same as training
-        padding_side="left",  # Required for Flash Attention with Phi3
+        model_max_length=1024,
+        padding_side="right", 
         use_fast=False,
         trust_remote_code=True
     )
@@ -326,10 +326,10 @@ def preload_models():
         model_name,
         config=config,
         cache_dir=cache_dir,
-        torch_dtype=torch.bfloat16,  # Same as training
-        device_map="cpu",  # Keep on CPU during download
+        torch_dtype=torch.bfloat16,
+        device_map="cpu", 
         trust_remote_code=True,
-        attn_implementation="flash_attention_2"  # Same as training
+        attn_implementation="flash_attention_2"
     )
     del phi_model
     torch.cuda.empty_cache()
@@ -351,9 +351,6 @@ def init_train():
     import os
     from models.chart_qa_model.train.train import train
     from models.components.config import ModelArguments, DataArguments, TrainingArguments
-    
-    print("🔍 Checking paths and configuration...")
-    
     # Check if we're in the right working directory
     current_dir = os.getcwd()
     print(f"Current working directory: {current_dir}")
@@ -375,14 +372,14 @@ def init_train():
     
     for desc, path in paths_to_check.items():
         if os.path.exists(path):
-            print(f"  ✅ {desc}: {path}")
+            print(f"{desc}: {path}")
         else:
-            print(f"  ❌ {desc}: {path}")
+            print(f"{desc}: {path}")
             missing_paths.append(f"{desc}: {path}")
     
     # Raise error if any paths are missing
     if missing_paths:
-        error_msg = f"❌ Missing required paths:\n" + "\n".join(f"  - {path}" for path in missing_paths)
+        error_msg = f"Missing required paths:\n" + "\n".join(f"  - {path}" for path in missing_paths)
         print(f"\n{error_msg}")
         raise FileNotFoundError(f"Required paths do not exist: {missing_paths}")
     
@@ -453,3 +450,117 @@ def init_train():
     
     volume.commit()
     
+@app.function(
+    image=training_image,
+    volumes={"/root/data": volume},
+    gpu=TRAIN_GPU,
+    cpu=4.0,  # Fixed CPU value 
+    memory=16 * 1024,  # Fixed memory value (16GB)
+    timeout= TRAIN_TIME * 60 * MINUTES,
+)
+def fine_tune_model():
+    pull_latest_code()
+    import os
+    from models.chart_qa_model.train.finetune import finetune
+    from models.components.config import ModelArguments, DataArguments, TrainingArguments
+    # Check if we're in the right working directory
+    current_dir = os.getcwd()
+    print(f"Current working directory: {current_dir}")
+    
+    # Define paths for Modal environment
+    data_path = "/root/data/Chart_QA/processed_data/train.json"
+    eval_data_path = "/root/data/Chart_QA/processed_data/val.json"
+
+    model_path = "/root/data/checkpoint-siglip_-1-resampler_768_256_3-phi4_init"
+    output_dir = "/root/data/checkpoint-siglip_-1-resampler_768_256_3-phi4_1"
+
+    cache_dir = "/root/data/cache"
+    
+    # Check if paths exist
+    paths_to_check = {
+        "Data file": data_path,
+        "Eval data file": eval_data_path,
+        "Save model file": model_path
+    }
+    print("Path validation:")
+    missing_paths = []
+    for desc, path in paths_to_check.items():
+        if os.path.exists(path):
+            print(f"{desc}: {path}")
+        else:
+            print(f" {desc}: {path}")
+            missing_paths.append(f"{desc}: {path}")
+    
+    # Raise error if any paths are missing
+    if missing_paths:
+        error_msg = f"Missing required paths:\n" + "\n".join(f"  - {path}" for path in missing_paths)
+        print(f"\n{error_msg}")
+        raise FileNotFoundError(f"Required paths do not exist: {missing_paths}")
+    
+    model_args = ModelArguments(
+        model_name_or_path="microsoft/Phi-4-mini-instruct",
+        version="phi4_instruct",
+        freeze_backbone=True,
+        vision_tower="mPLUG/TinyChart-3B-768-siglip",
+        mm_vision_select_layer=-1,
+        pretrain_mm_mlp_adapter=None,
+        tune_mm_mlp_adapter=True,
+        mm_projector_type="resampler",
+        mm_use_im_start_end=False,
+        mm_use_im_patch_token=False,
+        mm_patch_merge_type="flat",
+        mm_vision_select_feature="patch",
+        resampler_hidden_size=768,
+        num_queries=256,
+        num_resampler_layers=3,
+        tune_vision_tower=True,
+        tune_entire_model=False,
+        tune_vit_from_layer=-1,
+        tune_embed_tokens=True,
+    )
+
+    data_args = DataArguments(
+        data_path=data_path,
+        eval_data_path=eval_data_path,
+        lazy_preprocess=True,
+        is_multimodal=True,
+        image_folder="",
+        image_aspect_ratio="square",
+    )
+    
+    training_args = TrainingArguments(
+        output_dir=output_dir,
+        num_train_epochs=1, 
+        per_device_train_batch_size=8,
+        per_device_eval_batch_size=2,
+        gradient_accumulation_steps=1,
+        evaluation_strategy="no",
+        # eval_steps=20,
+        save_strategy="steps",
+        save_steps=1000, 
+        save_total_limit=3,
+        mm_projector_lr=5e-4,
+        vision_tower_lr=0,
+        weight_decay=0.005,
+        warmup_ratio=0.3,
+        lr_scheduler_type="cosine",
+        logging_steps=25,
+        fp16=False,
+        bf16=True,
+        model_max_length=2048,
+        gradient_checkpointing=True,
+        dataloader_num_workers=12, 
+        dataloader_persistent_workers=True,
+        report_to="tensorboard",
+        cache_dir=cache_dir,
+        optim="adamw_torch_fused",
+        bits=16,
+        group_by_modality_length=True,
+        warmup_steps=150,
+        max_grad_norm=0.3,
+        local_rank=-1
+    )
+
+    finetune(model_path, model_args, data_args, training_args, log_rewrite=True)
+    
+    volume.commit()
