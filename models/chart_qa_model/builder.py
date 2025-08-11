@@ -61,7 +61,7 @@ def load_pretrained_llava_model(model_path, load_8bit=False, load_4bit=False, de
                 print("I AM COOKED!")
                 return
             
-    # print("Model architecture:", model)
+    print("Model architecture:", model)
     # for name, module in model.named_children():
     #     print(f"{name}: {module}")
 
