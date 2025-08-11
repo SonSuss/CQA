@@ -32,6 +32,7 @@ def finetune(model_path: str, model_args: ModelArguments, data_args: DataArgumen
     compute_dtype = (torch.float16 if training_args.fp16 else (torch.bfloat16 if training_args.bf16 else torch.float32))
     bnb_model_from_pretrained_args = get_bnb_model_args(training_args)
     cfg_pretrained = PhiLlava_config.from_pretrained(model_path)
+    
     model = PhiLlavaForCausalLM.from_pretrained(
             model_args.model_name_or_path,
             config=cfg_pretrained,
@@ -41,3 +42,5 @@ def finetune(model_path: str, model_args: ModelArguments, data_args: DataArgumen
             torch_dtype=compute_dtype,
             trust_remote_code=True
         )
+
+    print(model)
