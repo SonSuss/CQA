@@ -43,5 +43,5 @@ def finetune(model_path: str, model_args: ModelArguments, data_args: DataArgumen
             trust_remote_code=True
         )
 
-    for name, module in model.named_children():
-        print(f"{name}: {module}")
+    for name, module in model.named_modules():
+        print(name, ":", type(module))
