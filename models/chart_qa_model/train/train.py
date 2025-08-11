@@ -216,11 +216,11 @@ def train(model_args:ModelArguments, data_args: DataArguments, training_args: Tr
     
     model.config.use_cache = True
     
-    if training_args.lora_enable:
-        lora_save_model(model, training_args)
-    else:
-        safe_save_model_for_hf_trainer(trainer=trainer,
-                                       output_dir=training_args.output_dir)
+    # if training_args.lora_enable:
+    #     lora_save_model(model, training_args)
+    # else:
+    #     safe_save_model_for_hf_trainer(trainer=trainer,
+    #                                    output_dir=training_args.output_dir)
         
     tokenizer.save_pretrained(training_args.output_dir)
 
