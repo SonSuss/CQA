@@ -42,5 +42,41 @@ def finetune(model_path: str, model_args: ModelArguments, data_args: DataArgumen
             torch_dtype=compute_dtype,
             trust_remote_code=True
         )
+    for name, module in model.named_children():
+        print(f"{name}: {module}")
+    
+    vision_tower = model.get_vision_tower()
+    vision_tower.to(dtype=torch.bfloat16 if training_args.bf16 else torch.float16, device=training_args.device)
+    if not vision_tower.is_loaded:
+        vision_tower.load_model()
+        
+    for name, module in model.named_children():
+        print(f"{name}: {module}")
 
-    print(cfg_pretrained.tune_mm_mlp_adapter, cfg_pretrained.tune_vision_tower)
+    # print(cfg_pretrained.tune_mm_mlp_adapter, cfg_pretrained.tune_vision_tower)
+    # if cfg_pretrained.tune_vision_tower:
+    #     vision_tower = model.get_vision_tower()
+    #     vision_tower.to(dtype=torch.bfloat16 if training_args.bf16 else torch.float16, device=training_args.device)
+    #     if not vision_tower.is_loaded:
+    #         vision_tower.load_model()
+    #     vision_path = os.path.join(model_path, "vision_tower", "pytorch_model.bin")
+    #     if os.path.exists(vision_path):
+    #         finetuned_weights = torch.load(vision_path, map_location="cpu")
+    #         vision_tower.vision_tower.load_state_dict(finetuned_weights, strict=False, assign=True)
+    #     else:
+    #         logger.warning("Vision tower weights not found at: %s", vision_path)
+    #         return
+    #     if cfg_pretrained.tune_mm_mlp_adapter:
+    #         projector = model.mm_projector
+            
+    #     else:
+    #         logger.warning("MM MLP adapter should be train at anystep!")
+    #         return
+    # else:
+    #     model.get_model().initialize_vision_modules(
+    #         model_args=model_args,
+    #         fsdp=training_args.fsdp
+    #     )
+    #     vision_tower = model.get_vision_tower()
+    #     vision_tower.to(dtype=torch.bfloat16 if training_args.bf16 else torch.float16, device=training_args.device)
+        
