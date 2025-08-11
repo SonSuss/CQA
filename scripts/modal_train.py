@@ -530,19 +530,20 @@ def fine_tune_model():
     
     training_args = TrainingArguments(
         output_dir=output_dir,
-        num_train_epochs=1, 
+        num_train_epochs=2, 
         per_device_train_batch_size=8,
         per_device_eval_batch_size=2,
         gradient_accumulation_steps=1,
         evaluation_strategy="no",
         # eval_steps=20,
         save_strategy="steps",
-        save_steps=1000, 
-        save_total_limit=3,
-        mm_projector_lr=5e-4,
-        vision_tower_lr=0,
-        weight_decay=0.005,
-        warmup_ratio=0.3,
+        save_steps=500, 
+        save_total_limit=4,
+        mm_projector_lr=2e-5,
+        vision_tower_lr=2e-5,
+        weight_decay=0.01,
+        warmup_ratio=0.05,
+        max_grad_norm=1.0,
         lr_scheduler_type="cosine",
         logging_steps=25,
         fp16=False,
@@ -556,8 +557,7 @@ def fine_tune_model():
         optim="adamw_torch_fused",
         bits=16,
         group_by_modality_length=True,
-        warmup_steps=150,
-        max_grad_norm=0.3,
+        warmup_steps=100,
         local_rank=-1
     )
 
