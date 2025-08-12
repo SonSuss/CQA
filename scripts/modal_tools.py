@@ -37,3 +37,29 @@ def remove_folder():
             shutil.rmtree(folder_path)
         else:
             print(f"Folder does not exist: {folder_path}")
+            
+@app.function(
+    image=image,
+    volumes={"/root/data": volume},
+    timeout=1800,  # 30 minutes
+    cpu=1,         # Default CPU - no waste
+    memory=1024    # Default memory - minimal cost
+)
+def coppy_file_to_folder():
+    import os
+    import shutil
+    src_file=""
+    dest_folder=""
+    root = "/root/data"
+    src_path = os.path.join(root, src_file)
+    dest_path = os.path.join(root, dest_folder)
+    if not os.path.isfile(src_path):
+        print(f"Source file does not exist: {src_path}")
+        return
+
+    if not os.path.exists(dest_path):
+        os.makedirs(dest_path, exist_ok=True)
+
+    dest_file_path = os.path.join(dest_path, os.path.basename(src_file))
+    shutil.copy2(src_path, dest_file_path)
+    print(f"Copied {src_path} to {dest_file_path}")
