@@ -444,16 +444,7 @@ class LLaVATrainer(Trainer):
         if os.path.exists(rng_path):
             print("Loading RNG state...")
             rng_state = torch.load(rng_path, map_location="cpu", weights_only=False)
-            print("Keys in RNG state:", rng_state.keys())
-            if "cuda" in rng_state:
-                cuda_state = rng_state["cuda"]
-                print("CUDA saved state type:", type(cuda_state))
-                if isinstance(cuda_state, list):
-                    for i, s in enumerate(cuda_state):
-                        print(f"Device {i}: dtype={s.dtype}, shape={s.shape}, numel={s.numel()}")
-            cur_state = torch.cuda.get_rng_state_all()
-            for i, s in enumerate(cur_state):
-                print(f"[CURRENT] Device {i}: dtype={s.dtype}, shape={s.shape}, numel={s.numel()}")   
+            print("Keys in RNG state:", rng_state.keys())  
             if "python" in rng_state:
                 print("Restoring Python RNG state...")
                 random.setstate(rng_state["python"])
@@ -463,6 +454,11 @@ class LLaVATrainer(Trainer):
             if "cpu" in rng_state:
                 print("Restoring PyTorch CPU RNG state...")
                 torch.set_rng_state(rng_state["cpu"])
-            if torch.cuda.is_available() and "cuda" in rng_state:
-                print("Restoring PyTorch CUDA RNG state...")
-                torch.cuda.set_rng_state_all(rng_state["cuda"])
+            if isinstance(rng_state["cuda"], torch.Tensor):
+                # Replace with a fresh, correct state
+                correct_state = torch.cuda.get_rng_state_all()
+                rng_state["cuda"] = correct_state
+                torch.save(rng_state, rng_path)
+                print("Fixed RNG CUDA state in checkpoint")
+            else:
+                print("No fix needed — CUDA state already in correct format")
