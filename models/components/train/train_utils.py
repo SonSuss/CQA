@@ -185,10 +185,10 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
     
     if not trainer.deepspeed:
         state_dict = trainer.model.state_dict()
-        # if trainer.args.should_save:
-        cpu_state_dict = {key: value.cpu() for key, value in state_dict.items()}
-        del state_dict
-        trainer._save(output_dir, state_dict=cpu_state_dict)
+        if trainer.args.should_save:
+            cpu_state_dict = {key: value.cpu() for key, value in state_dict.items()}
+            del state_dict
+            trainer._save(output_dir, state_dict=cpu_state_dict)
     else:
         trainer.save_model(output_dir)
 

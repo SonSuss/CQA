@@ -343,11 +343,11 @@ class LLaVATrainer(Trainer):
                     print('Failed to save vision tower config')
         super(LLaVATrainer, self)._save_checkpoint(model, trial)
 
-    def _save(self, output_dir: Optional[str] = None, state_dict=None):
-        # if getattr(self.args, 'tune_mm_mlp_adapter', False):
-        #     pass
-        # else:
-        super(LLaVATrainer, self)._save(output_dir, state_dict)
+    # def _save(self, output_dir: Optional[str] = None, state_dict=None):
+    #     if getattr(self.args, 'tune_mm_mlp_adapter', False):
+    #         pass
+    #     else:
+    #         super(LLaVATrainer, self)._save(output_dir, state_dict)
     
     def train(self, resume_from_checkpoint=None, trial=None, **kwargs):
         """
@@ -382,6 +382,8 @@ class LLaVATrainer(Trainer):
         """
         import os
         import torch
+        import random
+        import numpy as np
         
         if model is None:
             model = self.model
@@ -442,6 +444,15 @@ class LLaVATrainer(Trainer):
         if os.path.exists(rng_path):
             print("Loading RNG state...")
             rng_state = torch.load(rng_path, map_location="cpu", weights_only=False)
-            torch.set_rng_state(rng_state["python"])
+            if "python" in rng_state:
+                print("Restoring Python RNG state...")
+                random.setstate(rng_state["python"])
+            if "numpy" in rng_state:
+                print("Restoring NumPy RNG state...")
+                np.random.set_state(rng_state["numpy"])
+            if "cpu" in rng_state:
+                print("Restoring PyTorch CPU RNG state...")
+                torch.set_rng_state(rng_state["cpu"])
             if torch.cuda.is_available() and "cuda" in rng_state:
+                print("Restoring PyTorch CUDA RNG state...")
                 torch.cuda.set_rng_state_all(rng_state["cuda"])
