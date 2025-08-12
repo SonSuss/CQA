@@ -366,9 +366,8 @@ class LLaVATrainer(Trainer):
             self._load_from_checkpoint(resume_from_checkpoint)
             
             # Load trainer state to restore training progress
-            from transformers.trainer_utils import TRAINER_STATE_NAME
             import os
-            trainer_state_path = os.path.join(resume_from_checkpoint, TRAINER_STATE_NAME)
+            trainer_state_path = os.path.join(resume_from_checkpoint, "trainer_state.json")
             if os.path.exists(trainer_state_path):
                 from transformers import TrainerState
                 self.state = TrainerState.load_from_json(trainer_state_path)
@@ -439,7 +438,7 @@ class LLaVATrainer(Trainer):
         rng_path = os.path.join(resume_from_checkpoint, "rng_state.pth")
         if os.path.exists(rng_path):
             print("Loading RNG state...")
-            rng_state = torch.load(rng_path, map_location="cpu")
+            rng_state = torch.load(rng_path, map_location="cpu", weights_only=False)
             torch.set_rng_state(rng_state["python"])
             if torch.cuda.is_available():
                 torch.cuda.set_rng_state_all(rng_state["cuda"])
