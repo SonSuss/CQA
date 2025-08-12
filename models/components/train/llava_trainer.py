@@ -444,6 +444,16 @@ class LLaVATrainer(Trainer):
         if os.path.exists(rng_path):
             print("Loading RNG state...")
             rng_state = torch.load(rng_path, map_location="cpu", weights_only=False)
+            print("Keys in RNG state:", rng_state.keys())
+            if "cuda" in rng_state:
+                cuda_state = rng_state["cuda"]
+                print("CUDA saved state type:", type(cuda_state))
+                if isinstance(cuda_state, list):
+                    for i, s in enumerate(cuda_state):
+                        print(f"Device {i}: dtype={s.dtype}, shape={s.shape}, numel={s.numel()}")
+            cur_state = torch.cuda.get_rng_state_all()
+            for i, s in enumerate(cur_state):
+                print(f"[CURRENT] Device {i}: dtype={s.dtype}, shape={s.shape}, numel={s.numel()}")   
             if "python" in rng_state:
                 print("Restoring Python RNG state...")
                 random.setstate(rng_state["python"])
