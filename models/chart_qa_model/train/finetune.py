@@ -34,7 +34,7 @@ def finetune(model_path: str, model_args: ModelArguments, data_args: DataArgumen
     cfg_pretrained = PhiLlava_config.from_pretrained(model_path)
     
     model = PhiLlavaForCausalLM.from_pretrained(
-            model_path,
+            model_args.model_name_or_path,
             config=cfg_pretrained,
             cache_dir=training_args.cache_dir,
             **bnb_model_from_pretrained_args,
@@ -211,12 +211,12 @@ def finetune(model_path: str, model_args: ModelArguments, data_args: DataArgumen
                            custom_logger=logger,
                            **data_module)
     
-    # if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
-    #     trainer.train(resume_from_checkpoint=True)
-    # else:
-    #     trainer.train()
+    if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
+        trainer.train(resume_from_checkpoint=True)
+    else:
+        trainer.train()
 
-    # trainer.save_state()
+    trainer.save_state()
     
     model.config.use_cache = True
     

@@ -169,7 +169,7 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
         weight_to_save = get_mm_adapter_state_maybe_zero_3(trainer.model.named_parameters(), keys_to_match)
         mm_projector_folder = os.path.join(output_dir, "mm_projector")
         os.makedirs(mm_projector_folder, exist_ok=True)
-        torch.save(weight_to_save, os.path.join(output_dir, "mm_projector.bin"))
+        torch.save(weight_to_save, os.path.join(mm_projector_folder, "mm_projector.bin"))
     if getattr(trainer.args, "tune_vision_tower", False):
         keys_to_match = ['vision_model']
         weight_to_save = get_mm_adapter_state_maybe_zero_3(trainer.model.named_parameters(), keys_to_match)

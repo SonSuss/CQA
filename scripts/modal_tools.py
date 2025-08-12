@@ -48,8 +48,8 @@ def remove_folder():
 def coppy_file_to_folder():
     import os
     import shutil
-    src_file=""
-    dest_folder=""
+    src_file="checkpoint-siglip_-1-resampler2_768_128_3-phi4_init/mm_projector.bin"
+    dest_folder="checkpoint-siglip_-1-resampler2_768_128_3-phi4_init/mm_projector"
     root = "/root/data"
     src_path = os.path.join(root, src_file)
     dest_path = os.path.join(root, dest_folder)
