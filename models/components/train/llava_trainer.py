@@ -458,7 +458,7 @@ class LLaVATrainer(Trainer):
                 # Replace with a fresh, correct state
                 correct_state = torch.cuda.get_rng_state_all()
                 rng_state["cuda"] = correct_state
-                torch.save(rng_state, rng_path)
+                # torch.save(rng_state, rng_path)
                 print("Fixed RNG CUDA state in checkpoint")
             else:
                 print("No fix needed — CUDA state already in correct format")
