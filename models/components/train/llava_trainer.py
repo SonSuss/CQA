@@ -419,7 +419,10 @@ class LLaVATrainer(Trainer):
         
         # Load trainer state, optimizer, scheduler (this is handled by the parent method)
         # But we need to manually load optimizer and scheduler since we're overriding
-        
+        if self.optimizer is None:
+            self.create_optimizer()
+        if self.lr_scheduler is None:
+            self.create_scheduler(num_training_steps=self.args.max_steps, optimizer=self.optimizer)
         # Load optimizer state
         optimizer_path = os.path.join(resume_from_checkpoint, "optimizer.pt")
         if os.path.exists(optimizer_path):
