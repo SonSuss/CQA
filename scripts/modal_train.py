@@ -468,11 +468,11 @@ def fine_tune_model():
     print(f"Current working directory: {current_dir}")
     
     # Define paths for Modal environment
-    data_path = "/root/data/Chart_QA/processed_data/train.json"
-    eval_data_path = "/root/data/Chart_QA/processed_data/val.json"
+    data_path = "/root/data/Chart_QA/preprocessed_data_with_tables/train.json"
+    eval_data_path = "/root/data/Chart_QA/preprocessed_data_with_tables/val.json"
 
-    model_path = "/root/data/checkpoint-siglip_-1-resampler_768_256_3-phi4_init"
-    output_dir = "/root/data/checkpoint-siglip_-1-resampler_768_256_3-phi4_1"
+    model_path = "/root/data/checkpoint-siglip_-1-resampler2_768_128_3-phi4_init"
+    output_dir = "/root/data/checkpoint-siglip_-1-resampler2_768_128_3-phi4_1_plus"
 
     cache_dir = "/root/data/cache"
     
@@ -511,7 +511,7 @@ def fine_tune_model():
         mm_patch_merge_type="flat",
         mm_vision_select_feature="patch",
         resampler_hidden_size=768,
-        num_queries=256,
+        num_queries=128,
         num_resampler_layers=3,
         tune_vision_tower=True,
         tune_entire_model=False,
