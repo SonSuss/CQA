@@ -344,10 +344,10 @@ class LLaVATrainer(Trainer):
         super(LLaVATrainer, self)._save_checkpoint(model, trial)
 
     def _save(self, output_dir: Optional[str] = None, state_dict=None):
-        if getattr(self.args, 'tune_mm_mlp_adapter', False):
-            pass
-        else:
-            super(LLaVATrainer, self)._save(output_dir, state_dict)
+        # if getattr(self.args, 'tune_mm_mlp_adapter', False):
+        #     pass
+        # else:
+        super(LLaVATrainer, self)._save(output_dir, state_dict)
     
     def train(self, resume_from_checkpoint=None, trial=None, **kwargs):
         """
@@ -422,14 +422,14 @@ class LLaVATrainer(Trainer):
         
         # Load optimizer state
         optimizer_path = os.path.join(resume_from_checkpoint, "optimizer.pt")
-        if os.path.exists(optimizer_path) and self.optimizer is not None:
+        if os.path.exists(optimizer_path):
             print("Loading optimizer state...")
             optimizer_state = torch.load(optimizer_path, map_location="cpu")
             self.optimizer.load_state_dict(optimizer_state)
         
         # Load scheduler state  
         scheduler_path = os.path.join(resume_from_checkpoint, "scheduler.pt")
-        if os.path.exists(scheduler_path) and self.lr_scheduler is not None:
+        if os.path.exists(scheduler_path):
             print("Loading scheduler state...")
             scheduler_state = torch.load(scheduler_path, map_location="cpu")
             self.lr_scheduler.load_state_dict(scheduler_state)
@@ -439,6 +439,6 @@ class LLaVATrainer(Trainer):
         if os.path.exists(rng_path):
             print("Loading RNG state...")
             rng_state = torch.load(rng_path, map_location="cpu", weights_only=False)
-            torch.set_rng_state(rng_state["python"])
-            if torch.cuda.is_available():
-                torch.cuda.set_rng_state_all(rng_state["cuda"])
+            torch.random.set_rng_state(torch.ByteTensor(rng_state["python"]))
+            if torch.cuda.is_available() and "cuda" in rng_state:
+                torch.cuda.set_rng_state_all([torch.ByteTensor(state) for state in rng_state["cuda"]])
