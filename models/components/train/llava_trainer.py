@@ -348,5 +348,98 @@ class LLaVATrainer(Trainer):
             pass
         else:
             super(LLaVATrainer, self)._save(output_dir, state_dict)
+    
+    def train(self, resume_from_checkpoint=None, trial=None, **kwargs):
+        """
+        Override train method to handle custom checkpoint loading
+        """
+        from transformers.trainer_utils import get_last_checkpoint
+        
+        # Handle resume_from_checkpoint logic similar to parent class
+        if isinstance(resume_from_checkpoint, bool) and resume_from_checkpoint:
+            resume_from_checkpoint = get_last_checkpoint(self.args.output_dir)
+            if resume_from_checkpoint is None:
+                raise ValueError(f"No valid checkpoint found in output directory ({self.args.output_dir})")
+        
+        if resume_from_checkpoint is not None:
+            # Use our custom loading method
+            self._load_from_checkpoint(resume_from_checkpoint)
+            
+            # Load trainer state to restore training progress
+            from transformers.trainer_utils import TRAINER_STATE_NAME
+            import os
+            trainer_state_path = os.path.join(resume_from_checkpoint, TRAINER_STATE_NAME)
+            if os.path.exists(trainer_state_path):
+                from transformers import TrainerState
+                self.state = TrainerState.load_from_json(trainer_state_path)
+                print(f"Resuming training from step {self.state.global_step}, epoch {self.state.epoch}")
+        
+        # Call parent train method but don't pass resume_from_checkpoint since we handled it
+        return super(LLaVATrainer, self).train(resume_from_checkpoint=None, trial=trial, **kwargs)
 
-
+    def _load_from_checkpoint(self, resume_from_checkpoint, model=None):
+        """
+        Custom checkpoint loading for LLaVA model with frozen LLM backbone
+        """
+        import os
+        import torch
+        
+        if model is None:
+            model = self.model
+        
+        print(f"Loading custom LLaVA checkpoint from {resume_from_checkpoint}")
+        
+        # Load mm_projector weights if they exist and we're training the projector
+        if getattr(self.args, 'tune_mm_mlp_adapter', False):
+            mm_projector_path = os.path.join(resume_from_checkpoint, "mm_projector.bin")
+            if os.path.exists(mm_projector_path):
+                print("Loading mm_projector weights...")
+                mm_weights = torch.load(mm_projector_path, map_location="cpu")
+                # Load only the mm_projector weights
+                missing_keys, unexpected_keys = model.load_state_dict(mm_weights, strict=False)
+                print(f"MM Projector - Missing keys: {len(missing_keys)}, Unexpected keys: {len(unexpected_keys)}")
+            else:
+                print(f"Warning: mm_projector.bin not found at {mm_projector_path}")
+        
+        # Load vision tower weights if they exist and we're training the vision tower
+        if getattr(self.args, 'tune_vision_tower', False) or getattr(self.args, 'tune_entire_model', False):
+            vision_tower_path = os.path.join(resume_from_checkpoint, "vision_tower", "pytorch_model.bin")
+            if os.path.exists(vision_tower_path):
+                print("Loading vision tower weights...")
+                vision_weights = torch.load(vision_tower_path, map_location="cpu")
+                
+                # Load vision tower weights
+                vision_tower = model.get_vision_tower()
+                if hasattr(vision_tower, 'vision_tower'):
+                    missing_keys, unexpected_keys = vision_tower.vision_tower.load_state_dict(vision_weights, strict=False)
+                    print(f"Vision Tower - Missing keys: {len(missing_keys)}, Unexpected keys: {len(unexpected_keys)}")
+                else:
+                    print("Warning: Could not access vision_tower.vision_tower")
+            else:
+                print(f"Warning: vision tower weights not found at {vision_tower_path}")
+        
+        # Load trainer state, optimizer, scheduler (this is handled by the parent method)
+        # But we need to manually load optimizer and scheduler since we're overriding
+        
+        # Load optimizer state
+        optimizer_path = os.path.join(resume_from_checkpoint, "optimizer.pt")
+        if os.path.exists(optimizer_path) and self.optimizer is not None:
+            print("Loading optimizer state...")
+            optimizer_state = torch.load(optimizer_path, map_location="cpu")
+            self.optimizer.load_state_dict(optimizer_state)
+        
+        # Load scheduler state  
+        scheduler_path = os.path.join(resume_from_checkpoint, "scheduler.pt")
+        if os.path.exists(scheduler_path) and self.lr_scheduler is not None:
+            print("Loading scheduler state...")
+            scheduler_state = torch.load(scheduler_path, map_location="cpu")
+            self.lr_scheduler.load_state_dict(scheduler_state)
+        
+        # Load RNG state
+        rng_path = os.path.join(resume_from_checkpoint, "rng_state.pth")
+        if os.path.exists(rng_path):
+            print("Loading RNG state...")
+            rng_state = torch.load(rng_path, map_location="cpu")
+            torch.set_rng_state(rng_state["python"])
+            if torch.cuda.is_available():
+                torch.cuda.set_rng_state_all(rng_state["cuda"])

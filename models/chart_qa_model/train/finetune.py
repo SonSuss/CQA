@@ -227,3 +227,6 @@ def finetune(model_path: str, model_args: ModelArguments, data_args: DataArgumen
                                        output_dir=training_args.output_dir)
         
     tokenizer.save_pretrained(training_args.output_dir)
+    
+    
+    
