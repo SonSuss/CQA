@@ -442,6 +442,6 @@ class LLaVATrainer(Trainer):
         if os.path.exists(rng_path):
             print("Loading RNG state...")
             rng_state = torch.load(rng_path, map_location="cpu", weights_only=False)
-            torch.random.set_rng_state(torch.ByteTensor(rng_state["python"]))
+            torch.set_rng_state(rng_state["python"])
             if torch.cuda.is_available() and "cuda" in rng_state:
-                torch.cuda.set_rng_state_all([torch.ByteTensor(state) for state in rng_state["cuda"]])
+                torch.cuda.set_rng_state_all(rng_state["cuda"])
