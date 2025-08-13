@@ -33,7 +33,7 @@ def load_pretrained_llava_model(model_path, load_8bit=False, load_4bit=False, de
     cfg_pretrained = PhiLlava_config.from_pretrained(model_path)
     # model = PhiLlavaForCausalLM.from_pretrained(cfg_pretrained._name_or_path, low_cpu_mem_usage=True, **kwargs)
     model = PhiLlavaForCausalLM.from_pretrained(
-            cfg_pretrained._name_or_path,
+            model_path,
             config=cfg_pretrained,
             cache_dir="/root/data/cache",
             attn_implementation="flash_attention_2",
