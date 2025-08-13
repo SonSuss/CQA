@@ -126,14 +126,12 @@ def model_inference():
     from eval.inference_model import inference_model
     from models.chart_qa_model.builder import load_pretrained_llava_model
     import time
-    print("🔄 Loading model...")
+    print("Loading model...")
     tokenizer, model, image_processor, context_len = load_pretrained_llava_model(
         MODEL_PATH, 
         device="cuda"
     )
-    
-    
-    print("✅ Model loaded successfully")
+    print("Model loaded successfully")
     
     # image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/289.png"
     # text = "What's the leftmost value of bar in \"All adults\" category?"
@@ -165,7 +163,7 @@ def model_inference():
     # return {"response": response, "text_test_works": True}
 
 
-MODEL_PATH = "/root/data/checkpoint-siglip_-1-resampler_768_256_3-phi4_1"
+MODEL_PATH = "/root/data/checkpoint-siglip_-1-resampler2_768_128_3-phi4_1_plus"
 @app.function(
     image=training_image,
     volumes={"/root/data": volume},

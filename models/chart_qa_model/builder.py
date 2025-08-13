@@ -71,7 +71,7 @@ def load_pretrained_llava_model(model_path, load_8bit=False, load_4bit=False, de
                 print("I AM COOKED!")
                 return
             
-    print("Model architecture:", model)
+    # print("Model architecture:", model)
     # for name, module in model.named_children():
     #     print(f"{name}: {module}")
 
@@ -92,11 +92,16 @@ def load_pretrained_llava_model(model_path, load_8bit=False, load_4bit=False, de
         tokenizer.add_tokens(tokens_to_add, special_tokens=True)
         model.resize_token_embeddings(len(tokenizer))
         
-    if device != "auto":
-        if device == 'cpu':
-            vision_tower.to(device=device, dtype=torch.float32)
-        else:
-            vision_tower.to(device=device, dtype=torch.float16)
+    target_device = device if device != "auto" else "cuda"
+    target_dtype = torch.float32 if target_device == 'cpu' else torch.float16
+    print(f"Moving all model components to {target_device} with dtype {target_dtype}")
+    model.to(device=target_device, dtype=target_dtype)
+    
+    # if device != "auto":
+    #     if device == 'cpu':
+    #         vision_tower.to(device=device, dtype=torch.float32)
+    #     else:
+    #         vision_tower.to(device=device, dtype=torch.float16)
     
     image_processor = vision_tower.image_processor
 
