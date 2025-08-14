@@ -97,11 +97,13 @@ def load_pretrained_llava_model(model_path, load_8bit=False, load_4bit=False, de
     print(f"Moving all model components to {target_device} with dtype {target_dtype}")
     model.to(device=target_device, dtype=target_dtype)
     
-    # if device != "auto":
-    #     if device == 'cpu':
-    #         vision_tower.to(device=device, dtype=torch.float32)
-    #     else:
-    #         vision_tower.to(device=device, dtype=torch.float16)
+    dummy_image = torch.zeros(1, 3, 768, 768).to(target_dtype)
+    with torch.no_grad():
+        vision_out = vision_tower(dummy_image)
+        model.get_model().mm_projector.to(target_dtype)
+        projected_out = model.get_model().mm_projector(vision_out)
+    print("Vision tower output shape: %s", vision_out.shape)
+    print("Projected output shape: %s", projected_out.shape)
     
     image_processor = vision_tower.image_processor
 

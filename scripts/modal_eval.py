@@ -177,8 +177,8 @@ def eval_model_chart_qa():
     import os
     from eval.chart_qa.eval import get_eval
     
-    suffix = MODEL_PATH.split("/root/data/checkpoints-")[-1]
-    output_path = os.path.join("/root/data/eval_results_2/", suffix)
+    suffix = MODEL_PATH.split("/root/data/checkpoint-")[-1]
+    output_path = os.path.join("/root/data/eval_results/", suffix)
     
     get_eval(model_path=MODEL_PATH,
              valset_path="/root/data/Chart_QA/processed_data/val.json",
@@ -214,7 +214,7 @@ def run_eval_model_chart_qa():
     pull_latest_code()
     import os
     from eval.chart_qa.eval import eval_model
-    eval_path = "/root/data/eval_results_2/"
+    eval_path = "/root/data/eval_results/"
     model_file_list = [
         name for name in os.listdir(eval_path)
         if os.path.isdir(os.path.join(eval_path, name))

@@ -27,8 +27,8 @@ def remove_folder():
     import os
     import shutil
     root = "/root/data"
-    remove_lst = ["checkpoint-siglip_-1-resampler_768_256_3-phi4_init_testsave",
-                  "checkpoint-siglip_-1-resampler2_768_128_3-phi4_init"]
+    remove_lst = ["eval_results",
+                  "siglip_-1-resampler2_768_128_3-phi4_1_plus"]
     
     for folder in remove_lst:
         folder_path = os.path.join(root, folder)
@@ -48,8 +48,8 @@ def remove_folder():
 def coppy_file_to_folder():
     import os
     import shutil
-    src_file="checkpoint-siglip_-1-resampler2_768_128_3-phi4_init/mm_projector.bin"
-    dest_folder="checkpoint-siglip_-1-resampler2_768_128_3-phi4_init/mm_projector"
+    src_file="checkpoint-siglip_-1-resampler2_768_128_3-phi4_1_plus/answers_0.2_0.5.json"
+    dest_folder="eval_results/siglip_-1-resampler2_768_128_3-phi4_1_plus"
     root = "/root/data"
     src_path = os.path.join(root, src_file)
     dest_path = os.path.join(root, dest_folder)
