@@ -235,12 +235,12 @@ def get_training_status():
             except Exception as e:
                 status["log_tail"] = f"Error reading log: {e}"
     
-    print(f"🎯 Training Status:")
+    print(f"Training Status:")
     print(f"Total checkpoints: {status['total_checkpoints']}")
     print(f"Latest checkpoint: {status['latest_checkpoint']}")
     
     if status["log_tail"]:
-        print(f"\n📋 Recent log entries:")
+        print(f"\n Recent log entries:")
         print(status["log_tail"])
     
     return status

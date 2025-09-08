@@ -131,7 +131,6 @@ def model_inference():
         MODEL_PATH, 
         device="cuda"
     )
-    print("Model loaded successfully")
     
     # image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/289.png"
     # text = "What's the leftmost value of bar in \"All adults\" category?"
@@ -139,11 +138,11 @@ def model_inference():
     # "gt_answer": "Services", "final_model_answer": "24.5 <|end|>" '23.66 <|end|>''23.66 <|end|>'
     image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/multi_col_1238.png"
     texts= [
-        "<|image|>\nQuestion:\nWhat's the highest Distribution of employment by economic sector in 2010",
+        "Question:\nWhat's the highest Distribution of employment by economic sector in 2010",
         ]
 
     s_time = time.time()
-    print("🔄 Running vision inference...")
+    print("Running vision inference:")
     for text in texts:
         response = inference_model(
             image_path,
@@ -152,15 +151,14 @@ def model_inference():
             tokenizer, 
             image_processor, 
             conv_mode="phi4_instruct", 
-            temperature=0.0,   
-            top_p=1.0,        
+            temperature=0.0,
+            top_p=1.0,
             max_new_tokens=32
         )
-        print(f"✅ Vision response: '{response}'")
+        print(f"Vision response: '{response}'")
     e_time = time.time()
-    print(f"⏱️ Inference time: {e_time - s_time:.2f} seconds")
+    print(f"Inference time: {e_time - s_time:.2f} seconds")
         
-    # return {"response": response, "text_test_works": True}
 
 
 MODEL_PATH = "/root/data/checkpoint-siglip_-1-resampler2_768_128_3-phi4_1_plus"
@@ -186,19 +184,11 @@ def eval_model_chart_qa():
              image_folder="",
              temperature=0.0,
              top_p=1.0,
+            # temperature=0.2,
+            # top_p=0.5,
              max_new_tokens=32,
              min_new_tokens=1,
              num_beams=1)
-    
-    # get_eval(model_path=MODEL_PATH,
-    #          valset_path="/root/data/Chart_QA/processed_data/val.json",
-    #          output_path=output_path,
-    #          image_folder="",
-    #          temperature=0.2,
-    #          top_p=0.5,
-    #          max_new_tokens=32,
-    #          min_new_tokens=1,
-    #          num_beams=1)
     
     volume.commit()
     

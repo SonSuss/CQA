@@ -10,7 +10,7 @@ class SeparatorStyle(Enum):
     PHI4 = auto()
     TWO = auto()
     SINGLE = auto()
-
+    PHI4_FREE = auto()
 
 @dataclasses.dataclass
 class Conversation:
@@ -46,9 +46,17 @@ class Conversation:
                     if type(message) is tuple:
                         message, _, _ = message
                     if role == self.roles[0]:
-                        ret += f"{role}\nImage:\n{message}<|end|>"
+                        ret += f"{role}\nImage:\n{message}<|end|>\n"
                     else:
                         ret += f"{role}\n{message}<|end|>{self.sep}"
+                else:
+                    ret += f"{role}\n"
+                    
+        elif self.sep_style == SeparatorStyle.PHI4_FREE:
+            ret = ""
+            for role, message in messages:
+                if message:
+                    ret +=  f"{role}\n{message}<|end|>\n"
                 else:
                     ret += f"{role}\n"
         else:
@@ -216,7 +224,7 @@ conv_vicuna_v1 = Conversation(
 
 conv_phi4_instruct = Conversation(
     system="""<|system|>\nYou are a helpful assistant for answering chart-based questions. 
-Think step by step to understand the chart and the question. 
+Think step by step to understand the chart and the question.
 Then give a short and correct answer.""",
     roles=("<|user|>", "<|assistant|>"),
     version="phi4_instruct",
@@ -228,14 +236,13 @@ Then give a short and correct answer.""",
 
 conv_phi4_instruct_system = Conversation(
     system="",
-    roles=("<|user|>", "<|assistant|>"),
+    roles=("<|system|>", "<|user|>", "<|assistant|>"),
     version="phi4_instruct",
     messages=(),
     offset=0,
-    sep_style=SeparatorStyle.PHI4,
+    sep_style=SeparatorStyle.PHI4_FREE,
     sep="<|endoftext|>",
 )
-
 
 default_conversation = conv_vicuna_v1
 conv_templates = {
@@ -246,7 +253,6 @@ conv_templates = {
     "phi4_instruct": conv_phi4_instruct,
     "phi4_instruct_system": conv_phi4_instruct_system,
 }
-
 
 if __name__ == "__main__":
     print(default_conversation.get_prompt())

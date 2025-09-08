@@ -47,8 +47,6 @@ def process_images(images, image_processor, model_cfg):
     # if all(x.shape == new_images[0].shape for x in new_images):
     #     new_images = torch.stack(new_images, dim=0)
     # return new_images
-
-
 def tokenizer_image_token(prompt, tokenizer, image_token_index= IMAGE_TOKEN_INDEX, return_tensors=None):
     prompt_chunks = [tokenizer(chunk).input_ids for chunk in prompt.split('<|image|>')]
 
