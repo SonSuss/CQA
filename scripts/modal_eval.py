@@ -3,7 +3,7 @@ import modal
 app = modal.App("TrainChartQA")
 
 # Create or attach a persistent volume
-volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_6", create_if_missing=True)
+volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_5", create_if_missing=True)
 
 
 cuda_version = "12.6.0"
@@ -94,7 +94,7 @@ def simple_text_test():
     )
     
     # Simple text-only test
-    text = "What is 2+2?"
+    text = "What is 2+2?, answer with python code that prints only the result."
     input_ids = tokenizer.encode(text, return_tensors="pt").to(model.device)
     
     
@@ -184,9 +184,9 @@ def model_inference_system():
     # "gt_answer": "Services", "final_model_answer": "24.5 <|end|>" '23.66 <|end|>''23.66 <|end|>'
     image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/multi_col_1238.png"
     system_prompt = """You are a helpful assistant for solving chart-based questions using Python.  
-                        Think step by step to understand the chart and the question.  
-                        Then generate Python code that computes the correct answer.  
-                        The code must end with printing only the final result (no explanations, no extra text)."""
+Think step by step to understand the chart and the question.  
+Then generate Python code that computes the correct answer.  
+The code must end with printing only the final result."""
     texts= [
         "Question:\nWhat's the highest Distribution of employment by economic sector in 2010",
         ]
@@ -201,16 +201,16 @@ def model_inference_system():
             model, 
             tokenizer, 
             image_processor, 
-            conv_mode="phi4_instruct", 
-            temperature=0.0,
-            top_p=1.0,
-            max_new_tokens=32
+            conv_mode="phi4_instruct_system", 
+            temperature=0.7,
+            top_p=0.8,
+            max_new_tokens=1024
         )
         print(f"Vision response: '{response}'")
     e_time = time.time()
     print(f"Inference time: {e_time - s_time:.2f} seconds")
         
-MODEL_PATH = "/root/data/checkpoint-siglip_-1-resampler2_768_128_3-phi4_1_plus"
+MODEL_PATH = "/root/data/checkpoints-siglip_-1-mlp4x_gelu-phi4_2"
 @app.function(
     image=training_image,
     volumes={"/root/data": volume},
