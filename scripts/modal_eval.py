@@ -33,7 +33,6 @@ training_image = (
             "psutil", 
         ],
     )
-    # using newest huggingface transformers
     .pip_install(
         "flash-attn==2.8.1", extra_options="--no-build-isolation"
     )
@@ -158,9 +157,59 @@ def model_inference():
         print(f"Vision response: '{response}'")
     e_time = time.time()
     print(f"Inference time: {e_time - s_time:.2f} seconds")
+    
+@app.function(
+    image=training_image,
+    volumes={"/root/data": volume},
+    gpu=VAL_GPU,
+    timeout=15 * MINUTES, 
+    cpu=VAL_CPU_COUNT,
+    memory=VAL_MEMORY_GB,
+)
+def model_inference_system():
+    pull_latest_code()
+    import torch
+    from eval.inference_model import inference_model_system
+    from models.chart_qa_model.builder import load_pretrained_llava_model
+    import time
+    print("Loading model...")
+    tokenizer, model, image_processor, context_len = load_pretrained_llava_model(
+        MODEL_PATH, 
+        device="cuda"
+    )
+    
+    # image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/289.png"
+    # text = "What's the leftmost value of bar in \"All adults\" category?"
+    # "id": "multi_col_1238", "question": "<|image|>\nQuestion:\nWhat's the highest Distribution of employment by economic sector in 2010",
+    # "gt_answer": "Services", "final_model_answer": "24.5 <|end|>" '23.66 <|end|>''23.66 <|end|>'
+    image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/multi_col_1238.png"
+    system_prompt = """You are a helpful assistant for solving chart-based questions using Python.  
+                        Think step by step to understand the chart and the question.  
+                        Then generate Python code that computes the correct answer.  
+                        The code must end with printing only the final result (no explanations, no extra text)."""
+    texts= [
+        "Question:\nWhat's the highest Distribution of employment by economic sector in 2010",
+        ]
+
+    s_time = time.time()
+    print("Running vision inference:")
+    for text in texts:
+        response = inference_model_system(
+            image_path,
+            system_prompt,
+            text, 
+            model, 
+            tokenizer, 
+            image_processor, 
+            conv_mode="phi4_instruct", 
+            temperature=0.0,
+            top_p=1.0,
+            max_new_tokens=32
+        )
+        print(f"Vision response: '{response}'")
+    e_time = time.time()
+    print(f"Inference time: {e_time - s_time:.2f} seconds")
         
-
-
 MODEL_PATH = "/root/data/checkpoint-siglip_-1-resampler2_768_128_3-phi4_1_plus"
 @app.function(
     image=training_image,
