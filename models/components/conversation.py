@@ -223,10 +223,9 @@ conv_vicuna_v1 = Conversation(
 )
 
 conv_phi4_instruct = Conversation(
-    system="""<|system|>\nYou are a helpful assistant for solving chart-based questions using Python.  
-Think step by step to understand the chart and the question.  
-Then generate Python code that computes the correct answer.  
-The code must end with printing only the final result.""",
+    system="""<|system|>\nYou are a helpful assistant for answering chart-based questions. 
+Think step by step to understand the chart and the question.
+Then give a short and correct answer.""",
     roles=("<|user|>", "<|assistant|>"),
     version="phi4_instruct",
     messages=(),
