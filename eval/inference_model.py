@@ -28,7 +28,11 @@ def inference_model(image_path ,input, model, tokenizer, image_processor, conv_m
 
     print("Prompt:", prompt)
 
-    image = Image.open(image_path).convert("RGB") #-> true image
+    if isinstance(image_path, str):
+        image = Image.open(image_path).convert("RGB") #-> true image
+    else:   
+        image = image_path.convert("RGB")
+
     image_tensor= image_processor.preprocess(image, return_tensors='pt')['pixel_values'].to(model.device, dtype=torch.float16 if "cuda" in str(model.device) else torch.float32)
 
     input_ids = (
