@@ -73,7 +73,7 @@ MINUTES = 60
 TRAIN_GPU = gpu
 TRAIN_CPU_COUNT = (1.0,8.0)
 TRAIN_MEMORY_GB = (8 * 1024,32 * 1024)  # 8GB to 32GB
-TRAIN_TIME = 10 # hours
+TRAIN_TIME = 15 # hours
 
 @app.function(
     image=training_image,
@@ -300,7 +300,6 @@ def preload_models():
     import torch
     from models.chart_qa_model.model.modeling_phi3 import Phi3ForCausalLM
     from models.chart_qa_model.model.configuration_phi3 import Phi3Config
-    from models.components.vision_towers.siglip_tome.siglip_tome import SigLipVisionTower, SigLipVisionConfig
     from transformers import AutoTokenizer
     cache_dir= "/root/data/cache"
     os.makedirs(cache_dir, exist_ok=True)
@@ -337,13 +336,13 @@ def preload_models():
     volume.commit()
 
 
-CHECKPOINT = "/root/data/checkpoint-siglip_-1-resampler2_768_128_3-phi4_init"
+CHECKPOINT = "/root/data/checkpoint-siglip_-1-resampler2_768_96_3-phi4_init"
 @app.function(
     image=training_image,
     volumes={"/root/data": volume},
     gpu=TRAIN_GPU,
-    cpu=4.0,  # Fixed CPU value 
-    memory=16 * 1024,  # Fixed memory value (16GB)
+    cpu=TRAIN_CPU_COUNT,  # Fixed CPU value 
+    memory=TRAIN_MEMORY_GB,  # Fixed memory value (16GB)
     timeout= TRAIN_TIME * 60 * MINUTES,
 )
 def init_train():
@@ -398,7 +397,7 @@ def init_train():
         mm_patch_merge_type="flat",
         mm_vision_select_feature="patch",
         resampler_hidden_size=768,
-        num_queries=128,
+        num_queries=96,
         num_resampler_layers=3,
         tune_vision_tower=False,
         tune_entire_model=False,
@@ -417,7 +416,7 @@ def init_train():
     training_args = TrainingArguments(
         output_dir=output_dir,
         num_train_epochs=1, 
-        per_device_train_batch_size=10,
+        per_device_train_batch_size=8,
         per_device_eval_batch_size=2,
         gradient_accumulation_steps=1,
         evaluation_strategy="no",
@@ -454,8 +453,8 @@ def init_train():
     image=training_image,
     volumes={"/root/data": volume},
     gpu=TRAIN_GPU,
-    cpu=4.0,  # Fixed CPU value 
-    memory=16 * 1024,  # Fixed memory value (16GB)
+    cpu=TRAIN_CPU_COUNT,
+    memory=TRAIN_MEMORY_GB, 
     timeout= TRAIN_TIME * 60 * MINUTES,
 )
 def fine_tune_model():
@@ -471,8 +470,8 @@ def fine_tune_model():
     data_path = "/root/data/Chart_QA/preprocessed_data_with_tables/train.json"
     eval_data_path = "/root/data/Chart_QA/preprocessed_data_with_tables/val.json"
 
-    model_path = "/root/data/checkpoint-siglip_-1-resampler2_768_128_3-phi4_init"
-    output_dir = "/root/data/checkpoint-siglip_-1-resampler2_768_128_3-phi4_1_plus"
+    model_path = "/root/data/checkpoint-siglip_-1-resampler2_768_96_3-phi4_init"
+    output_dir = "/root/data/checkpoint-siglip_-1-resampler2_768_96_3-phi4_plus"
 
     cache_dir = "/root/data/cache"
     
@@ -511,7 +510,7 @@ def fine_tune_model():
         mm_patch_merge_type="flat",
         mm_vision_select_feature="patch",
         resampler_hidden_size=768,
-        num_queries=128,
+        num_queries=96,
         num_resampler_layers=3,
         tune_vision_tower=True,
         tune_entire_model=False,
@@ -530,7 +529,7 @@ def fine_tune_model():
     
     training_args = TrainingArguments(
         output_dir=output_dir,
-        num_train_epochs=1, 
+        num_train_epochs=3, 
         per_device_train_batch_size=6,
         per_device_eval_batch_size=2,
         gradient_accumulation_steps=1,
@@ -540,8 +539,8 @@ def fine_tune_model():
         save_steps=600, 
         save_total_limit=4,
         # learning_rate=2e-5,
-        mm_projector_lr=3e-5,
-        vision_tower_lr=1.5e-5,
+        mm_projector_lr=2e-5,
+        vision_tower_lr=1e-5,
         weight_decay=0.05,
         warmup_ratio=0.08,
         max_grad_norm=0.3,

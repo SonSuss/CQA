@@ -3,7 +3,7 @@ import modal
 app = modal.App("TrainChartQA")
 
 # Create or attach a persistent volume
-volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4_5", create_if_missing=True)
+volume = modal.Volume.from_name("chartqa-A100-llava-siglip-phi4", create_if_missing=True)
 
 
 cuda_version = "12.6.0"
@@ -14,6 +14,9 @@ gpu = "A100-40GB"
 
 training_image = (
     modal.Image.from_registry(tag, add_python="3.11")
+    .run_commands([
+        "apt-get update && apt-get install -y git build-essential clang",
+    ])
     .pip_install("bitsandbytes", gpu=gpu)
     .pip_install(
         [
@@ -37,7 +40,7 @@ training_image = (
         "flash-attn==2.8.1", extra_options="--no-build-isolation"
     )
     .run_commands([
-        "apt-get update && apt-get install -y git build-essential",
+        # "apt-get update && apt-get install -y git build-essential",
         "git clone https://github.com/SonSuss/CQA.git /root/CQA",
     ])
     .workdir("/root/CQA")
@@ -186,9 +189,20 @@ def model_inference_system():
     system_prompt = """You are a helpful assistant for solving chart-based questions using Python.  
 Think step by step to understand the chart and the question.  
 Then generate Python code that computes the correct answer.  
-The code must end with printing only the final result."""
+The code must end with printing only the final result (no explanations, no extra text)."""
     texts= [
-        "Question:\nWhat's the highest Distribution of employment by economic sector in 2010",
+        """
+Question:
+Which year has the lowest GDP in the chart?<|end|>
+<|assistant|>
+gdp_values = {"2000": 1.2, "2005": 1.0, "2010": 2.3}
+lowest_year = min(gdp_values, key=gdp_values.get)
+print(lowest_year)<|end|>
+<|user|>
+Image:
+<|image|>
+Question:
+What's the highest Distribution of employment by economic sector in 2010?<|end|>""",
         ]
 
     s_time = time.time()
@@ -210,7 +224,7 @@ The code must end with printing only the final result."""
     e_time = time.time()
     print(f"Inference time: {e_time - s_time:.2f} seconds")
         
-MODEL_PATH = "/root/data/checkpoints-siglip_-1-mlp4x_gelu-phi4_2"
+MODEL_PATH = "/root/data/checkpoint-siglip_-1-resampler2_768_96_3-phi4_plus"
 @app.function(
     image=training_image,
     volumes={"/root/data": volume},
@@ -231,10 +245,10 @@ def eval_model_chart_qa():
              valset_path="/root/data/Chart_QA/processed_data/val.json",
              output_path=output_path,
              image_folder="",
-             temperature=0.0,
-             top_p=1.0,
-            # temperature=0.2,
-            # top_p=0.5,
+            #  temperature=0.0,
+            #  top_p=1.0,
+            temperature=0.3,
+            top_p=0.5,
              max_new_tokens=32,
              min_new_tokens=1,
              num_beams=1)
