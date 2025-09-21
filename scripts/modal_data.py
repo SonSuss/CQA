@@ -43,9 +43,9 @@ def pull_latest_code():
 @app.function(
     image=image,
     volumes={"/root/data": volume},
-    timeout=1800,  # 30 minutes
-    cpu=1,         # Default CPU - no waste
-    memory=1024    # Default memory - minimal cost
+    timeout=1800,
+    cpu=1,
+    memory=1024
 )
 def download_preprocess_datasets():
     pull_latest_code()
@@ -63,7 +63,95 @@ def download_preprocess_datasets():
     print("Chart to table addition completed.")
     
     volume.commit()
-    
+
+
+def decode_img(val):
+    # print(type(image))
+    # if not isinstance(image, str):
+    #     return None
+    # Case 1: base64 string starting with /9j/
+    from io import BytesIO
+    from PIL import Image
+    import base64
+    if isinstance(val, (bytes, bytearray)):
+        b = bytes(val)
+        if b.startswith(b'/9j/'):
+            return Image.open(BytesIO(base64.b64decode(b)))
+        return Image.open(BytesIO(b))
+
+    raise TypeError(f"Unsupported image type: {type(val)}")
+
+@app.function(
+    image=image,
+    volumes={"/root/data": volume},
+    timeout=1800,
+    cpu=1,
+    memory=1024
+)
+def chartQAPro_download():
+    pull_latest_code()
+    from datasets import load_dataset
+    # Login using e.g. `huggingface-cli login` to access this dataset
+    ds = load_dataset("ahmed-masry/ChartQAPro")['test']
+    import os
+    import json
+
+    save_path = "/root/data/ChartQAPro"
+    os.makedirs(save_path, exist_ok=True)
+    img_path = os.path.join(save_path, "images")
+    os.makedirs(img_path, exist_ok=True)
+    count = 0
+    test_set = []
+    for item in ds:
+        img_save_path = os.path.join(img_path, f"{count}.png")
+        img = decode_img(item['image']).convert("RGB")
+        img.save(img_save_path)
+        entry = {
+            'id': count,
+            'image': img_save_path,
+            'conversations': [
+                {
+                    "from": "human",
+                    "value": "<|image|>\n" + "Question:\n" + item['Question'][0]
+                },
+                {
+                    "from": "gpt",
+                    "value": item['Answer'][0]
+                }
+            ]
+        }
+        test_set.append(entry)
+        count += 1
+    testset_path = os.path.join(save_path, "testset.json")
+    with open(testset_path, "w") as f:
+        json.dump(test_set, f)
+    volume.commit()
+
+@app.function(
+    image=image,
+    volumes={"/root/data": volume},
+    timeout=1800,
+    cpu=1,
+    memory=1024
+)
+def figureqa_download_3000():
+    from datasets import load_dataset
+    import os, json, random
+    ds = load_dataset("vikhyatk/figureqa", split="train")
+    random.seed(42)
+    indices = random.sample(range(len(ds)), 3000)
+    out_root = "/root/data/figureqa_subset"
+    img_dir = os.path.join(out_root, "images")
+    os.makedirs(img_dir, exist_ok=True)
+    records = []
+    count = 0
+    for idx in indices:
+        item = ds[idx]
+        qa_list = item["qa"]
+        if not qa_list:
+            continue
+        
+
 @app.function(
     image=image,
     volumes={"/root/data": volume},

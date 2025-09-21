@@ -138,9 +138,11 @@ def model_inference():
     # text = "What's the leftmost value of bar in \"All adults\" category?"
     # "id": "multi_col_1238", "question": "<|image|>\nQuestion:\nWhat's the highest Distribution of employment by economic sector in 2010",
     # "gt_answer": "Services", "final_model_answer": "24.5 <|end|>" '23.66 <|end|>''23.66 <|end|>'
-    image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/multi_col_1238.png"
+    image_path = "/root/data/images/test3.png"
     texts= [
-        "Question:\nWhat's the highest Distribution of employment by economic sector in 2010",
+        "Question:\nWhat is the red line variable?",
+        "Question:\nWhat is the red line variable?",
+        "Question:\nWhat is the red line variable?"
         ]
 
     s_time = time.time()
@@ -153,11 +155,11 @@ def model_inference():
             tokenizer, 
             image_processor, 
             conv_mode="phi4_instruct", 
-            temperature=0.0,
-            top_p=1.0,
-            max_new_tokens=32
+            temperature=0.8,
+            top_p=0.8,
+            max_new_tokens=1024
         )
-        print(f"Vision response: '{response}'")
+        print(f"Model response: '{response}'")
     e_time = time.time()
     print(f"Inference time: {e_time - s_time:.2f} seconds")
     
@@ -185,7 +187,7 @@ def model_inference_system():
     # text = "What's the leftmost value of bar in \"All adults\" category?"
     # "id": "multi_col_1238", "question": "<|image|>\nQuestion:\nWhat's the highest Distribution of employment by economic sector in 2010",
     # "gt_answer": "Services", "final_model_answer": "24.5 <|end|>" '23.66 <|end|>''23.66 <|end|>'
-    image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/multi_col_1238.png"
+    image_path = "/root/data/images/test1.png"
     system_prompt = """You are a helpful assistant for solving chart-based questions using Python.  
 Think step by step to understand the chart and the question.  
 Then generate Python code that computes the correct answer.  
@@ -199,10 +201,11 @@ gdp_values = {"2000": 1.2, "2005": 1.0, "2010": 2.3}
 lowest_year = min(gdp_values, key=gdp_values.get)
 print(lowest_year)<|end|>
 <|user|>
-Image:
+Image
 <|image|>
 Question:
-What's the highest Distribution of employment by economic sector in 2010?<|end|>""",
+What is the total number of events that occur when "school start" and "after school" """,
+"What is the total number of events that occur when \"school start\" and \"after school\""
         ]
 
     s_time = time.time()
@@ -216,15 +219,15 @@ What's the highest Distribution of employment by economic sector in 2010?<|end|>
             tokenizer, 
             image_processor, 
             conv_mode="phi4_instruct_system", 
-            temperature=0.7,
+            temperature=0.8,
             top_p=0.8,
             max_new_tokens=1024
         )
-        print(f"Vision response: '{response}'")
+        print(f"model response: '{response}'")
     e_time = time.time()
     print(f"Inference time: {e_time - s_time:.2f} seconds")
         
-MODEL_PATH = "/root/data/checkpoint-siglip_-1-resampler2_768_96_3-phi4_plus"
+MODEL_PATH = "/root/data/checkpoint-siglip_-1-resampler2_768_128_3-phi4"
 @app.function(
     image=training_image,
     volumes={"/root/data": volume},
@@ -239,19 +242,19 @@ def eval_model_chart_qa():
     from eval.chart_qa.eval import get_eval
     
     suffix = MODEL_PATH.split("/root/data/checkpoint-")[-1]
-    output_path = os.path.join("/root/data/eval_results/", suffix)
+    output_path = os.path.join("/root/data/eval_results_chartQAPro/", suffix)
     
     get_eval(model_path=MODEL_PATH,
-             valset_path="/root/data/Chart_QA/processed_data/val.json",
+             valset_path="/root/data/ChartQAPro/testset.json",
              output_path=output_path,
              image_folder="",
             #  temperature=0.0,
             #  top_p=1.0,
             temperature=0.3,
             top_p=0.5,
-             max_new_tokens=32,
-             min_new_tokens=1,
-             num_beams=1)
+            max_new_tokens=32,
+            min_new_tokens=1,
+            num_beams=1)
     
     volume.commit()
     
@@ -267,7 +270,7 @@ def run_eval_model_chart_qa():
     pull_latest_code()
     import os
     from eval.chart_qa.eval import eval_model
-    eval_path = "/root/data/eval_results/"
+    eval_path = "/root/data/eval_results_chartQAPro/"
     model_file_list = [
         name for name in os.listdir(eval_path)
         if os.path.isdir(os.path.join(eval_path, name))
@@ -276,4 +279,116 @@ def run_eval_model_chart_qa():
         full_answers_path = os.path.join(eval_path, answers_path)
         eval_model(answers_path=full_answers_path, output_path=full_answers_path)
         
+    volume.commit()
+
+@app.function(
+    image=training_image,
+    volumes={"/root/data": volume},
+    timeout=15 * MINUTES, 
+    cpu=VAL_CPU_COUNT,
+    memory=VAL_MEMORY_GB,
+) 
+def collect_correct_answers():
+    import os, json, re
+    from difflib import SequenceMatcher
+    eval_path = "/root/data/eval_results_chartQAPro/siglip_-1-resampler2_768_128_3-phi4/answers_0.3_0.5.json"
+    out_path = "/root/data/eval_results_chartQAPro/siglip_-1-resampler2_768_128_3-phi4/correct_relaxed_0.3_0.5.json"
+    with open(eval_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    
+    def norm(x):
+        if x is None:
+            return ""
+        return x.replace("<|end|>", "").strip().lower()
+    
+    def clean_end(s):
+        if not isinstance(s, str):
+            return ""
+        return s.replace("<|end|>", "").strip()
+    
+    def norm_text(s):
+        s = clean_end(s).lower()
+        s = re.sub(r'[%,$]', '', s)  # drop symbols but keep digits
+        s = re.sub(r'\s+', ' ', s)
+        return s.strip()
+
+    num_pat = re.compile(r'-?\d+(?:\.\d+)?')
+
+    def extract_numbers(s):
+        if not isinstance(s, str):
+            return []
+        return [float(x) for x in num_pat.findall(s)]
+
+    def numbers_match(gt_nums, pred_nums):
+        if not gt_nums or not pred_nums:
+            return False
+        # Single number case
+        if len(gt_nums) == 1 and len(pred_nums) == 1:
+            g, p = gt_nums[0], pred_nums[0]
+            denom = max(abs(g), abs(p), 1e-8)
+            rel_err = abs(g - p) / denom
+            return rel_err <= 0.05  # 5%
+        # Range (take first two)
+        if len(gt_nums) >= 2 and len(pred_nums) >= 2:
+            g1, g2 = gt_nums[0], gt_nums[1]
+            p1, p2 = pred_nums[0], pred_nums[1]
+            def close(a,b):
+                return abs(a-b) / max(abs(a), abs(b), 1e-8) <= 0.05
+            return close(g1,p1) and close(g2,p2)
+        return False
+
+    def strings_match(gt, pred):
+        gt_n = norm_text(gt)
+        pred_n = norm_text(pred)
+        if not gt_n or not pred_n:
+            return False
+        # Exact after normalization
+        if gt_n == pred_n:
+            return True
+        # Handle year shorthand like 2037-38 vs 2037-2038
+        if re.match(r'^\d{4}-\d{2}$', gt_n):
+            # expand gt: 2037-38 -> 2037-2038
+            base = gt_n[:4]
+            tail = gt_n[-2:]
+            expanded = f"{base}-{base[:2]}{tail}"
+            if expanded == pred_n:
+                return True
+        if re.match(r'^\d{4}-\d{2}$', pred_n):
+            base = pred_n[:4]
+            tail = pred_n[-2:]
+            expanded = f"{base}-{base[:2]}{tail}"
+            if expanded == gt_n:
+                return True
+        # Fuzzy similarity
+        sim = SequenceMatcher(None, gt_n, pred_n).ratio()
+        return sim >= 0.90
+
+    correct = []
+    for item in data:
+        gt_raw = item.get("gt_answer")
+        pred_raw = item.get("final_model_answer")
+        gt_clean = clean_end(gt_raw)
+        pred_clean = clean_end(pred_raw)
+
+        gt_nums = extract_numbers(gt_clean)
+        pred_nums = extract_numbers(pred_clean)
+
+        ok = False
+        if gt_nums and pred_nums:
+            ok = numbers_match(gt_nums, pred_nums)
+        if not ok:
+            ok = strings_match(gt_clean, pred_clean)
+
+        if ok:
+            correct.append({
+                "id": item.get("id"),
+                "question": item.get("question"),
+                "gt_answer": gt_raw,
+                "final_model_answer": pred_raw
+            })
+
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(correct, f, ensure_ascii=False, indent=2)
+
+    print(len(correct), "correct answers saved to", out_path)
     volume.commit()
