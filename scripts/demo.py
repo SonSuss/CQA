@@ -141,11 +141,7 @@ def model_inference():
         MODEL_PATH, 
         device="cuda"
     )
-    
-    # image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/289.png"
-    # text = "What's the leftmost value of bar in \"All adults\" category?"
-    # "id": "multi_col_1238", "question": "<|image|>\nQuestion:\nWhat's the highest Distribution of employment by economic sector in 2010",
-    # "gt_answer": "Services", "final_model_answer": "24.5 <|end|>" '23.66 <|end|>''23.66 <|end|>'
+
     image_path = "/root/data/Chart_QA/ChartQA Dataset/val/png/multi_col_1238.png"
     texts= [
         "Question:\nWhat's the highest Distribution of employment by economic sector in 2010",
@@ -232,28 +228,6 @@ web_app = FastAPI()
 @web_app.get("/", response_class=HTMLResponse)
 async def get_form():
     return HTMLResponse(content=HTML_1)
-
-# @web_app.post("/choose")
-# async def submit_model(model_path: str = Form(...)):
-#     global MODEL_PATH
-#     match model_path:
-#         case "model1": MODEL_PATH = MODEL_PATH_1
-#         case "model2": MODEL_PATH = MODEL_PATH_2
-#         case "model3": MODEL_PATH = MODEL_PATH_3
-#         case "model4": MODEL_PATH = MODEL_PATH_4
-#         case "model5": MODEL_PATH = MODEL_PATH_5 
-    
-#     # Import Lib
-#     from models.chart_qa_model.builder import load_pretrained_llava_model
-#     import time
-      
-#     # Preload Model
-#     tokenizer, model, image_processor, context_len = load_pretrained_llava_model(
-#         MODEL_PATH, 
-#         device="cuda"
-#     )
-#     return {"model": MODEL_PATH}
-
 
 @web_app.post("/submit")
 async def sumbit_form(
@@ -587,37 +561,3 @@ HTML_1 = """
 </body>
 </html>
 """
-# LEGACY FEATURE
-
-# <li><strong>Format:</strong> ${data.format}</li>
-# <li><strong>Size:</strong> ${data.size[0]} x ${data.size[1]}</li>
-# <li><strong>Mode:</strong> ${data.mode}</li>
-
-# <button type="submit" id="choose" name="choose">Choose Model</button>
-#         <p id="model_result"></p>
-                            
-# const ModelDisplay = document.getElementById("model_result");
-    
-#         document.getElementById("choose").addEventListener("click", async function(e) {
-#             e.preventDefault();
-
-#             const formData = new FormData(form);
-            
-#             const response = await fetch("/choose", {
-#                 method: "POST",
-#                 body: formData
-#             });
-#             const data = await response.json();
-#             if (response.ok) {
-#                 ModelDisplay.innerHTML  = `
-#                     <h3>Info</h3>
-#                         <ul>           
-#                             <li><strong>Model:</strong> ${data.model}</li>
-#                         </ul>
-#                 `;
-#             } else {
-#                 ModelDisplay.textContent = `Error: ${data.error}`;
-#             }
-#         });
-
-# siglip_-1-resampler2_768_128_3-phi4

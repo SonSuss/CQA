@@ -62,14 +62,18 @@ def load_pretrained_llava_model(model_path, load_8bit=False, load_4bit=False, de
 
     if cfg_pretrained.tune_mm_mlp_adapter:
         print("manually loading projecor state_dict.")
-        projector_path = os.path.join(model_path, "mm_projector", "mm_projector.bin")
-        if os.path.exists(projector_path):
-            finetuned_weights = torch.load(projector_path, map_location="cpu")
-            _, unexpected_keys = model.load_state_dict(finetuned_weights, strict=False, assign=True)
-            if unexpected_keys:
-                print("Unexpected keys:", unexpected_keys)
-                print("I AM COOKED!")
-                return
+        projector_dir = os.path.join(model_path, "mm_projector")
+        if os.path.isdir(projector_dir):
+            projector_path = os.path.join(projector_dir, "mm_projector.bin")
+            if os.path.exists(projector_path):
+                finetuned_weights = torch.load(projector_path, map_location="cpu")
+                _, unexpected_keys = model.load_state_dict(finetuned_weights, strict=False, assign=True)
+                if unexpected_keys:
+                    print("Unexpected keys:", unexpected_keys)
+                    print("I AM COOKED!")
+                    return
+        else:
+            print("mm_projector folder not found. Skipping projector weight loading.")
             
     # print("Model architecture:", model)
     # for name, module in model.named_children():
