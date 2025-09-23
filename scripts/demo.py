@@ -81,7 +81,7 @@ VAL_TIME = 10 # hours
 
 MODEL_PATH_1 = "/root/data/checkpoint-siglip_-1-resampler2_768_128_3-phi4"
 MODEL_PATH_2 = "/root/data/checkpoint-siglip_-1-resampler2_768_96_3-phi4_plus"
-MODEL_PATH_3 = "model_path_3"
+MODEL_PATH_3 = "/root/data/checkpoint-siglip_mlpx4gelu-phi4"
 MODEL_PATH_4 = "model_path_4"
 MODEL_PATH_5 = "model_path_5"
 
@@ -461,8 +461,8 @@ HTML_1 = """
                 <select name="model_path" id="model_path">
                     <option value="model1">SigLIP-tome_Resambler128_Phi4</option>
                     <option value="model2">SigLIP-tome_Resambler96_Phi4</option>
-                    <option value="model3">SigLIP-tome_Resambler256_Phi4</option>
-                    <option value="model4">SigLIP-tome_MLP4xGELU_Phi4</option>
+                    <option value="model3">SigLIP-tome_MLP4xGELU_Phi4</option>
+                    <option value="model4">SigLIP-tome_Resambler256_Phi4</option>
                     <option value="model5">SigLIP-tome_MLP2xGELU_Phi4</option>
                 </select>
 

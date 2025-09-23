@@ -61,9 +61,9 @@ def load_pretrained_llava_model(model_path, load_8bit=False, load_4bit=False, de
                 return
 
     if cfg_pretrained.tune_mm_mlp_adapter:
-        print("manually loading projecor state_dict.")
         projector_dir = os.path.join(model_path, "mm_projector")
         if os.path.isdir(projector_dir):
+            print("manually loading projecor state_dict.")
             projector_path = os.path.join(projector_dir, "mm_projector.bin")
             if os.path.exists(projector_path):
                 finetuned_weights = torch.load(projector_path, map_location="cpu")
